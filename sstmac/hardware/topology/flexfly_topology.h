@@ -15,7 +15,12 @@ namespace hw {
 class flexfly_topology : public structured_topology {
 
  FactoryRegister("flexfly", topology, flexfly_topology);
-
+protected:
+  struct link {
+    switch_id dest_sid; // switch_id of the destination switch
+    int dest_inport; // port of the destination switch
+    link_type type; 
+  }
 public:
  ~flexfly_topology();
    /**** BEGIN PURE VIRTUAL INTERFACE *****/
@@ -67,7 +72,7 @@ public:
    * @param [inout] switch_params
    */
   virtual void configure_individual_port_params(switch_id src,
-          sprockit::sim_parameters* switch_params) const;
+          sprockit::sim_parameters* switch_params) const; //DONE (RECHECK)
 
   /**
      For indirect networks, this includes all switches -
@@ -75,7 +80,7 @@ public:
      switches that are only a part of the network
      @return The total number of switches
   */
-  virtual int num_switches() const {
+  virtual int num_switches() const { //DONE
   	return num_groups_ * switches_per_group_ + num_optical_switches_;
   };
 
@@ -84,7 +89,9 @@ public:
    *  might be larger than the actual number of switches.
    * @return The max switch id
    */
-  virtual switch_id max_switch_id() const = 0;
+  virtual switch_id max_switch_id() const { // DONE
+    return max_switch_id_;
+  };
 
   /**
    * @brief swithc_id_slot_filled
@@ -245,15 +252,16 @@ private:
  uint32_t num_total_switches_;
 
  uint32_t num_optical_switches_per_group_;
-
+ 
+ switch_id max_switch_id_;
 //maps a switch_id to a vector of connections of said switch
- std::unordered_map<switch_id, std::vector<connection*>> switch_connection_map_;
+ std::unordered_map<switch_id, std::vector<switch_port_pair*>> switch_connection_map_;
 //maps a switch_id (must be electrical) to a vector of all the nodes (end-point compute) it is connected to
  std::unordered_map<switch_id, std::vector<injection_port*>> node_connection_map_;
 
  void setup_flexfly_topology();
 
- void connect_switches(switch_id src, switch_id dst);
+ bool connect_switches(switch_id src, switch_id dst, link_type ltype);
 
  //std::vector<flexfly_optical_switch*> optical_switches_;
 
