@@ -80,6 +80,10 @@ class software_launch_request
     return nproc_;
   }
 
+  int procs_per_node() const {
+    return procs_per_node_;
+  }
+
   timestamp time() const {
     return time_;
   }

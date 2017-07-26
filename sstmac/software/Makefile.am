@@ -66,7 +66,8 @@ libsstmac_sw_la_SOURCES = \
   launch/round_robin_task_mapper.cc \
   launch/node_id_task_mapper.cc \
   launch/job_launcher.cc \
-  launch/app_launcher.cc 
+  launch/app_launcher.cc \
+  launch/greedy_job_launcher.cc
 
 
 library_includedir=$(includedir)/sstmac/software
@@ -150,7 +151,8 @@ nobase_library_include_HEADERS = \
   launch/app_launcher_fwd.h \
   launch/job_launch_event.h \
   launch/launch_event.h  \
-  launch/launch_event_fwd.h  
+  launch/launch_event_fwd.h  \
+  launch/greedy_job_launcher.h
 
 if HAVE_UCONTEXT
   libsstmac_sw_la_SOURCES += \

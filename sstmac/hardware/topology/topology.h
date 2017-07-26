@@ -59,6 +59,14 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/factories/factory.h>
 #include <sprockit/unordered.h>
 
+/**
+ * by Jason Teh
+ * Added 07/20/2017 for the Flexfly project
+ */
+// include this for the metis configuration structs
+#include "/Users/minyee/install/metis-5.1.0/include/metis.h" // NOTE THAT THIS MUST BE GENERALIZED AND SHOULD NOT BE
+                                                              // INTO THE REPO AS IS  
+
 DeclareDebugSlot(topology)
 
 #define top_debug(...) \
@@ -74,12 +82,35 @@ class topology : public sprockit::printable
  public:
   static const int eject;
 
+  enum Link_Type {optical, electrical}; 
+  
   struct connection {
     switch_id src;
     switch_id dst;
     int src_outport;
     int dst_inport;
+    Link_Type link_type;
   };
+
+  /**
+   * Jason Teh 07/20/2017
+   */
+  struct metis_config {
+    idx_t nvtxs;
+    idx_t ncon;
+    idx_t *xadj;
+    idx_t *adjncy;
+    idx_t *vwgt;
+    idx_t *vsize;
+    idx_t *adjwgt;
+    idx_t nparts;
+    real_t *tpwgts;
+    real_t ubvec;
+    idx_t *options;
+    idx_t *objval;
+    idx_t *part;
+  };
+
 
   static const int speedy_port = 1000000;
 
@@ -89,6 +120,17 @@ class topology : public sprockit::printable
 
  public:
   virtual ~topology();
+
+  /** 
+   * Jason Teh added 07/20/2017
+   * this is to integrate with Metis graph partitioner to 
+   * complete the Flexfly project
+   */
+  virtual void configure_metis(metis_config* configuration) const {
+    return; // by default do nothing, but if a topology chooses to implement this
+            // method, it may do so
+  }
+
 
   /**** BEGIN PURE VIRTUAL INTERFACE *****/
   /**
@@ -448,7 +490,7 @@ class topology : public sprockit::printable
            sprockit::sim_parameters* params) const;
 
  protected:
-  RNG::rngint_t seed_;
+  RNG::rngint_t seed_; //RNG = random number generator
 
   bool debug_seed_;
 

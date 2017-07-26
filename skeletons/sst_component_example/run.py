@@ -2,6 +2,8 @@ import sst
 from sst.macro import *
 import sst.test
 
+#num_ping_pongs=10
+
 latency="1us"
 comp1 = sst.Component("1", "test.dummy_switch")
 comp1.addParam("id", 1)
@@ -18,3 +20,4 @@ makeBiNetworkLink(comp1,comp1Id,port,
                   comp2,comp2Id,port,
                   latency)
 
+num_ping_pongs=10

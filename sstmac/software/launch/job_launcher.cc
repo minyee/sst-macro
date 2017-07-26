@@ -108,8 +108,12 @@ job_launcher::add_launch_requests(sprockit::sim_parameters* params)
   bool keep_going = true;
   int aid = 1;
   int last_used_aid = 0;
-  while (keep_going || aid < 10){
-    std::string name = sprockit::printf("app%d",aid);
+  while (keep_going || aid < 10){ // why aid == 9 specifically -- Jason Teh
+    std::string name = sprockit::printf("app%d",aid); // this loop essetially looks in the param .ini file
+                                                      // for app id's numbered from 1 to 9 and checks if these
+                                                      // apps have been defined by the .ini parameter file, and 
+                                                      // add these to a series of launch requests.This loop will 
+                                                      // loop at least 9 times. 
     if (params->has_namespace(name)){
       sprockit::sim_parameters* app_params = params->get_namespace(name);
       app_launch_request* mgr = new app_launch_request(app_params, app_id(aid), name);

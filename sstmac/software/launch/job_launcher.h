@@ -139,7 +139,7 @@ class task_mapping : public sprockit::ptr_type
   static std::map<app_id, task_mapping::ptr> app_ids_launched_;
   static std::map<std::string, task_mapping::ptr> app_names_launched_;
 
-  static void delete_statics();
+  static void delete_statics();  //delete static variables, whether member of a class or not? --Jason
 };
 
 /**
