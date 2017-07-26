@@ -19,7 +19,7 @@ protected:
   struct link {
     switch_id dest_sid; // switch_id of the destination switch
     int dest_inport; // port of the destination switch
-    link_type type; 
+    Link_Type type; 
   }
 public:
  ~flexfly_topology();
