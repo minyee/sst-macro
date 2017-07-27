@@ -46,7 +46,7 @@ namespace hw {
     swid++; 
   }
   // setup the optical links
-  // setup the optical switches
+  
   max_switch_id_ = swid; // REMEMBER TO SET THE MAXIMUM SWITCH ID
  };
 
@@ -82,6 +82,7 @@ namespace hw {
 	// if reach this point, this means that the configuration pointer is not null
 
 	configuration->nvtxs = (idx_t) num_groups_ * switches_per_group_;
+  configuration->
 
  };
 
