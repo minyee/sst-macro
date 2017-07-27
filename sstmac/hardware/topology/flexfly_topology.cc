@@ -16,8 +16,8 @@
 #include <assertion.h>
 
 
-namespace sst{
-namespace hw{
+namespace sst {
+namespace hw {
  
  void flexfly_topology::setup_flexfly_topology() {
  	// first iterate over all the groups
@@ -31,25 +31,21 @@ namespace hw{
  					other_intra_group_indices++) {
  				switch_id dest_id = swid + other_intra_group_indices;
  				connect_switches(swid, dest_id, Link_Type::electrical); // form all intra-group electrical connections first
+        connect_switches(dest_id, swid, Link_Type::electrical);
         // NOTE that at this point, we are assuming that intra-group topology is all to all
  			}
  			swid++;
  		}
-
-    for (int i = 0; i < switches_per_group_; i++) {
-      switch_id elec_switch_id = swid - 1 
-      connect_switches()
-    }
-    // assume that there is 1 optical switch per group
-    swid++;
-
  	}
 
+  assert(swid == num_groups_ * switches_per_group_);
+  for (int g = 0; g < num_groups_; g++) {
+    for (int a = 0; a < switches_per_group_; a++) {
+      switch_connection_map_.insert(swid, std::vector<link*>());
+    }
+    swid++; 
+  }
   // setup the optical links
-  
-
-  
-
   // setup the optical switches
   max_switch_id_ = swid; // REMEMBER TO SET THE MAXIMUM SWITCH ID
  };
@@ -231,17 +227,18 @@ namespace hw{
     }
     bool connection_successful = true;
  	  std::vector<link*> source_switch_connection_vector = switch_connection_map_.find(source);
-    std::vector<link*> dest_switch_connection_vector = switch_connection_map_.find(dest);
+    //std::vector<link*> dest_switch_connection_vector = switch_connection_map_.find(dest);
     int src_outport = source_switch_connection_vector.size();
-    int dest_inport = dest_switch_connection_vector.size();
+    //int dest_inport = dest_switch_connection_vector.size();
 
     link* src_link = (link *) malloc(sizeof(link));
-    link* dest_link = (link *) malloc(sizeof(link));
+    //link* dest_link = (link *) malloc(sizeof(link));
     src_link->dest_sid = dest;
     src_link->dest_inport = dest_inport;
-    src_link->type = dest_link->type = ltype;
-    dest_link->dest_sid = src;
-    dest_link->dest_inport = src_outport;
+    src_link->type = ltype;
+    //dest_link->dest_sid = src;
+    //dest_link->dest_inport = src_outport;
+    return connection_successful;
  }
 
 
