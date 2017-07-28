@@ -41,10 +41,12 @@ namespace hw {
   assert(swid == num_groups_ * switches_per_group_);
   for (int g = 0; g < num_groups_; g++) {
     for (int a = 0; a < switches_per_group_; a++) {
-      switch_connection_map_.insert(swid, std::vector<link*>());
+      switch_connection_map_.insert(swid, new std::vector<link*>());
+      connect_switches((swich_id)(g * switches_per_group_ + a))
     }
     swid++; 
   }
+  std::vector<switch_id>
   // setup the optical links
   
   max_switch_id_ = swid; // REMEMBER TO SET THE MAXIMUM SWITCH ID
