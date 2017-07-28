@@ -255,7 +255,7 @@ private:
  
  switch_id max_switch_id_;
 //maps a switch_id to a vector of connections of said switch
- std::unordered_map<switch_id, std::vector<switch_port_pair*>> switch_connection_map_;
+ std::unordered_map<switch_id, std::vector<switch_port_pair*>&> switch_connection_map_;
 //maps a switch_id (must be electrical) to a vector of all the nodes (end-point compute) it is connected to
  std::unordered_map<switch_id, std::vector<injection_port*>> node_connection_map_;
 

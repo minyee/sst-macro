@@ -23,6 +23,7 @@ namespace hw {
  	// first iterate over all the groups
  	switch_id swid = 0;
 
+  // SETUP ALL-TO-ALL ELECTRICAL SWITCHES
  	//setup the electrical links
  	for (int group = 0; group < num_groups_; group++) {
  		for (int intra_group_index = 0; intra_group_index < switches_per_group_; intra_group_index++) {
@@ -36,19 +37,27 @@ namespace hw {
  			}
  			swid++;
  		}
+    switch_connection_map_.insert(swid, new std::vector<link*>);
+    swid++;
  	}
 
   assert(swid == num_groups_ * switches_per_group_);
+
+  // SETUP OPTICAL SWITCHES
   for (int g = 0; g < num_groups_; g++) {
-    for (int a = 0; a < switches_per_group_; a++) {
-      switch_connection_map_.insert(swid, new std::vector<link*>());
-      connect_switches((swich_id)(g * switches_per_group_ + a))
-    }
-    swid++; 
+    switch_id curr_optical_swid = (g + 1) * switches_per_group_;
+    for (int gg = 0; gg < num_groups_; gg++) {
+      if ((gg + 1) * switches_per_group_ == curr_optical_swid) {
+        continue;
+      } else {
+        for (int a = 0; a < switches_per_group_; a++) {
+          switch_id curr_electrical_swid = g * switches_per_group_ + a;
+          connect_switches(curr_optical_swid, curr_electrical_swid, Link_Type::optical);
+          connect_switches(curr_electrical_swid, curr_optical_swid, Link_Type::optical); 
+        }
+      }
+    } 
   }
-  std::vector<switch_id>
-  // setup the optical links
-  
   max_switch_id_ = swid; // REMEMBER TO SET THE MAXIMUM SWITCH ID
  };
 
@@ -70,10 +79,11 @@ namespace hw {
 
  // need to deallocate everything at the deconstructor
  flexfly_topology::~flexfly_topology() {
-  for (std::vector<link> connection_vector : switch_connection_map_) {
+  for (std::vector<link>& connection_vector : switch_connection_map_) {
     for (link* link_ptr : connection_vector) {
       free(link_ptr);
     }
+    delete connection_vector;
   }
  };
 
@@ -81,11 +91,7 @@ namespace hw {
 	if (!configuration) {
 		return;
 	}
-	// if reach this point, this means that the configuration pointer is not null
-
 	configuration->nvtxs = (idx_t) num_groups_ * switches_per_group_;
-  configuration->
-
  };
 
 
@@ -109,7 +115,6 @@ namespace hw {
  	if (!valid_switch_id(src) || switch_connection_map_.count(src) == 0) {
  		return;
  	}
-
   int cidx = 0;
   std::vector<link*> link_vectors = switch_connection_map_.find(src)
   assert(link_vectors != switch_connection_map_.end());
@@ -223,15 +228,15 @@ namespace hw {
   */
  bool flexfly_topology::connect_switches(switch_id source, switch_id dest, Link_Type ltype) {
  	  if (switch_connection_map_.count(source) == 0) {
-      switch_connection_map_.insert(source, std::vector<link*>);
+      switch_connection_map_.insert(source, new std::vector<link*>);
  	  }
     if (switch_connection_map_.count(dest) == 0) {
-      switch_connection_map_.insert(dest, std::vector<link*>);
+      switch_connection_map_.insert(dest, new std::vector<link*>);
     }
     bool connection_successful = true;
- 	  std::vector<link*> source_switch_connection_vector = switch_connection_map_.find(source);
+ 	  std::vector<link*>& source_switch_connection_vector = switch_connection_map_.find(source);
     //std::vector<link*> dest_switch_connection_vector = switch_connection_map_.find(dest);
-    int src_outport = source_switch_connection_vector.size();
+    int src_outport = source_switch_connection_vector->size();
     //int dest_inport = dest_switch_connection_vector.size();
 
     link* src_link = (link *) malloc(sizeof(link));
