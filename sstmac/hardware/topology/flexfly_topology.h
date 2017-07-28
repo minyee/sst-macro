@@ -21,6 +21,7 @@ protected:
     int dest_inport; // port of the destination switch
     Link_Type type; 
   }
+
 public:
  ~flexfly_topology();
    /**** BEGIN PURE VIRTUAL INTERFACE *****/
@@ -98,9 +99,11 @@ public:
    * @param sid
    * @return Whether a switch object should be built for a given switch_id
    */
-  virtual bool switch_id_slot_filled(switch_id sid) const = 0;
+  virtual bool switch_id_slot_filled(switch_id sid) const; // DONE
 
-  virtual int num_nodes() const = 0;
+  virtual int num_nodes() const { // DONE
+    return num_groups_ * switches_per_group_ * nodes_per_switch_;
+  };
 
   /**
    * @brief max_node_id Depending on the node indexing scheme, the maximum node id
@@ -224,7 +227,7 @@ public:
      @param dest_sw_addr The addr of the destination switch
      @param path [inout] A complete path descriptor to the destination switch
   */
-  virtual void minimal_route_to_switch(
+  virtual void minimal_route_to_switch( //this is really the key
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
     routable::path& path) const;
@@ -242,9 +245,9 @@ private:
 
  uint32_t num_groups_; // equivalent to parameter g in Kim's paper
  uint32_t switches_per_group_; // equivalent to parameter a in Kim's paper
- uint32_t node_per_switch_; // equivalent to parameter p in Kim's paper
+ uint32_t nodes_per_switch_; // equivalent to parameter p in Kim's paper
 
- uint32_t topology_diameter_; // need to figure out if the diameter needs to take into account optical hops or not
+ //uint32_t topology_diameter_; // need to figure out if the diameter needs to take into account optical hops or not
  
  //int intra_group_diameter_;
  uint32_t num_optical_switches_;

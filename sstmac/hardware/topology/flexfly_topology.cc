@@ -69,7 +69,7 @@ namespace hw {
  	num_optical_switches_per_group_ = 1; // This can be changed
  	switches_per_group_ = get_optional_int_param("switches_per_group", 6);
  	nodes_per_switch_ = get_optional_int_param("nodes_per_switch", 7);
-
+  //p_ = get_optional_int_param("");
  	num_optical_switches_ = num_groups_ * num_optical_switches_per_group_; // for now, assume that each group will have one optical switch attached to itself.
 
  	num_total_switches_ = num_optical_switches_ + num_groups_ * switches_per_group_;
@@ -249,6 +249,8 @@ namespace hw {
     return connection_successful;
  }
 
-
+ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
+  return (sid < max_switch_id_);
+ };
 }
 }
