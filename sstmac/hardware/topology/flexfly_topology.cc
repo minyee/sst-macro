@@ -305,7 +305,7 @@ namespace hw {
   };
 
   int flexfly_topology::num_hops_to_node(node_id src, node_id dst) const {
-    return minimal_distance
+    switch_id src_id = 
   };
 }
 }
