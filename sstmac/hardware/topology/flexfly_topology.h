@@ -16,7 +16,7 @@ class flexfly_topology : public structured_topology {
 
  FactoryRegister("flexfly", topology, flexfly_topology);
 protected:
-  struct link {
+  struct switch_link {
     switch_id dest_sid; // switch_id of the destination switch
     int dest_inport; // port of the destination switch
     Link_Type type; 
@@ -110,14 +110,18 @@ public:
    *  might be larger than the actual number of nodes.
    * @return The max node id
    */
-  virtual node_id max_node_id() const = 0;
+  virtual node_id max_node_id() const { // DONE
+    return num_groups_ * switches_per_group_ * nodes_per_switch_ - 1;
+  };
 
   /**
    * @brief node_id_slot_filled
    * @param nid
    * @return Whether a node object should be built for a given node_id
    */
-  virtual bool node_id_slot_filled(node_id nid) const = 0;
+  virtual bool node_id_slot_filled(node_id nid) const { // DONE
+    return (nid < flecfly_topology::max_node_id());
+  };
 
   virtual switch_id max_netlink_id() const = 0;
 
@@ -135,8 +139,9 @@ public:
    * @brief Return the maximum number of ports on any switch in the network
    * @return
    */
-  virtual int max_num_ports() const {
-  	return std::max(optical_switch_radix_, electrical_switch_radix_);
+  virtual int max_num_ports() const { // DONE (RECHECK)
+  	//return std::max(optical_switch_radix_, electrical_switch_radix_);
+    return switches_per_group_ + nodes_per_switch_; // + 1 - 1
   }
 
   /**
@@ -166,7 +171,7 @@ public:
    *        required for all supported routing algorithms
    * @param [inout] m
    */
-  virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const = 0;
+  virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const; // DONE (RECHECK)
 
   /**
    * @brief node_to_ejection_switch Given a destination node,
@@ -176,9 +181,9 @@ public:
    *              to the particular node
    * @return
    */
-  virtual switch_id node_to_ejection_switch(node_id addr, uint16_t& port) const = 0;
+  virtual switch_id node_to_ejection_switch(node_id addr, uint16_t& port) const; // DONE (RECHECK)
 
-  virtual switch_id node_to_injection_switch(node_id addr, uint16_t& port) const = 0;
+  virtual switch_id node_to_injection_switch(node_id addr, uint16_t& port) const; // DONE (RECHECK)
 
   /**
     This gives the minimal distance counting the number of hops between switches.
@@ -257,10 +262,12 @@ private:
  uint32_t num_optical_switches_per_group_;
  
  switch_id max_switch_id_;
+
+ node_id max_node_id_;
 //maps a switch_id to a vector of connections of said switch
  std::unordered_map<switch_id, std::vector<switch_port_pair*>&> switch_connection_map_;
 //maps a switch_id (must be electrical) to a vector of all the nodes (end-point compute) it is connected to
- std::unordered_map<switch_id, std::vector<injection_port*>> node_connection_map_;
+ //std::unordered_map<switch_id, std::vector<node_id>> node_connection_map_;
 
  void setup_flexfly_topology();
 
@@ -269,7 +276,8 @@ private:
  //std::vector<flexfly_optical_switch*> optical_switches_;
 
  //std::vector<flexfly_electrical_switch*> electrical_switches_;
-
+ inline bool valid_switch_id(switch_id id);
+ 
 public:
  int num_groups() {
  	return num_groups_;
@@ -279,7 +287,7 @@ public:
  	return switches_per_group_;
  }
 
- inline bool valid_switch_id(switch_id id);
+
 };
 
 

@@ -24,20 +24,22 @@ namespace hw {
  	switch_id swid = 0;
 
   // SETUP ALL-TO-ALL ELECTRICAL SWITCHES
- 	//setup the electrical links
+ 	//setup the electrical switch_links
  	for (int group = 0; group < num_groups_; group++) {
  		for (int intra_group_index = 0; intra_group_index < switches_per_group_; intra_group_index++) {
  			for (int other_intra_group_indices = swid - group * switches_per_group_ + 1; 
  					other_intra_group_indices < switches_per_group_; 
  					other_intra_group_indices++) {
  				switch_id dest_id = swid + other_intra_group_indices;
- 				connect_switches(swid, dest_id, Link_Type::electrical); // form all intra-group electrical connections first
-        connect_switches(dest_id, swid, Link_Type::electrical);
+ 				connect_switches(swid, dest_id, switch_link_Type::electrical); // form all intra-group electrical connections first
+        connect_switches(dest_id, swid, switch_link_Type::electrical);
         // NOTE that at this point, we are assuming that intra-group topology is all to all
  			}
+      //node_connection_map_.insert(swid, new std::vector<switch_link*>());
  			swid++;
+
  		}
-    switch_connection_map_.insert(swid, new std::vector<link*>);
+    switch_connection_map_.insert(swid, new std::vector<switch_link*>);
     swid++;
  	}
 
@@ -52,13 +54,21 @@ namespace hw {
       } else {
         for (int a = 0; a < switches_per_group_; a++) {
           switch_id curr_electrical_swid = g * switches_per_group_ + a;
-          connect_switches(curr_optical_swid, curr_electrical_swid, Link_Type::optical);
-          connect_switches(curr_electrical_swid, curr_optical_swid, Link_Type::optical); 
+          connect_switches(curr_optical_swid, curr_electrical_swid, switch_link_Type::optical);
+          connect_switches(curr_electrical_swid, curr_optical_swid, switch_link_Type::optical); 
         }
       }
     } 
   }
   max_switch_id_ = swid; // REMEMBER TO SET THE MAXIMUM SWITCH ID
+
+  // NO NEED TO SETUP NODES BECAUSE WE CAN EASILY MAP NODES TO SWITCHES
+
+  // setup nodes
+  // for (int node = 0; node < switches_per_group_ * num_groups_ * nodes_per_switch_; node++) {
+  // switch_id swid = node / nodes_per_switch_;
+    
+  // }
  };
 
  flexfly_topology::flexfly_topology(sprockit::sim_parameters* params) {
@@ -79,9 +89,9 @@ namespace hw {
 
  // need to deallocate everything at the deconstructor
  flexfly_topology::~flexfly_topology() {
-  for (std::vector<link>& connection_vector : switch_connection_map_) {
-    for (link* link_ptr : connection_vector) {
-      free(link_ptr);
+  for (std::vector<switch_link>& connection_vector : switch_connection_map_) {
+    for (switch_link* switch_link_ptr : connection_vector) {
+      free(switch_link_ptr);
     }
     delete connection_vector;
   }
@@ -107,7 +117,7 @@ namespace hw {
  	} else {
 
  	}
- }
+ };
  
  // DONE
  void flexfly_topology::connected_outports(switch_id src, 
@@ -116,18 +126,18 @@ namespace hw {
  		return;
  	}
   int cidx = 0;
-  std::vector<link*> link_vectors = switch_connection_map_.find(src)
-  assert(link_vectors != switch_connection_map_.end());
-  for (link* current_link : link_vectors) {
+  std::vector<switch_link*> switch_link_vectors = switch_connection_map_.find(src)
+  assert(switch_link_vectors != switch_connection_map_.end());
+  for (switch_link* current_switch_link : switch_link_vectors) {
     conns[cidx].src = src;
-    conns[cidx].dst = current_link->dest_sid;
+    conns[cidx].dst = current_switch_link->dest_sid;
     conns[cidx].src_outport = cidx; // TODO: CHECK THIS
-    conns[cidx].dst_inport = current_link->dest_inport;
-    conns[cidx].link_type = current_link->type;
+    conns[cidx].dst_inport = current_switch_link->dest_inport;
+    conns[cidx].switch_link_type = current_switch_link->type;
     cidx++;
   }
  	return;
- }
+ };
 
  void flexfly_topology::minimal_route_to_switch(switch_id current_sw_addr, 
  												switch_id dest_sw_addr, 
@@ -154,16 +164,15 @@ namespace hw {
  	if (!valid_switch_id(swid)) {
  		return false;
  	} 
- 	
+  int group_num = swid / (switches_per_group_ + num_optical_switches_per_group_);
+ 	return swid >= group_num * (switches_per_group_ + num_optical_switches_per_group_) + switches_per_group_;
  };
 
  /**
   * checks if a given switch id in the topology is an electrical switch or not
   */
  bool flexfly_topology::is_electrical_switch(switch_id swid) {
- 	if (!valid_switch_id(swid)) {
- 		return false;
- 	} 
+  return valid_switch_id(swid) && !is_optical_switch(swid);
  };
 
  /**
@@ -172,28 +181,28 @@ namespace hw {
  void flexfly_topology::wire(std::string& filename) {
  	// TODO: Implement this in the future to configure things from say an input adjacency graph
  	return;
- }
+ };
 
  // DONE (RECHECK)
  void flexfly_topology::configure_optical_or_electrical_port_params(switch_id swid, const std::string& str, sprockit::sim_parameters* switch_params) {
- 	if (!link_params) {
- 		spkt_throw_printf("link params fed in is a null pointer, link params not defined?");
+ 	if (!switch_link_params) {
+ 		spkt_throw_printf("switch_link params fed in is a null pointer, switch_link params not defined?");
  		return;
  	}
  	
  	sim_params* specific_switch_params = switch_params->get_namespace(str); // refers to either optical or electrical
  	int port_count = specific_switch_params->
- 	sim_params* link_params = specific_switch_params->get_namespace("link");
+ 	sim_params* switch_link_params = specific_switch_params->get_namespace("switch_link");
 
- 	double bandwidth = link_params->get_bandwidth_param("bandwidth"); // in units of bytes/sec I think
- 	int port_count = link_params->get_int_param("port_count");
- 	long buf_space = link_params->get_byte_length_param("buffer_size");
- 	int link_redundancy = get_optional_int_param("link_redundancy", 1);
- 	int credits = ((int) buf_space)*link_redundancy;
+ 	double bandwidth = switch_link_params->get_bandwidth_param("bandwidth"); // in units of bytes/sec I think
+ 	int port_count = switch_link_params->get_int_param("port_count");
+ 	long buf_space = switch_link_params->get_byte_length_param("buffer_size");
+ 	int switch_link_redundancy = get_optional_int_param("switch_link_redundancy", 1);
+ 	int credits = ((int) buf_space)*switch_link_redundancy;
  	for (int i = 0; i < port_count; i++) {
- 		topology::setup_port_params(i, credits, bandwidth, link_params, switch_params);
+ 		topology::setup_port_params(i, credits, bandwidth, switch_link_params, switch_params);
  	}
- }
+ };
 
  // DONE
  void flexfly_topology::configure_individual_port_params(switch_id src,
@@ -202,8 +211,8 @@ namespace hw {
  		spkt_throw_printf("switch_params is null");
  	}
 
- 	//sim_params* link_params = switch_params->get_namespace("link");
- 	//sim_params* switch_params = switch_params->get_namespace("link");
+ 	//sim_params* switch_link_params = switch_params->get_namespace("switch_link");
+ 	//sim_params* switch_params = switch_params->get_namespace("switch_link");
  	if (valid_switch_id(src)) {
  		std::string str;
  		if (is_optical_switch(src)) {
@@ -213,44 +222,90 @@ namespace hw {
  		}
  		configure_optical_or_electrical_port_params(src, (const std::string&) str, switch_params);
  	} 	
- }
+ };
 
  // DONE
  inline bool flexfly_topology::valid_switch_id(switch_id swid) {
- 	return (id >= 0) && (id < num_optical_switches_ + num_optical_switches_);
- }
+ 	return id < (switches_per_group_ * num_groups_ + num_optical_switches_);
+ };
 
  // DONE
  /**
   * @Brief Given a source switch and a destination switch, connects the source switch with the 
   * dest switch
-  * NOTE: This member function should form a bidirectional link
+  * NOTE: This member function should form a bidirectional switch_link
   */
- bool flexfly_topology::connect_switches(switch_id source, switch_id dest, Link_Type ltype) {
- 	  if (switch_connection_map_.count(source) == 0) {
-      switch_connection_map_.insert(source, new std::vector<link*>);
- 	  }
-    if (switch_connection_map_.count(dest) == 0) {
-      switch_connection_map_.insert(dest, new std::vector<link*>);
-    }
-    bool connection_successful = true;
- 	  std::vector<link*>& source_switch_connection_vector = switch_connection_map_.find(source);
-    //std::vector<link*> dest_switch_connection_vector = switch_connection_map_.find(dest);
-    int src_outport = source_switch_connection_vector->size();
-    //int dest_inport = dest_switch_connection_vector.size();
+ bool flexfly_topology::connect_switches(switch_id source, switch_id dest, switch_link_Type ltype) {
+ 	if (switch_connection_map_.count(source) == 0) {
+    switch_connection_map_.insert(source, new std::vector<switch_link*>);
+ 	}
+  if (switch_connection_map_.count(dest) == 0) {
+    switch_connection_map_.insert(dest, new std::vector<switch_link*>);
+  }
+  bool connection_successful = true;
+ 	std::vector<switch_link*>& source_switch_connection_vector = switch_connection_map_.find(source);
+  //std::vector<switch_link*> dest_switch_connection_vector = switch_connection_map_.find(dest);
+  int src_outport = source_switch_connection_vector->size();
+  //int dest_inport = dest_switch_connection_vector.size();
+  switch_link* src_switch_link = (switch_link *) malloc(sizeof(switch_link));
+  //switch_link* dest_switch_link = (switch_link *) malloc(sizeof(switch_link));
+  src_switch_link->dest_sid = dest;
+  src_switch_link->dest_inport = dest_inport;
+  src_switch_link->type = ltype;
+  //dest_switch_link->dest_sid = src;
+  //dest_switch_link->dest_inport = src_outport;
+  return connection_successful;
+ };
 
-    link* src_link = (link *) malloc(sizeof(link));
-    //link* dest_link = (link *) malloc(sizeof(link));
-    src_link->dest_sid = dest;
-    src_link->dest_inport = dest_inport;
-    src_link->type = ltype;
-    //dest_link->dest_sid = src;
-    //dest_link->dest_inport = src_outport;
-    return connection_successful;
- }
-
- bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
+ bool flexfly_topology::switch_id_slot_filled(switch_id sid) {
   return (sid < max_switch_id_);
  };
+
+
+ // TODO: FIGURE OUT HOW THIS FUNCTION WORKS
+ switch_id flexfly_topology::netswitch_link_to_injection_switch(netswitch_link_id nodeaddr, uint16_t& switch_port) {
+  return 0;
+ };
+
+ // TODO: FIGURE OUT HOW THIS FUNCTION WORKS
+ switch_id flexfly_topology::netswitch_link_to_ejection_switch(netswitch_link_id nodeaddr, uint16_t& switch_port) {
+  return 0;
+ };
+
+ void flexfly_topology::configure_vc_routing(std::map<routing::algorithm_t, int>& m) override {
+  m.insert(routing::minimal, 3);
+  m.insert(routing::minimal_adaptive, 3);
+  m.insert(routing::valiant, 3);
+  m.insert(routing::ugal, 3);
+  return;
+ };
+
+  switch_id flexfly_topology::node_to_ejection_switch(node_id addr, uint16_t& port) const override {
+    switch_id swid = addr / nodes_per_switch_; // this gives us the switch id of the switch node addr is connected to
+    std::vector<link*>& conn_vector = switch_connection_map_.find(swid);
+    port = std::max((conn_vector.size() - 1), 0) + ((int) swid) * nodes_per_switch_; // CHECK THIS AGAIN
+    return swid;
+  };
+  
+  switch_id flexfly_topology::node_to_injection_switch(node_id addr, uint16_t& port) const override {
+    return node_to_ejection_switch(addr, port);
+  };
+
+  int flexfly_topology::minimal_distance(switch_id src, switch_id dst) const {
+    int dist = 3;
+    if (src == dst) { // same switch
+      dist = 0;
+    } else if ((src / switches_per_group_) == (dst / switches_per_group_)) { // same group
+      dist = 1;
+    } else if () { // different group but
+      dist = 2;
+    }
+
+    return dist; // maximum Dragonfly 
+  };
+
+  int flexfly_topology::num_hops_to_node(node_id src, node_id dst) const {
+    return minimal_distance
+  };
 }
 }
