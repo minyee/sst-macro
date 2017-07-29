@@ -305,7 +305,26 @@ namespace hw {
   };
 
   int flexfly_topology::num_hops_to_node(node_id src, node_id dst) const {
-    switch_id src_id = 
+    switch_id src_id = ;
+    switch_id dst_id = ;
+    return minimal_distance(src_id, dst_id) + 2; // added by 2 because each node is 1 hop away from it's switch
+  };
+
+  void flexfly_topology::nodes_connected_to_injection_switch(switch_id swid, 
+                                                              std::vector<injection_port>& nodes) const {
+
+  };
+
+  void flexfly_topology::nodes_connected_to_injection_switch(switch_id swid, 
+                                                              std::vector<injection_port>& nodes) const { 
+  };
+
+  void flexfly_topology::minimal_route_to_switch(switch_id current_sw_addr, 
+                                                  switch_id dest_sw_addr, 
+                                                  routable::path& path) const {
+    
   };
 }
+
 }
+
