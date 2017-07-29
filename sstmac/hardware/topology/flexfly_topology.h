@@ -191,7 +191,7 @@ public:
     @param dest. The destination switch.
     @return The number of hops to final destination
   */
-  virtual int minimal_distance(switch_id src, switch_id dst) const;
+  virtual int minimal_distance(switch_id src, switch_id dst) const; // DONE (PLEASE RECHECK)
   	//return topology_diameter_;
 
   /**
@@ -276,8 +276,16 @@ private:
  //std::vector<flexfly_optical_switch*> optical_switches_;
 
  //std::vector<flexfly_electrical_switch*> electrical_switches_;
- inline bool valid_switch_id(switch_id id);
  
+ inline bool valid_switch_id(switch_id id);
+
+ // figures out if two groups are currently connected to one another
+ // also accounts for the connectivity within the optical switches
+ bool is_group_connected(int src_group, int dst_group);
+ 
+ inline int group_from_swid (switch_id swid) {
+  
+ };
 public:
  int num_groups() {
  	return num_groups_;

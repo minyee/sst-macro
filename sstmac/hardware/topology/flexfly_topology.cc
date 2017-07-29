@@ -292,27 +292,42 @@ namespace hw {
   };
 
   int flexfly_topology::minimal_distance(switch_id src, switch_id dst) const {
-    int dist = 3;
+    
     if (src == dst) { // same switch
-      dist = 0;
+      return 0;
     } else if ((src / switches_per_group_) == (dst / switches_per_group_)) { // same group
-      dist = 1;
-    } else if () { // different group but
-      dist = 2;
-    }
+      return 1;
+    } else { // different group but can reach either by 1 global and 1 local or 1 local and then 1 global
+      std::vector<link*>& conn_vector = switch_connection_map_.find(src);
+      int dest_group = dst / (switches_per_group_ + num_optical_switches_per_group_);
+      bool two_or_three = true;
+      for (link* tmp_link : conn_vector ) {
+        if (tmp_link->type == electrical)
+          continue;
+        if (tmp_link->dest_sid / (switches_per_group_ + num_optical_switches_per_group_) == dest_group)
+          return 2;
+      }
 
-    return dist; // maximum Dragonfly 
+
+      if (conn_vector)
+      dist = 2;
+      return two_or_three ? 2 : 3;
+    }
   };
 
   int flexfly_topology::num_hops_to_node(node_id src, node_id dst) const {
-    switch_id src_id = ;
-    switch_id dst_id = ;
-    return minimal_distance(src_id, dst_id) + 2; // added by 2 because each node is 1 hop away from it's switch
+    int supposed_src_swid = src / (nodes_per_switch_);
+    int supposed_dst_swid = dst / (nodes_per_switch_);
+    int src_group = supposed_src_swid / switches_per_group_;
+    int dst_group = supposed_dst_swid / switches_per_group_;
+    switch_id actual_src_swid = src_group * (switches_per_group_ + num_optical_switches_per_group_) + supposed_src_swid % switches_per_group_;
+    switch_id actual_dst_swid = dst_group * (switches_per_group_ + num_optical_switches_per_group_) + supposed_dst_swid % switches_per_group_;
+    return minimal_distance(actual_src_swid, actual_dst_swid) + 2; // added by 2 because each node is 1 hop away from it's switch
   };
 
   void flexfly_topology::nodes_connected_to_injection_switch(switch_id swid, 
                                                               std::vector<injection_port>& nodes) const {
-
+    
   };
 
   void flexfly_topology::nodes_connected_to_injection_switch(switch_id swid, 
@@ -324,6 +339,10 @@ namespace hw {
                                                   routable::path& path) const {
     
   };
+
+  bool flexfly_topology::is_group_connected() const {
+    
+  }
 }
 
 }
