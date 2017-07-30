@@ -331,11 +331,17 @@ namespace hw {
 
   void flexfly_topology::nodes_connected_to_injection_switch(switch_id swid, 
                                                               std::vector<injection_port>& nodes) const {
-    
+    int i = 0;
+    for (node_id nid : node_connection_map_) {
+      switch_id private_swid = public_swid_to_private_swid(swid);
+      nodes[i].node_id = private_swid * nodes_per_switch_ + i;
+      nodes[i].port = (switch_connection_map_.find(swid)).size() + i;
+    }
   };
 
-  void flexfly_topology::nodes_connected_to_injection_switch(switch_id swid, 
+  void flexfly_topology::nodes_connected_to_ejection_switch(switch_id swid, 
                                                               std::vector<injection_port>& nodes) const { 
+    nodes_connected_to_injection_switch(swid, nodes)
   };
 
   void flexfly_topology::minimal_route_to_switch(switch_id current_sw_addr, 
@@ -344,8 +350,20 @@ namespace hw {
     
   };
 
-  bool flexfly_topology::is_group_connected() const {
-    
+  /**
+   * @Bool returns boolean true when two groups are linked via optical switch
+   * false otherwise
+   */
+  bool flexfly_topology::is_group_connected(int src_gid, int dst_gid) const {
+    bool res = true;
+
+    return res;
+  }
+
+  inline switch_id public_swid_to_private_swid(switch_id swid) const {
+    switch_id offset = swid % (switches_per_group_ + num_optical_switches_per_group_);
+    switch_id group = swid / (switches_per_group_ + num_optical_switches_per_group_);
+    return group + offset;
   }
 }
 
