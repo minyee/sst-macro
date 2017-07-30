@@ -300,7 +300,11 @@ namespace hw {
     } else { // different group but can reach either by 1 global and 1 local or 1 local and then 1 global
       std::vector<link*>& conn_vector = switch_connection_map_.find(src);
       int dest_group = dst / (switches_per_group_ + num_optical_switches_per_group_);
-      bool two_or_three = true;
+      bool two_or_three = true; 
+      // 1) have to search through the vector of all port connections of it's own global link
+      // 2) also to search through the connection vectors of all of the switch's neighbors
+      // 3) at the same time, you'd need to be aware of what the optical switches' internal states are
+      //    and if they are connecting the groups together. 
       for (link* tmp_link : conn_vector ) {
         if (tmp_link->type == electrical)
           continue;
