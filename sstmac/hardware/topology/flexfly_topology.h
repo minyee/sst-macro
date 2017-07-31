@@ -3,16 +3,16 @@
  * This is the header file containing all the function footprint for the flexfly topology class
  * which is really a canonical Dragonfly
  */
-#include <sstmac/hardware/topology/flexfly_topology.h>
-#include <math>
+//#include <sstmac/hardware/topology/flexfly_topology.h>
+//#include <math>
 #include <algorithm>
 #include <vector>
-
+#include <sstmac/hardware/topology/topology.h>
 
 namespace sstmac{
 namespace hw {
 
-class flexfly_topology : public structured_topology {
+class flexfly_topology : public topology {
 
  FactoryRegister("flexfly", topology, flexfly_topology);
 protected:
@@ -20,7 +20,7 @@ protected:
     switch_id dest_sid; // switch_id of the destination switch
     int dest_inport; // port of the destination switch
     Link_Type type; 
-  }
+  };
 
 public:
  ~flexfly_topology();
@@ -120,7 +120,7 @@ public:
    * @return Whether a node object should be built for a given node_id
    */
   virtual bool node_id_slot_filled(node_id nid) const { // DONE
-    return (nid < flecfly_topology::max_node_id());
+    return (nid < flexfly_topology::max_node_id());
   };
 
   virtual switch_id max_netlink_id() const = 0;
@@ -240,8 +240,7 @@ public:
   virtual bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
   
 protected:
- flexfly_topology(sprockit::sim_parameters* params) : topology(params); 
-
+ flexfly_topology(sprockit::sim_parameters* params); 
  void configure_optical_or_electrical_port_params(switch_id swid, const std::string& str, sprockit::sim_parameters* sim_params) const;
 
 private:
@@ -265,13 +264,13 @@ private:
 
  node_id max_node_id_;
 //maps a switch_id to a vector of connections of said switch
- std::unordered_map<switch_id, std::vector<switch_port_pair*>&> switch_connection_map_;
+ std::unordered_map<switch_id, std::vector<switch_link*>&> switch_connection_map_;
 //maps a switch_id (must be electrical) to a vector of all the nodes (end-point compute) it is connected to
  //std::unordered_map<switch_id, std::vector<node_id>> node_connection_map_;
 
  void setup_flexfly_topology();
 
- bool connect_switches(switch_id src, switch_id dst, link_type ltype);
+ bool connect_switches(switch_id src, switch_id dst, Link_Type ltype);
 
  //std::vector<flexfly_optical_switch*> optical_switches_;
 
