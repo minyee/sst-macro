@@ -15,6 +15,8 @@
                                               // which flexfly_optical_switch inherits
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/topology/topology_fwd.h>
+#include <sstmac/hardware/topology/topology.h>
+#include <sstmac/common/event_scheduler.h>
 #include <sprockit/sim_parameters_fwd.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
@@ -29,9 +31,15 @@ DeclareDebugSlot(network_switch)
     int(addr()), sprockit::printf(__VA_ARGS__).c_str())
 
 
-template<class T, class Fxn> new_link_handler(const T* t, Fxn function) {
-  return new SST::Event::Handler<T>(function);
-};
+template <class T, class Fxn>
+sstmac::link_handler*
+new_link_handler(const T* t, Fxn fxn){
+  return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
+}
+
+//template<class T, class Fxn> sstmac::link_handler* new_link_handler(const T* t, Fxn function) {
+  //return new SST::Event::Handler<T> const_cast(function);
+//}
 
 namespace sstmac {
 namespace hw {
@@ -75,7 +83,7 @@ class flexfly_optical_switch :
                                 int src_outport, 
                                 int dst_inport, 
                                 event_handler* payload_handler) {
-    outport_link_handler_[dst_inport] = payload_handler;
+    outport_link_handler_[dst_inport] = new_link_handler(this, payload_handler);
   };
 
 
@@ -91,7 +99,7 @@ class flexfly_optical_switch :
                               int dst_inport,
                               event_handler* credit_handler) {
     // tying an event handler to an input port?
-    inport_link_handler_[src_outport] = credit_handler;
+    inport_link_handler_[src_outport] = new_link_handler(this, credit_handler);
 
   };
 
@@ -131,7 +139,7 @@ class flexfly_optical_switch :
     sprockit::sim_parameters* params,
     uint64_t id,
     event_manager* mgr,
-    device_id::type_t ty = device_id::router) : connectable_component(params,id,mgr,ty);
+    device_id::type_t ty = device_id::router);// : connectable_component(params,id,mgr,ty);
 
   void recv_payload(event* ev) {
     // cast it to a known event first?
@@ -143,8 +151,8 @@ class flexfly_optical_switch :
 
   std::vector<link_handler*> outport_link_handler_;
   std::vector<link_handler*> inport_link_handler_;
-  std::vector<connection*> outport_connection_;
-  std::vector<connection*> inport_connection_;
+  std::vector<topology::connection*> outport_connection_;
+  std::vector<topology::connection*> inport_connection_;
 
   int num_ports_;
 
@@ -154,4 +162,4 @@ class flexfly_optical_switch :
 }
 }
 
-#endif
+//#endif

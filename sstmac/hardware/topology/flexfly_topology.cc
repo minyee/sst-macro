@@ -13,63 +13,13 @@
 #include <sprockit/sim_parameters.h>
 #include <sprockit/errors.h> 
 #include <stdlib.h>
-#include <assertion.h>
+//#include <assertion.h>
 
 
 namespace sst {
 namespace hw {
  
- void flexfly_topology::setup_flexfly_topology() {
- 	// first iterate over all the groups
- 	switch_id swid = 0;
 
-  // SETUP ALL-TO-ALL ELECTRICAL SWITCHES
- 	//setup the electrical switch_links
- 	for (int group = 0; group < num_groups_; group++) {
- 		for (int intra_group_index = 0; intra_group_index < switches_per_group_; intra_group_index++) {
- 			for (int other_intra_group_indices = swid - group * switches_per_group_ + 1; 
- 					other_intra_group_indices < switches_per_group_; 
- 					other_intra_group_indices++) {
- 				switch_id dest_id = swid + other_intra_group_indices;
- 				connect_switches(swid, dest_id, switch_link_Type::electrical); // form all intra-group electrical connections first
-        connect_switches(dest_id, swid, switch_link_Type::electrical);
-        // NOTE that at this point, we are assuming that intra-group topology is all to all
- 			}
-      //node_connection_map_.insert(swid, new std::vector<switch_link*>());
- 			swid++;
-
- 		}
-    switch_connection_map_.insert(swid, new std::vector<switch_link*>);
-    swid++;
- 	}
-
-  assert(swid == num_groups_ * switches_per_group_);
-
-  // SETUP OPTICAL SWITCHES
-  for (int g = 0; g < num_groups_; g++) {
-    switch_id curr_optical_swid = (g + 1) * switches_per_group_;
-    for (int gg = 0; gg < num_groups_; gg++) {
-      if ((gg + 1) * switches_per_group_ == curr_optical_swid) {
-        continue;
-      } else {
-        for (int a = 0; a < switches_per_group_; a++) {
-          switch_id curr_electrical_swid = g * switches_per_group_ + a;
-          connect_switches(curr_optical_swid, curr_electrical_swid, switch_link_Type::optical);
-          connect_switches(curr_electrical_swid, curr_optical_swid, switch_link_Type::optical); 
-        }
-      }
-    } 
-  }
-  max_switch_id_ = swid; // REMEMBER TO SET THE MAXIMUM SWITCH ID
-
-  // NO NEED TO SETUP NODES BECAUSE WE CAN EASILY MAP NODES TO SWITCHES
-
-  // setup nodes
-  // for (int node = 0; node < switches_per_group_ * num_groups_ * nodes_per_switch_; node++) {
-  // switch_id swid = node / nodes_per_switch_;
-    
-  // }
- };
 
  flexfly_topology::flexfly_topology(sprockit::sim_parameters* params) {
 
@@ -95,6 +45,58 @@ namespace hw {
     }
     delete connection_vector;
   }
+ };
+
+ void flexfly_topology::setup_flexfly_topology() {
+  // first iterate over all the groups
+  switch_id swid = 0;
+
+  // SETUP ALL-TO-ALL ELECTRICAL SWITCHES
+  //setup the electrical switch_links
+  for (int group = 0; group < num_groups_; group++) {
+    for (int intra_group_index = 0; intra_group_index < switches_per_group_; intra_group_index++) {
+      for (int other_intra_group_indices = swid - group * switches_per_group_ + 1; 
+          other_intra_group_indices < switches_per_group_; 
+          other_intra_group_indices++) {
+        switch_id dest_id = swid + other_intra_group_indices;
+        connect_switches(swid, dest_id, switch_link_Type::electrical); // form all intra-group electrical connections first
+        connect_switches(dest_id, swid, switch_link_Type::electrical);
+        // NOTE that at this point, we are assuming that intra-group topology is all to all
+      }
+      //node_connection_map_.insert(swid, new std::vector<switch_link*>());
+      swid++;
+
+    }
+    switch_connection_map_.insert(swid, new std::vector<switch_link*>);
+    swid++;
+  }
+
+  //assert(swid == num_groups_ * switches_per_group_);
+
+  // SETUP OPTICAL SWITCHES
+  for (int g = 0; g < num_groups_; g++) {
+    switch_id curr_optical_swid = (g + 1) * switches_per_group_;
+    for (int gg = 0; gg < num_groups_; gg++) {
+      if ((gg + 1) * switches_per_group_ == curr_optical_swid) {
+        continue;
+      } else {
+        for (int a = 0; a < switches_per_group_; a++) {
+          switch_id curr_electrical_swid = g * switches_per_group_ + a;
+          connect_switches(curr_optical_swid, curr_electrical_swid, switch_link_Type::optical);
+          connect_switches(curr_electrical_swid, curr_optical_swid, switch_link_Type::optical); 
+        }
+      }
+    } 
+  }
+  max_switch_id_ = swid; // REMEMBER TO SET THE MAXIMUM SWITCH ID
+
+  // NO NEED TO SETUP NODES BECAUSE WE CAN EASILY MAP NODES TO SWITCHES
+
+  // setup nodes
+  // for (int node = 0; node < switches_per_group_ * num_groups_ * nodes_per_switch_; node++) {
+  // switch_id swid = node / nodes_per_switch_;
+    
+  // }
  };
 
  void flexfly_topology::config_metis(metis_configuration* configuration) {
@@ -127,7 +129,7 @@ namespace hw {
  	}
   int cidx = 0;
   std::vector<switch_link*> switch_link_vectors = switch_connection_map_.find(src)
-  assert(switch_link_vectors != switch_connection_map_.end());
+  //xassert(switch_link_vectors != switch_connection_map_.end());
   for (switch_link* current_switch_link : switch_link_vectors) {
     conns[cidx].src = src;
     conns[cidx].dst = current_switch_link->dest_sid;
