@@ -358,13 +358,18 @@ namespace hw {
     bool res = true;
 
     return res;
-  }
+  };
 
-  inline switch_id public_swid_to_private_swid(switch_id swid) const {
+  inline switch_id flexfly_topology::public_swid_to_private_swid(switch_id swid) const {
     switch_id offset = swid % (switches_per_group_ + num_optical_switches_per_group_);
     switch_id group = swid / (switches_per_group_ + num_optical_switches_per_group_);
     return group + offset;
-  }
+  };
+
+  // returns the group id of a given switch
+  inline int flexfly_topology::group_from_swid(switch_id swid) const {
+    return swid / (switches_per_group_ + num_optical_switches_per_group_);
+  };
 }
 
 }

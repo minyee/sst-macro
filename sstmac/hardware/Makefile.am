@@ -87,6 +87,7 @@ nobase_library_include_HEADERS = \
   topology/structured_topology.h \
   topology/tiled_dragonfly.h \
   topology/traffic/traffic.h \
+  topology/flexfly_topology.h \
   router/router.h \
   router/router_fwd.h \
   router/routable.h \
@@ -144,6 +145,7 @@ libsstmac_hw_la_SOURCES =  \
   topology/coordinates.cc \
   topology/tiled_dragonfly.cc \
   topology/traffic/traffic.cc \
+  topology/flexfly_topology.cc \
   router/router.cc \
   router/routable.cc \
   router/fat_tree_router.cc \

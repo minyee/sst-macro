@@ -283,9 +283,9 @@ private:
  // also accounts for the connectivity within the optical switches
  bool is_group_connected(int src_group, int dst_group);
  
- inline int group_from_swid (switch_id swid) {
-  
- };
+ inline int group_from_swid (switch_id swid);
+ inline switch_id public_swid_to_private_swid(switch_id swid) const; 
+
 public:
  int num_groups() {
  	return num_groups_;
