@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <vector>
 #include <sstmac/hardware/topology/topology.h>
+#include <unordered_map>
 
 namespace sstmac{
 namespace hw {
@@ -123,9 +124,9 @@ public:
     return (nid < flexfly_topology::max_node_id());
   };
 
-  virtual switch_id max_netlink_id() const = 0;
+  virtual switch_id max_netlink_id() const;
 
-  virtual bool netlink_id_slot_filled(node_id nid) const = 0;
+  virtual bool netlink_id_slot_filled(node_id nid) const;
 
   /**
    * @brief num_endpoints To be distinguished slightly from nodes.
@@ -133,7 +134,7 @@ public:
    * is then the network endpoint that injects to the switch topology
    * @return
    */
-  virtual int num_netlinks() const = 0;
+  virtual int num_netlinks() const;
 
   /**
    * @brief Return the maximum number of ports on any switch in the network
@@ -153,7 +154,7 @@ public:
      @return The switch that injects from the node
   */
   virtual switch_id netlink_to_injection_switch(
-        netlink_id nodeaddr, uint16_t& switch_port) const = 0;
+        netlink_id nodeaddr, uint16_t& switch_port) const;
 
   /**
      For a given node, determine the ejection switch
@@ -164,7 +165,7 @@ public:
      @return The switch that ejects into the node
   */
   virtual switch_id netlink_to_ejection_switch(
-        netlink_id nodeaddr, uint16_t& switch_port) const = 0;
+        netlink_id nodeaddr, uint16_t& switch_port) const;
 
   /**
    * @brief configure_vc_routing  Configure the number of virtual channels
@@ -200,7 +201,7 @@ public:
     @param dest. The destination node.
     @return The number of hops to final destination
   */
-  virtual int num_hops_to_node(node_id src, node_id dst) const = 0;
+  virtual int num_hops_to_node(node_id src, node_id dst) const;
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -209,7 +210,7 @@ public:
      @return The nodes connected to switch for injection
   */
   virtual void nodes_connected_to_injection_switch(switch_id swid,
-                          std::vector<injection_port>& nodes) const = 0;
+                          std::vector<injection_port>& nodes) const;
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -218,7 +219,7 @@ public:
      @return The nodes connected to switch for ejection
   */
   virtual void nodes_connected_to_ejection_switch(switch_id swid,
-                          std::vector<injection_port>& nodes) const = 0;
+                          std::vector<injection_port>& nodes) const;
 
   /**
      Given the current location and a destination,
@@ -237,15 +238,20 @@ public:
     switch_id dest_sw_addr,
     routable::path& path) const;
 
-  virtual bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const = 0;
+  virtual bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const;
   
+  virtual void configure_metis(metis_config* configuration) const;
+
+  
+
 protected:
  flexfly_topology(sprockit::sim_parameters* params); 
- void configure_optical_or_electrical_port_params(switch_id swid, const std::string& str, sprockit::sim_parameters* sim_params) const;
+ 
+ void configure_optical_or_electrical_port_params(switch_id swid, const std::string& str, sprockit::sim_parameters* sim_params);
 
 private:
  // wires the dragonfly or flexfly using  
- void dfly_wire(); // NOTE: CAN BE IMPLEMENTED AT A LATER TIME
+ void dfly_wire(std::string& filename); // NOTE: CAN BE IMPLEMENTED AT A LATER TIME
 
  uint32_t num_groups_; // equivalent to parameter g in Kim's paper
  uint32_t switches_per_group_; // equivalent to parameter a in Kim's paper
@@ -264,7 +270,7 @@ private:
 
  node_id max_node_id_;
 //maps a switch_id to a vector of connections of said switch
- std::unordered_map<switch_id, std::vector<switch_link*>&> switch_connection_map_;
+ std::unordered_map<switch_id, std::vector<switch_link*>> switch_connection_map_;
 //maps a switch_id (must be electrical) to a vector of all the nodes (end-point compute) it is connected to
  //std::unordered_map<switch_id, std::vector<node_id>> node_connection_map_;
 
@@ -272,11 +278,18 @@ private:
 
  bool connect_switches(switch_id src, switch_id dst, Link_Type ltype);
 
+ bool valid_switch_id(switch_id id) const {
+    return id < (switches_per_group_ * num_groups_ + num_optical_switches_);
+ };
+
+ bool is_optical_switch(switch_id sid) const;
+
+ bool is_electrical_switch(switch_id sid) const;
  //std::vector<flexfly_optical_switch*> optical_switches_;
 
  //std::vector<flexfly_electrical_switch*> electrical_switches_;
  
- inline bool valid_switch_id(switch_id id);
+ 
 
  // figures out if two groups are currently connected to one another
  // also accounts for the connectivity within the optical switches
