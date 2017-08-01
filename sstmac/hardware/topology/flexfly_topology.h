@@ -15,7 +15,7 @@ namespace hw {
 
 class flexfly_topology : public topology {
 
- FactoryRegister("flexfly", topology, flexfly_topology);
+ //FactoryRegister("flexfly_topology", topology, flexfly_topology);
 protected:
   struct switch_link {
     switch_id dest_sid; // switch_id of the destination switch
@@ -24,6 +24,10 @@ protected:
   };
 
 public:
+ virtual std::string to_string() const {
+  return "flexfly_topology";
+ };
+
  ~flexfly_topology();
    /**** BEGIN PURE VIRTUAL INTERFACE *****/
   /**
@@ -247,7 +251,7 @@ public:
 protected:
  flexfly_topology(sprockit::sim_parameters* params); 
  
- void configure_optical_or_electrical_port_params(switch_id swid, const std::string& str, sprockit::sim_parameters* sim_params);
+ void configure_optical_or_electrical_port_params(switch_id swid, std::string& str, sprockit::sim_parameters* sim_params) const;
 
 private:
  // wires the dragonfly or flexfly using  
@@ -293,9 +297,9 @@ private:
 
  // figures out if two groups are currently connected to one another
  // also accounts for the connectivity within the optical switches
- bool is_group_connected(int src_group, int dst_group);
+ bool is_group_connected(int src_group, int dst_group) const;
  
- inline int group_from_swid (switch_id swid);
+ inline int group_from_swid (switch_id swid) const;
  inline switch_id public_swid_to_private_swid(switch_id swid) const; 
 
 public:
