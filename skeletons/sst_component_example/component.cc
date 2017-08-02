@@ -20,7 +20,7 @@ using namespace SST;
 No special Python actions are needed so this is null.
 */
 char py[] = {0x00};
-
+#include <sst/core/model/element_python.h>
 /**
  * @brief The TestModule class
  * SST will look for this module information after loading libtest.so using dlopen

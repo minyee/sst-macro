@@ -232,11 +232,13 @@ class dummy_switch : public test_component {
 
   link_handler* credit_handler(int port) const override {
     std::cout << "credit_handler for component_id: " + std::to_string(id_) + " is being called" << std::endl;
+    //return nullptr;
     return new_link_handler(this, &dummy_switch::recv_credit);
   }
 
   link_handler* payload_handler(int port) const override {
     std::cout << "payload_handler for component_id: " + std::to_string(id_) + " is being called" << std::endl; 
+    //return nullptr;
     return new_link_handler(this, &dummy_switch::recv_payload);
   }
 

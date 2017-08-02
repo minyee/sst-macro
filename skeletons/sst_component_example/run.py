@@ -1,3 +1,4 @@
+import sys
 import sst
 from sst.macro import *
 import sst.test
