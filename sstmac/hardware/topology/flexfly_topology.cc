@@ -384,8 +384,10 @@ namespace hw {
    * argument
    */
   void print_topology() const {
-    for (std::unordered_map<switch_id, std::vector<switch_link*>> ) {
-      print_port_connection_for_switch();
+    for (std::pair<switch_id, std::vector<switch_link*>> key_val_pair : 
+                switch_connection_map_ ) {
+      switch_id swid = key_val_pair.first;
+      print_port_connection_for_switch(swid);
     }
   };
 
@@ -420,7 +422,11 @@ namespace hw {
       i++;
     }
     cout << message; 
-  }
+  };
+
+  void print_connectivity_matrix() const {
+    
+  };
 
 }
 }

@@ -246,7 +246,9 @@ public:
   
   virtual void configure_metis(metis_config* configuration) const;
 
-  
+  void print_topology() const;
+
+  void print_connectivity_matrix() const; 
 
 protected:
  flexfly_topology(sprockit::sim_parameters* params); 
@@ -300,8 +302,12 @@ private:
  bool is_group_connected(int src_group, int dst_group) const;
  
  inline int group_from_swid (switch_id swid) const;
+ 
  inline switch_id public_swid_to_private_swid(switch_id swid) const; 
- void print_topology() const;
+ 
+ void print_port_connection_for_switch(switch_id swid) const;
+
+
 public:
  int num_groups() {
  	return num_groups_;
