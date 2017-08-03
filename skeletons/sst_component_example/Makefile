@@ -1,5 +1,5 @@
 TARGET := libtest.so
-SRC := component.cc
+SRC := my_component.cc
 
 CXX :=    libsst++
 CC :=     libsstcc

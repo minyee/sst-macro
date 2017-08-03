@@ -301,7 +301,7 @@ private:
  
  inline int group_from_swid (switch_id swid) const;
  inline switch_id public_swid_to_private_swid(switch_id swid) const; 
-
+ void print_topology() const;
 public:
  int num_groups() {
  	return num_groups_;

@@ -46,12 +46,13 @@ class TestModule : public SSTElementPythonModule {
 
 };
 
+/*
 template <class T, class Fxn>
 link_handler*
 new_link_handler(const T* t, Fxn fxn){
   return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
 }
-
+*/
 
 /**
  * @brief The test_component class

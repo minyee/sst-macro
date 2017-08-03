@@ -378,7 +378,50 @@ namespace hw {
     return swid / (switches_per_group_ + num_optical_switches_per_group_);
   };
 
-}
+  /**
+   * Used to print the connectivity matrix of the entire topology 
+   * Doesn't need to take in any sort of arguments and does not return any
+   * argument
+   */
+  void print_topology() const {
+    for (std::unordered_map<switch_id, std::vector<switch_link*>> ) {
+      print_port_connection_for_switch();
+    }
+  };
 
+  /**
+   * prints out the all the connections for each switch
+   */
+  void print_port_connection_for_switch(switch_id swid) const {
+    std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_iter = switch_connection_map_.find(swid);
+    if (tmp_iter == switch_connection_map_.end()) {
+      std::printf("nothing to print, this switch with swid: %d does not exist\n", (int) swid);
+      return;
+    }
+    std::vector<switch_link*>& connection_vector = tmp_iter->second;
+
+    std::stringstream message;
+    int i = 0;
+    for (switch_link* sl_ptr : connection_vector) {
+      // check if null, if null have to throw an error 
+      if (sl_ptr) {
+        message << "Dest switch_id: " << std::to_string(sl_Ptr->dest_sid);
+        message << " Dest inport: " << std::to_string(sl_ptr->dest_inport);
+        message << " Link type: ";
+        if (sl_ptr->type == Link_Type::electrical) {
+          message << "ELECTRICAL" << endl;
+        } else {
+          message << "OPTICAL" << endl;
+        }
+      } else {
+        spkt_throw_printf(spkt::error, "A switch link with swid: " +
+                         std::to_string(swid) + " is null, which it shouldn't be");
+      }
+      i++;
+    }
+    cout << message; 
+  }
+
+}
 }
 
