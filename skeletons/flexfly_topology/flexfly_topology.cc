@@ -9,7 +9,7 @@
 #include <sprockit/sim_parameters.h>
 #include <stdlib.h>
 #include <sstmac/hardware/topology/topology.h>
-#include <sstmac/hardware/topology/flexfly_topology.h>
+#include "flexfly_topology.h"
 
 
 
@@ -429,7 +429,6 @@ namespace hw {
   void flexfly_topology::print_connectivity_matrix() const {
 
   };
-
 }
 }
 

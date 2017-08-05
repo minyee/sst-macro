@@ -15,7 +15,7 @@ namespace hw {
 
 class flexfly_topology : public topology {
 
- //FactoryRegister("flexfly_topology", topology, flexfly_topology);
+ FactoryRegister("flexfly", topology, flexfly_topology, "This is flexfly topology for Flexfly project");
 protected:
   struct switch_link {
     switch_id dest_sid; // switch_id of the destination switch
@@ -250,8 +250,9 @@ public:
 
   void print_connectivity_matrix() const; 
 
+  flexfly_topology(sprockit::sim_parameters* params); 
+
 protected:
- flexfly_topology(sprockit::sim_parameters* params); 
  
  void configure_optical_or_electrical_port_params(switch_id swid, std::string& str, sprockit::sim_parameters* sim_params) const;
 
