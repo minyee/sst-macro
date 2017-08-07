@@ -128,9 +128,9 @@ public:
     return (nid < flexfly_topology::max_node_id());
   };
 
-  virtual switch_id max_netlink_id() const;
+  virtual switch_id max_netlink_id() const; // DONE (RECHECK)
 
-  virtual bool netlink_id_slot_filled(node_id nid) const;
+  virtual bool netlink_id_slot_filled(node_id nid) const; // DONE (RECHECK)
 
   /**
    * @brief num_endpoints To be distinguished slightly from nodes.
@@ -138,7 +138,7 @@ public:
    * is then the network endpoint that injects to the switch topology
    * @return
    */
-  virtual int num_netlinks() const;
+  virtual int num_netlinks() const; // DONE (RECHECK)
 
   /**
    * @brief Return the maximum number of ports on any switch in the network

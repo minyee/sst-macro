@@ -264,14 +264,14 @@ namespace hw {
 
 
  // TODO: FIGURE OUT HOW THIS FUNCTION WORKS
- switch_id flexfly_topology::netlink_to_injection_switch(netlink_id nodeaddr, uint16_t& switch_port) const {
-  return 0;
- };
+ //switch_id flexfly_topology::netlink_to_injection_switch(netlink_id nodeaddr, uint16_t& switch_port) const {
+  //return 0;
+ //};
 
  // TODO: FIGURE OUT HOW THIS FUNCTION WORKS
- switch_id flexfly_topology::netlink_to_ejection_switch(netlink_id nodeaddr, uint16_t& switch_port) const {
-  return 0;
- };
+ //switch_id flexfly_topology::netlink_to_ejection_switch(netlink_id nodeaddr, uint16_t& switch_port) const {
+  //return 0;
+ //};
 
  void flexfly_topology::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const {
   m.insert({routing::minimal, 3});
@@ -428,6 +428,54 @@ namespace hw {
 
   void flexfly_topology::print_connectivity_matrix() const {
 
+  };
+
+  /**
+   * @brief num_endpoints To be distinguished slightly from nodes.
+   * Multiple nodes can be grouped together with a netlink.  The netlink
+   * is then the network endpoint that injects to the switch topology
+   * @return
+   */
+  int flexfly_topology::num_netlinks() const {
+    return 1;
+  }; 
+
+  switch_id flexfly_topology::max_netlink_id() const {
+    return max_switch_id_;
+  };
+
+  bool flexfly_topology::netlink_id_slot_filled(node_id nid) const {
+    return true;
+  };
+    /**
+     For a given node, determine the injection switch
+     All messages from this node inject into the network
+     through this switch
+     @param nodeaddr The node to inject to
+     @param switch_port [inout] The port on the switch the node injects on
+     @return The switch that injects from the node
+  */
+  switch_id flexfly_topology::netlink_to_injection_switch(
+        netlink_id nodeaddr, uint16_t& switch_port) const {
+    return max_switch_id_;
+  };
+
+  /**
+     For a given node, determine the ejection switch
+     All messages to this node eject into the network
+     through this switch
+     @param nodeaddr The node to eject from
+     @param switch_port [inout] The port on the switch the node ejects on
+     @return The switch that ejects into the node
+  */
+  switch_id flexfly_topology::netlink_to_ejection_switch(
+        netlink_id nodeaddr, uint16_t& switch_port) const {
+    return max_switch_id_;
+  };
+
+  
+  bool flexfly_topology::node_to_netlink(node_id nid, node_id& net_id, int& offset) const {
+    return true;
   };
 }
 }
