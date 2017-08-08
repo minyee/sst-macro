@@ -283,7 +283,7 @@ private:
 
  void setup_flexfly_topology();
 
- bool connect_switches(switch_id src, switch_id dst, Link_Type ltype);
+ void connect_switches(switch_id src, switch_id dst, Link_Type ltype);
 
  bool valid_switch_id(switch_id id) const {
     return id < (switches_per_group_ * num_groups_ + num_optical_switches_);

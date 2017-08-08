@@ -28,8 +28,12 @@ namespace hw {
  	num_optical_switches_ = num_groups_ * num_optical_switches_per_group_; // for now, assume that each group will have one optical switch attached to itself.
  	num_total_switches_ = num_optical_switches_ + num_groups_ * switches_per_group_;
  	//switch_id sid = 0;
+  bool force_set_opt_switch_params = 
+              params->get_optional_bool_param("force_set_opt_switch_params", true);
   num_optical_switches_per_group_ = (switches_per_group_ / optical_switch_radix_) + 
-                                        ((switches_per_group_ % optical_switch_radix_ == 0) ? 0 : 1); 
+                                        ((switches_per_group_ % optical_switch_radix_ == 0) ? 0 : 1);
+  num_optical_switches_per_group_ = force_set_opt_switch_params ? 1 : num_optical_switches_per_group_;
+  optical_switch_radix_ = force_set_opt_switch_params ? switches_per_group_ : optical_switch_radix_;
  	setup_flexfly_topology();
  }
 
@@ -50,9 +54,8 @@ namespace hw {
  void flexfly_topology::setup_flexfly_topology() {
   // setup the intra-group all-to-all connection first.
   for (int group = 0; group < num_groups_; group++) {
-    for (int intra_group_index = 0; intra_group_index < switches_per_group_; intra_group_index++) {
+    for (int intra_group_index = 0; intra_group_index < switches_per_group_ - 1; intra_group_index++) {
       switch_id swid = group * (switches_per_group_ + num_optical_switches_per_group_) + intra_group_index;
-      
       for (int other_intra_group_indices = intra_group_index + 1; 
             other_intra_group_indices < switches_per_group_; 
             other_intra_group_indices++) {
@@ -64,30 +67,40 @@ namespace hw {
     }
   }
 
+  // tells us what the last switch was used in this group, each index represents a group
+  switch_id *last_used_id = (switch_id *) std::calloc(num_groups_, sizeof(switch_id));
   // SETUP OPTICAL SWITCHES
+  for (int g = 0; g < num_groups_; g++) {
+    for (int opt_switch = 0; opt_switch < num_optical_switches_per_group_; opt_switch++) {
+      switch_id opt_swid = (g * (switches_per_group_ + num_optical_switches_per_group_)) + switches_per_group_ + opt_switch;
+      //for (int opt_radix = 0; opt_radix < optical_switch_radix_; opt_radix++) {
+        int opt_radix = 0;
+        for (int gg = 0; gg < num_groups_ ; gg++) {
+          if (opt_radix >= optical_switch_radix_) {
+            break;
+          }
+          if (gg == g)
+            continue;
+          switch_id elec_swid = gg * (switches_per_group_ + num_optical_switches_per_group_) + (int)(last_used_id[gg]);
+          last_used_id[gg] = (last_used_id[gg] + 1) % switches_per_group_;
+          connect_switches(opt_swid, elec_swid, Link_Type::optical);
+          connect_switches(elec_swid, opt_swid, Link_Type::optical);
+          opt_radix++;
+        }
+      //}
+    }
+  }
+  free(last_used_id);
+  /*
   for (int g = 0; g < num_groups_; g++) {
     for (int opt_switch_num = 0; opt_switch_num < num_optical_switches_per_group_; opt_switch_num++) {
       switch_id opt_swid = (g + 1) * (switches_per_group_ + num_optical_switches_per_group_) + opt_switch_num;
       for (int opt_radix = 0; opt_radix < optical_switch_radix_; opt_radix++) {
-        
+        //connect_switches(opt_swid, Link_Type::optical);
+        //connect_switches(Link_Type::optical);
+
       }
     }
-  }
-  /*
-  for (int g = 0; g < num_groups_; g++) {
-    switch_id curr_optical_swid = (g + 1) * switches_per_group_;
-    for (int gg = 0; gg < num_groups_; gg++) {
-      if ((gg + 1) * switches_per_group_ == curr_optical_swid) {
-        continue;
-      } else {
-        for (int a = 0; a < switches_per_group_; a++) {
-          switch_id curr_electrical_swid = g * switches_per_group_ + a;
-          connect_switches(curr_optical_swid, curr_electrical_swid, Link_Type::optical);
-          connect_switches(curr_electrical_swid, curr_optical_swid, Link_Type::optical); 
-        }
-      }
-    } 
-
   }
   */
   max_switch_id_ = num_groups_ * (switches_per_group_ + num_optical_switches_per_group_) - 1;
@@ -100,22 +113,6 @@ namespace hw {
 	configuration->nvtxs = (idx_t) num_groups_ * switches_per_group_;
  }
 
-
-/*
- int flexfly_topology::minimal_distance(switch_id src, switch_id dest) const {
- 	if (src == dest) {
- 		return 0;
- 	} else if (src / num_groups_ == dest / num_groups_) { // two switches are in the same group
-
- 		// return std::min(intra_group_diameter_, ); // assume intra group topology is all to all
- 	} else if (true) { // in different groups 
-
- 	} else {
-
- 	}
-  return 3;
- }
- */
  // DONE
  void flexfly_topology::connected_outports(const switch_id src, 
  											                      std::vector<topology::connection>& conns) const {
@@ -144,18 +141,6 @@ namespace hw {
  	}
  };
 
-
- /**
-  * divvy the job of populating the nodes reference to each switch.
-  */
- /*
- void flexfly_topology::nodes_connected_to_ejection_switch(switch_id sid, std::vector<topology::injection_port>& nodes) const {
- 	bool to_ret = valid_switch_id(sid);
-  if (!to_ret) {
- 		return;
- 	}
- };
- */
  /**
   * checks if a given switch id in the topology is an optical switch or not
   */
@@ -225,28 +210,23 @@ namespace hw {
  	} 	
  };
 
- // DONE
- //inline bool flexfly_topology::valid_switch_id(switch_id swid) const {
- 	//return id < (switches_per_group_ * num_groups_ + num_optical_switches_);
- //};
-
- // DONE
  /**
   * @Brief Given a source switch and a destination switch, connects the source switch with the 
   * dest switch
   * NOTE: This member function should form a bidirectional switch_link
   */
- bool flexfly_topology::connect_switches(switch_id source, switch_id dest, Link_Type ltype) {
+  void flexfly_topology::connect_switches(switch_id source, switch_id dest, Link_Type ltype) {
   std::string msg = (ltype == Link_Type::electrical) ? "electrical" : "optical";
   std::cout << "connect switches " << std::to_string(source) << " and " << std::to_string(dest) 
             << " using " << msg << std::endl;
  	if (switch_connection_map_.count(source) == 0) {
+    //std::cout << "INSERTION FOR SWITCH_ID = " << std::to_string(source) << std::endl;
     switch_connection_map_[source] = std::vector<switch_link*>();
  	}
   if (switch_connection_map_.count(dest) == 0) {
+    //std::cout << "INSERTION FOR SWITCH_ID = " << std::to_string(dest) << std::endl;
     switch_connection_map_[dest] = std::vector<switch_link*>();
   }
-  bool connection_successful = true;
  	std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp = switch_connection_map_.find(source);
   const std::vector<switch_link*>& source_switch_connection_vector = tmp->second;
   tmp = switch_connection_map_.find(dest);
@@ -257,7 +237,6 @@ namespace hw {
   src_switch_link->dest_sid = dest;
   src_switch_link->dest_inport = dest_inport;
   src_switch_link->type = ltype;
-  return connection_successful;
  }
 
  bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
