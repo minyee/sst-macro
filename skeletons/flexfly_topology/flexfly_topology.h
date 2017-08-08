@@ -270,7 +270,7 @@ private:
  uint32_t num_optical_switches_;
 
  uint32_t num_total_switches_;
-
+ uint32_t optical_switch_radix_;
  uint32_t num_optical_switches_per_group_;
  
  switch_id max_switch_id_;
