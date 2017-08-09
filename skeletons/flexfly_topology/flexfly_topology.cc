@@ -87,22 +87,9 @@ namespace hw {
           connect_switches(elec_swid, opt_swid, Link_Type::optical);
           opt_radix++;
         }
-      //}
     }
   }
   free(last_used_id);
-  /*
-  for (int g = 0; g < num_groups_; g++) {
-    for (int opt_switch_num = 0; opt_switch_num < num_optical_switches_per_group_; opt_switch_num++) {
-      switch_id opt_swid = (g + 1) * (switches_per_group_ + num_optical_switches_per_group_) + opt_switch_num;
-      for (int opt_radix = 0; opt_radix < optical_switch_radix_; opt_radix++) {
-        //connect_switches(opt_swid, Link_Type::optical);
-        //connect_switches(Link_Type::optical);
-
-      }
-    }
-  }
-  */
   max_switch_id_ = num_groups_ * (switches_per_group_ + num_optical_switches_per_group_) - 1;
  }
 
