@@ -85,7 +85,7 @@ class flexfly_optical_switch :
                                 int src_outport, 
                                 int dst_inport, 
                                 event_handler* payload_handler) override {
-    outport_link_handler_[dst_inport] = new_link_handler(this, payload_handler);
+    //outport_link_handler_[dst_inport] = new_link_handler(this, payload_handler);
   };
 
 
@@ -101,7 +101,7 @@ class flexfly_optical_switch :
                               int dst_inport,
                               event_handler* credit_handler) override {
     // tying an event handler to an input port?
-    inport_link_handler_[src_outport] = new_link_handler(this, credit_handler);
+    //inport_link_handler_[src_outport] = new_link_handler(this, credit_handler);
 
   };
 
