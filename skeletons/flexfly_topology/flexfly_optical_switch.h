@@ -2,13 +2,10 @@
  * Author: Min Yee Teh
  *
  */
-
-//#ifndef SSTMAC_HARDWARE_NETWORK_SWITCHES_NETWORKSWITCH_H_INCLUDED
-//#define SSTMAC_HARDWARE_NETWORK_SWITCHES_NETWORKSWITCH_H_INCLUDED
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
 
-#include <sstmac/hardware/common/connection.h> // have to import connection because it contains the prototype for connectable_component
+//#include <sstmac/hardware/common/connection.h> // have to import connection because it contains the prototype for connectable_component
                                               // which flexfly_optical_switch inherits
 #include <sstmac/hardware/router/router_fwd.h>
 //#include <sstmac/hardware/topology/topology_fwd.h>
@@ -23,7 +20,7 @@
 #include <vector>
 //#include <sst/core/event.h>
 
-DeclareDebugSlot(network_switch)
+//DeclareDebugSlot(network_switch)
 #define switch_debug(...) \
   debug_printf(sprockit::dbg::network_switch, "Switch %d: %s", \
     int(addr()), sprockit::printf(__VA_ARGS__).c_str())
@@ -36,25 +33,34 @@ DeclareDebugSlot(network_switch)
 //new_link_handler(const T* t, Fxn fxn){
 // return new_handler<T,Fxn>(const_cast<T*>(t), fxn);
 //}
-template <class T, class Fxn>
-sstmac::link_handler* new_link_handler(const T* t, Fxn fxn){
-  return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
-}
-//template<class T, class Fxn> sstmac::link_handler* new_link_handler(const T* t, Fxn function) {
-  //return new SST::Event::Handler<T> const_cast(function);
+//template <class T, class Fxn>
+//sstmac::link_handler* new_link_handler(const T* t, Fxn fxn){
+  //return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
 //}
+
 
 namespace sstmac {
 namespace hw {
+
+class optical_switch : public connectable_component {
+  public:
+  DeclareFactory(optical_switch, uint64_t, event_manager*);
+
+  optical_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr) :
+    connectable_component(params,id,
+      device_id(params->get_int_param("id"),device_id::router),mgr) {
+    };
+};  
 /**
  * @brief The network_switch class
  * A class encapsulating a network switch that packets must traverse on the network.
  * The network switch performs both routing computations and congestion modeling.
  */
 class flexfly_optical_switch :
-  public connectable_component
+  public optical_switch
 {
-  DeclareFactory(flexfly_optical_switch, uint64_t,event_manager*)
+  
+  FactoryRegister("flexfly optical switch", optical_switch, flexfly_optical_switch, "This is flexfly optical switch");
  public:
   virtual ~flexfly_optical_switch();
 
@@ -64,15 +70,11 @@ class flexfly_optical_switch :
 
   virtual void init(unsigned int phase) override;
 
-  virtual void deadlock_check() override;
+  virtual void deadlock_check() override {return;};
 
-  virtual void deadlock_check(event* ev) override;
+  virtual void deadlock_check(event* ev) override {return;};
 
   virtual void setup() override; //needed for SST core compatibility
-  
-  // It is very crucial to know that the link_handlers have to be both on the receiving end.
-  // That means that the methods/member functions that return link_handlers pointers have to 
-  // be on the receiving end
 
   /**
    * @brief connect_output
@@ -84,9 +86,7 @@ class flexfly_optical_switch :
   virtual void connect_output(sprockit::sim_parameters* params, 
                                 int src_outport, 
                                 int dst_inport, 
-                                event_handler* payload_handler) override {
-    //outport_link_handler_[dst_inport] = new_link_handler(this, payload_handler);
-  };
+                                event_handler* payload_handler) override;
 
 
   /**
@@ -99,60 +99,46 @@ class flexfly_optical_switch :
   virtual void connect_input(sprockit::sim_parameters* params, 
                               int src_outport, 
                               int dst_inport,
-                              event_handler* credit_handler) override {
-    // tying an event handler to an input port?
-    //inport_link_handler_[src_outport] = new_link_handler(this, credit_handler);
-
-  };
+                              event_handler* credit_handler) override;
 
   /**
    * @brief credit_handler
    * @param port
    * @return Can be null, if no credits are ever to be received
    */
-  virtual link_handler* credit_handler(int port) const override {
-    // this is the error-catching part
-    if (port < 0 || port >= num_ports_) {
-      return nullptr;
-    }
-    return inport_link_handler_[port];
-  };
-
+  virtual link_handler* credit_handler(int port) const override;
   /**
    * @brief payload_handler
    * @param port
    * @return
    */
-  virtual link_handler* payload_handler(int port) const override {
-    // this is the error-catching part
-    if (port < 0 || port >= num_ports_) {
-      return nullptr;
-    }
-    return outport_link_handler_[port]; // either if we cast the event_handler first into a link_Handler or we cast it upon returning it in this function
-  };
+  virtual link_handler* payload_handler(int port) const override;// either if we cast the event_handler first into a link_Handler or we cast it upon returning it in this function
+
 
   switch_id addr() const {
     return my_addr_;
   };
 
-
- protected:
+public:
   flexfly_optical_switch(
     sprockit::sim_parameters* params,
     uint64_t id,
-    event_manager* mgr,
-    device_id::type_t ty = device_id::router);// : connectable_component(params,id,mgr,ty);
-
+    event_manager* mgr);// : connectable_component(params,id,mgr,ty);
+protected:
   void recv_payload(event* ev) {
     // cast it to a known event first?
+  };
+
+  void recv_credit(event* ev) {
+
   };
 
  private: 
   switch_id my_addr_;
   topology* top_;
 
-  std::vector<link_handler*> outport_link_handler_;
-  std::vector<link_handler*> inport_link_handler_;
+  std::vector<event_handler*> outport_handler_;
+  std::vector<event_handler*> inport_handler_;
   std::vector<topology::connection*> outport_connection_;
   std::vector<topology::connection*> inport_connection_;
 

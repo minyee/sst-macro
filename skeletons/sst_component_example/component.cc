@@ -181,4 +181,3 @@ class dummy_switch : public test_component {
   uint64_t id_;
 
 };
-
