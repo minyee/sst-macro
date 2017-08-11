@@ -91,6 +91,7 @@ namespace hw {
   }
   free(last_used_id);
   max_switch_id_ = num_groups_ * (switches_per_group_ + num_optical_switches_per_group_) - 1;
+  max_node_id_ = num_groups_ * switches_per_group_ * nodes_per_switch_ - 1;
  }
 
  void flexfly_topology::configure_metis(metis_config* configuration) const {
@@ -306,9 +307,10 @@ namespace hw {
 
   void flexfly_topology::nodes_connected_to_injection_switch(switch_id swid, 
                                                               std::vector<injection_port>& nodes) const {
+    std::cout << "nodes_connected_to_injection_switch?" << std::endl;
     int i = 0;
     switch_id private_swid = public_swid_to_private_swid(swid);
-    std::cout << "nodes_connected_to_injection_switch?" << std::endl;
+    
     for (int i = 0; i < nodes_per_switch_; i++) {
       nodes[i].nid = private_swid * nodes_per_switch_ + i;
       std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_iter = switch_connection_map_.find(swid);
@@ -321,7 +323,7 @@ namespace hw {
   void flexfly_topology::nodes_connected_to_ejection_switch(switch_id swid, 
                                                               std::vector<injection_port>& nodes) const { 
     std::cout << "nodes_connected_to_ejection_switch?" << std::endl;
-    nodes_connected_to_injection_switch(swid, nodes);
+    flexfly_topology::nodes_connected_to_injection_switch(swid, nodes);
   };
 
   /*
