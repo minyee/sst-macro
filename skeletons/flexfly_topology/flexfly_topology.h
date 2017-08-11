@@ -107,7 +107,8 @@ public:
   virtual bool switch_id_slot_filled(switch_id sid) const; // DONE
 
   virtual int num_nodes() const { // DONE
-    return num_groups_ * switches_per_group_ * nodes_per_switch_;
+    int node_num = num_groups_ * switches_per_group_ * nodes_per_switch_;
+    return node_num;
   };
 
   /**

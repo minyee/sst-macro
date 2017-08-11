@@ -203,9 +203,9 @@ namespace hw {
   * NOTE: This member function should form a bidirectional switch_link
   */
   void flexfly_topology::connect_switches(switch_id source, switch_id dest, Link_Type ltype) {
-  std::string msg = (ltype == Link_Type::electrical) ? "electrical" : "optical";
-  std::cout << "connect switches " << std::to_string(source) << " and " << std::to_string(dest) 
-            << " using " << msg << std::endl;
+  //std::string msg = (ltype == Link_Type::electrical) ? "electrical" : "optical";
+  //std::cout << "connect switches " << std::to_string(source) << " and " << std::to_string(dest) 
+  //          << " using " << msg << std::endl;
  	if (switch_connection_map_.count(source) == 0) {
     //std::cout << "INSERTION FOR SWITCH_ID = " << std::to_string(source) << std::endl;
     switch_connection_map_[source] = std::vector<switch_link*>();
@@ -250,6 +250,7 @@ namespace hw {
  };
 
   switch_id flexfly_topology::node_to_ejection_switch(node_id addr, uint16_t& port) const {
+    std::cout << "node_to_ejection_switch?" << std::endl;
     switch_id swid = addr / nodes_per_switch_; // this gives us the switch id of the switch node addr is connected to
     std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_iter = switch_connection_map_.find(swid);
     const std::vector<switch_link*>& conn_vector = tmp_iter->second;
@@ -258,11 +259,12 @@ namespace hw {
   };
   
   switch_id flexfly_topology::node_to_injection_switch(node_id addr, uint16_t& port) const {
+    std::cout << "node_to_injection_switch?" << std::endl;
     return node_to_ejection_switch(addr, port);
   };
 
   int flexfly_topology::minimal_distance(switch_id src, switch_id dst) const {
-    
+    std::cout << "src switch id: " << std::to_string(src) << " dst switch id: " << std::to_string(dst) << std::endl;
     if (src == dst) { // same switch
       return 0;
     } else if ((src / switches_per_group_) == (dst / switches_per_group_)) { // same group
@@ -290,20 +292,23 @@ namespace hw {
   };
 
   int flexfly_topology::num_hops_to_node(node_id src, node_id dst) const {
+    //std::cout << "num_hops_to_node?" << std::endl;
     int supposed_src_swid = src / (nodes_per_switch_);
     int supposed_dst_swid = dst / (nodes_per_switch_);
     int src_group = supposed_src_swid / switches_per_group_;
     int dst_group = supposed_dst_swid / switches_per_group_;
     switch_id actual_src_swid = src_group * (switches_per_group_ + num_optical_switches_per_group_) + supposed_src_swid % switches_per_group_;
     switch_id actual_dst_swid = dst_group * (switches_per_group_ + num_optical_switches_per_group_) + supposed_dst_swid % switches_per_group_;
-    return minimal_distance(actual_src_swid, actual_dst_swid) + 2; // added by 2 because each node is 1 hop away from it's switch
+    int min_dist = minimal_distance(actual_dst_swid, actual_dst_swid);
+    //std::cout << std::to_string(min_dist) << std::endl;
+    return min_dist + 2; // added by 2 because each node is 1 hop away from it's switch
   };
 
   void flexfly_topology::nodes_connected_to_injection_switch(switch_id swid, 
                                                               std::vector<injection_port>& nodes) const {
     int i = 0;
     switch_id private_swid = public_swid_to_private_swid(swid);
-    
+    std::cout << "nodes_connected_to_injection_switch?" << std::endl;
     for (int i = 0; i < nodes_per_switch_; i++) {
       nodes[i].nid = private_swid * nodes_per_switch_ + i;
       std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_iter = switch_connection_map_.find(swid);
@@ -315,6 +320,7 @@ namespace hw {
 
   void flexfly_topology::nodes_connected_to_ejection_switch(switch_id swid, 
                                                               std::vector<injection_port>& nodes) const { 
+    std::cout << "nodes_connected_to_ejection_switch?" << std::endl;
     nodes_connected_to_injection_switch(swid, nodes);
   };
 
@@ -405,14 +411,17 @@ namespace hw {
    * @return
    */
   int flexfly_topology::num_netlinks() const {
+    std::cout << "num_netlinks?" << std::endl;
     return 1;
   }; 
 
   switch_id flexfly_topology::max_netlink_id() const {
+    std::cout << "max_netlink_id?" << std::endl;
     return max_switch_id_;
   };
 
   bool flexfly_topology::netlink_id_slot_filled(node_id nid) const {
+    std::cout << "netlink_id_slot_filled?" << std::endl;
     return true;
   };
     /**
@@ -425,6 +434,7 @@ namespace hw {
   */
   switch_id flexfly_topology::netlink_to_injection_switch(
         netlink_id nodeaddr, uint16_t& switch_port) const {
+    std::cout << "netlink_to_injection_switch?" << std::endl;
     return max_switch_id_;
   };
 
@@ -438,11 +448,13 @@ namespace hw {
   */
   switch_id flexfly_topology::netlink_to_ejection_switch(
         netlink_id nodeaddr, uint16_t& switch_port) const {
+    std::cout << "netlink_to_ejection_switch?" << std::endl;
     return max_switch_id_;
   };
 
   
   bool flexfly_topology::node_to_netlink(node_id nid, node_id& net_id, int& offset) const {
+    std::cout << "node_to_netlink?" << std::endl;
     return true;
   };
 }

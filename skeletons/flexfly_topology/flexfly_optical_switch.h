@@ -60,8 +60,16 @@ class flexfly_optical_switch :
   public optical_switch
 {
   
-  FactoryRegister("flexfly optical switch", optical_switch, flexfly_optical_switch, "This is flexfly optical switch");
+  FactoryRegister("flexfly optical switch", 
+                    optical_switch, 
+                    flexfly_optical_switch, 
+                    "This is flexfly optical switch");
  public:
+  flexfly_optical_switch(
+    sprockit::sim_parameters* params,
+    uint64_t id,
+    event_manager* mgr);
+
   virtual ~flexfly_optical_switch();
 
   virtual std::string to_string() const override {
@@ -70,9 +78,9 @@ class flexfly_optical_switch :
 
   virtual void init(unsigned int phase) override;
 
-  virtual void deadlock_check() override {return;};
+  virtual void deadlock_check() override;
 
-  virtual void deadlock_check(event* ev) override {return;};
+  virtual void deadlock_check(event* ev) override;
 
   virtual void setup() override; //needed for SST core compatibility
 
@@ -112,26 +120,16 @@ class flexfly_optical_switch :
    * @param port
    * @return
    */
-  virtual link_handler* payload_handler(int port) const override;// either if we cast the event_handler first into a link_Handler or we cast it upon returning it in this function
+  virtual link_handler* payload_handler(int port) const override;
 
 
   switch_id addr() const {
     return my_addr_;
-  };
+  }; 
 
-public:
-  flexfly_optical_switch(
-    sprockit::sim_parameters* params,
-    uint64_t id,
-    event_manager* mgr);// : connectable_component(params,id,mgr,ty);
 protected:
-  void recv_payload(event* ev) {
-    // cast it to a known event first?
-  };
-
-  void recv_credit(event* ev) {
-
-  };
+  void recv_payload(event* ev);
+  void recv_credit(event* ev);
 
  private: 
   switch_id my_addr_;
