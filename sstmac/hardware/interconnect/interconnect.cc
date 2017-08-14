@@ -64,6 +64,7 @@ Questions? Contact sst-macro-help@sandia.gov
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
 
+#include <iostream>
 
 RegisterDebugSlot(interconnect);
 RegisterNamespaces("interconnect");
@@ -124,12 +125,14 @@ interconnect::~interconnect()
 interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
                            partition *part, parallel_runtime *rt)
 {
+  std::cout << "WE ARE IN INTERCONNECT" << std::endl;
+
   if (!static_interconnect_) static_interconnect_ = this;
   topology_ = topology::static_topology(params);
   num_nodes_ = topology_->num_nodes();
   num_switches_ = topology_->num_switches();
   runtime::set_topology(topology_);
-
+  
 #if !SSTMAC_INTEGRATED_SST_CORE
   partition_ = part;
   rt_ = rt;
@@ -226,6 +229,7 @@ interconnect::connect_endpoints(sprockit::sim_parameters* inj_params,
 {
   int num_nodes = topology_->num_nodes();
   int me = rt_->me();
+  std::cout << "connect_endpoints: num_nodes - " << std::to_string(num_nodes) << std::endl;
   for (int nodeaddr=0; nodeaddr < num_nodes; ++nodeaddr){
     node_id netlink_id;
     int netlink_offset;

@@ -198,6 +198,7 @@ class Interconnect:
 
 
   def buildFull(self, epFxn):
+    print("BUILDFULL SHOULD BE THE ONE THAT IS ACTUALLY CALLED")
     self.buildSwitches()
     self.buildEndpoints(epFxn)
     self.connectSwitches()
@@ -205,6 +206,7 @@ class Interconnect:
     self.buildLogPNetwork()
 
   def buildLogP(self, epFxn):
+    print("BUILDLOGP TURNS OUT TO BE THE ONE THAT IS ACTUALLY CALLED")
     self.buildEndpoints(epFxn)
     self.buildLogPNetwork()
   
@@ -226,7 +228,6 @@ def setupDeprecated():
 
   nodeParams = params["node"]
   swParams = params["switch"]
-
   builtinApps = [
     "apitest",
     "global_test",

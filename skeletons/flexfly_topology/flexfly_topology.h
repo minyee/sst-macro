@@ -14,8 +14,13 @@ namespace sstmac{
 namespace hw {
 
 class flexfly_topology : public topology {
-
- FactoryRegister("flexfly", topology, flexfly_topology, "This is flexfly topology for Flexfly project");
+public:
+FactoryRegister("flexfly", topology, flexfly_topology, "This is flexfly topology for Flexfly project");
+/*
+RegisterComponent("flexfly", topology, flexfly_topology,
+           "topol", COMPONENT_CATEGORY_NETWORK,
+           "The flexfly topology")
+*/
 protected:
   struct switch_link {
     switch_id dest_sid; // switch_id of the destination switch
