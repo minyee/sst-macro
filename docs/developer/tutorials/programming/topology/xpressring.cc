@@ -88,6 +88,7 @@ xpress_ring::connected_outports(switch_id src,
 void
 xpress_ring::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
 {
+  std::cout << "configure individual port params" << std::endl;
   topology::configure_individual_port_params(0, 4, switch_params);
 }
 
@@ -107,8 +108,8 @@ xpress_ring::minimal_route_to_switch(
 {
   std::cout << "is the minimal_route_to_switch function in the xpressring class actually called or not?" << std::endl;
   //can route up or down
-  int up_distance = abs(dest - src);
-  int down_distance = abs(src + ring_size_ - dest);
+  int up_distance = dest - src;
+  int down_distance = src + ring_size_ - dest;
 
   int xpress_cutoff = jump_size_ / 2;
 
@@ -155,8 +156,8 @@ xpress_ring::minimal_distance(
   switch_id dest) const
 {
   std::cout << "src swid: " << std::to_string(src) << " and dst swid: " << std::to_string(dest) << std::endl;
-  int up_distance = abs(dest - src);
-  int down_distance = abs(src + ring_size_ - dest);
+  int up_distance = dest - src;
+  int down_distance = src + ring_size_ - dest;
 
   int total_distance = std::max(up_distance, down_distance);
   return num_hops(total_distance);

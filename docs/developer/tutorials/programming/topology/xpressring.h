@@ -67,7 +67,7 @@ public:
 
   virtual ~xpress_ring() {}
 
-  virtual int num_leaf_switches() const {
+  virtual int num_leaf_switches() const override {
     std::cout << "xpress ring calls num_leaf_switches" << std::endl;
     return num_switches();
   };

@@ -29,7 +29,7 @@ protected:
   };
 
 public:
- virtual std::string to_string() const {
+ virtual std::string to_string() const override {
   return "flexfly_topology";
  };
 
@@ -91,7 +91,7 @@ public:
      switches that are only a part of the network
      @return The total number of switches
   */
-  virtual int num_switches() const { //DONE
+  virtual int num_switches() const override { //DONE
     std::cout << "num_switches?" << std::endl;
   	return num_groups_ * switches_per_group_ + num_optical_switches_;
   };
@@ -101,7 +101,7 @@ public:
    *  might be larger than the actual number of switches.
    * @return The max switch id
    */
-  virtual switch_id max_switch_id() const { // DONE
+  virtual switch_id max_switch_id() const override{ // DONE
     std::cout << "max_switch_id" << std::endl;
     return max_switch_id_;
   };
@@ -111,9 +111,9 @@ public:
    * @param sid
    * @return Whether a switch object should be built for a given switch_id
    */
-  virtual bool switch_id_slot_filled(switch_id sid) const; // DONE
+  virtual bool switch_id_slot_filled(switch_id sid) const override; // DONE
 
-  virtual int num_nodes() const { // DONE
+  virtual int num_nodes() const override { // DONE
     int node_num = num_groups_ * switches_per_group_ * nodes_per_switch_;
     //std::cout << "num_nodes?" << std::endl;
     return node_num;
@@ -124,7 +124,7 @@ public:
    *  might be larger than the actual number of nodes.
    * @return The max node id
    */
-  virtual node_id max_node_id() const { // DONE
+  virtual node_id max_node_id() const override{ // DONE
     std::cout << "max_node_id?" << std::endl;
     return max_node_id_;
   };
@@ -139,9 +139,9 @@ public:
     return (nid < flexfly_topology::max_node_id());
   };
 
-  virtual switch_id max_netlink_id() const; // DONE (RECHECK)
+  virtual switch_id max_netlink_id() const override; // DONE (RECHECK)
 
-  virtual bool netlink_id_slot_filled(node_id nid) const; // DONE (RECHECK)
+  virtual bool netlink_id_slot_filled(node_id nid) const override; // DONE (RECHECK)
 
   /**
    * @brief num_endpoints To be distinguished slightly from nodes.
@@ -149,13 +149,13 @@ public:
    * is then the network endpoint that injects to the switch topology
    * @return
    */
-  virtual int num_netlinks() const; // DONE (RECHECK)
+  virtual int num_netlinks() const override; // DONE (RECHECK)
 
   /**
    * @brief Return the maximum number of ports on any switch in the network
    * @return
    */
-  virtual int max_num_ports() const { // DONE (RECHECK)
+  virtual int max_num_ports() const override { // DONE (RECHECK)
   	//return std::max(optical_switch_radix_, electrical_switch_radix_);
     return switches_per_group_ + nodes_per_switch_; // + 1 - 1
   }
@@ -255,7 +255,7 @@ public:
 
   virtual bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const final;
   
-  virtual void configure_metis(metis_config* configuration) const;
+  virtual void configure_metis(metis_config* configuration) const override;
 
   void print_topology() const;
 
