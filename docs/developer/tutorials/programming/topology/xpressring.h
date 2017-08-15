@@ -43,6 +43,7 @@ Questions? Contact sst-macro-help@sandia.gov
 */
 
 #include <sstmac/hardware/topology/structured_topology.h>
+#include <iostream>
 
 namespace sstmac {
 namespace hw {
@@ -50,8 +51,9 @@ namespace hw {
 class xpress_ring :
   public structured_topology
 {
+public:
   FactoryRegister("xpress", topology, xpress_ring,
-              "A ring topology with express cables that make large jumps")
+              "A ring topology with express cables that make large jumps");
  public:
   typedef enum {
     up_port = 0,
@@ -64,6 +66,11 @@ class xpress_ring :
   xpress_ring(sprockit::sim_parameters* params);
 
   virtual ~xpress_ring() {}
+
+  virtual int num_leaf_switches() const {
+    std::cout << "xpress ring calls num_leaf_switches" << std::endl;
+    return num_switches();
+  };
 
   bool uniform_switches() const override {
     return true;

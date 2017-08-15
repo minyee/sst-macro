@@ -56,10 +56,12 @@ xpress_ring::xpress_ring(sprockit::sim_parameters* params)
   eject_geometric_id_ = max_ports_intra_network_;
 }
 
+// NOT CALLED 
 void
 xpress_ring::connected_outports(switch_id src,
                             std::vector<connection>& conns) const
 {
+  std::cout << "hello lskahgoai egoiaerygivaey" << std::endl;
   conns.resize(4); //+1/-1 conns, +jump,-jump conns
   conns[0].src = src;
   conns[0].dst = (src+1) % ring_size_;
@@ -82,6 +84,7 @@ xpress_ring::connected_outports(switch_id src,
   conns[3].dst_inport = jump_up_port;
 }
 
+ // NOT CALLED
 void
 xpress_ring::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
 {
@@ -102,6 +105,7 @@ xpress_ring::minimal_route_to_switch(
   switch_id dest,
   routable::path& path) const
 {
+  std::cout << "is the minimal_route_to_switch function in the xpressring class actually called or not?" << std::endl;
   //can route up or down
   int up_distance = abs(dest - src);
   int down_distance = abs(src + ring_size_ - dest);
@@ -114,7 +118,7 @@ xpress_ring::minimal_route_to_switch(
       path.vc = 0;
     }
     else {
-      path.outport = up_port;
+      path.set_outport(up_port);
       path.vc = 0;
     }
   }
@@ -144,11 +148,13 @@ xpress_ring::num_hops(int total_distance) const
   return num_jumps + num_steps;
 }
 
+// CALLED
 int
 xpress_ring::minimal_distance(
   switch_id src,
   switch_id dest) const
 {
+  std::cout << "src swid: " << std::to_string(src) << " and dst swid: " << std::to_string(dest) << std::endl;
   int up_distance = abs(dest - src);
   int down_distance = abs(src + ring_size_ - dest);
 

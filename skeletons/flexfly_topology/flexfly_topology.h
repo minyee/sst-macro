@@ -74,7 +74,7 @@ public:
    *              and the port numbers for each connection
    */
   virtual void connected_outports(switch_id src,
-                     std::vector<topology::connection>& conns) const; //DONE
+                     std::vector<topology::connection>& conns) const final; //DONE
 
   /**
    * @brief configure_individual_port_params.  The port-specific parameters
@@ -83,7 +83,7 @@ public:
    * @param [inout] switch_params
    */
   virtual void configure_individual_port_params(switch_id src,
-          sprockit::sim_parameters* switch_params) const; //DONE (RECHECK)
+          sprockit::sim_parameters* switch_params) const final; //DONE (RECHECK)
 
   /**
      For indirect networks, this includes all switches -
@@ -134,7 +134,7 @@ public:
    * @param nid
    * @return Whether a node object should be built for a given node_id
    */
-  virtual bool node_id_slot_filled(node_id nid) const { // DONE
+  virtual bool node_id_slot_filled(node_id nid) const override { // DONE
     std::cout << "node_id_slot_filled?" << std::endl;
     return (nid < flexfly_topology::max_node_id());
   };
@@ -169,7 +169,7 @@ public:
      @return The switch that injects from the node
   */
   virtual switch_id netlink_to_injection_switch(
-        netlink_id nodeaddr, uint16_t& switch_port) const;
+        netlink_id nodeaddr, uint16_t& switch_port) const final;
 
   /**
      For a given node, determine the ejection switch
@@ -180,14 +180,14 @@ public:
      @return The switch that ejects into the node
   */
   virtual switch_id netlink_to_ejection_switch(
-        netlink_id nodeaddr, uint16_t& switch_port) const;
+        netlink_id nodeaddr, uint16_t& switch_port) const final;
 
   /**
    * @brief configure_vc_routing  Configure the number of virtual channels
    *        required for all supported routing algorithms
    * @param [inout] m
    */
-  virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const; // DONE (RECHECK)
+  virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const final; // DONE (RECHECK)
 
   /**
    * @brief node_to_ejection_switch Given a destination node,
@@ -197,9 +197,9 @@ public:
    *              to the particular node
    * @return
    */
-  virtual switch_id node_to_ejection_switch(node_id addr, uint16_t& port) const; // DONE (RECHECK)
+  virtual switch_id node_to_ejection_switch(node_id addr, uint16_t& port) const final; // DONE (RECHECK)
 
-  virtual switch_id node_to_injection_switch(node_id addr, uint16_t& port) const; // DONE (RECHECK)
+  virtual switch_id node_to_injection_switch(node_id addr, uint16_t& port) const final; // DONE (RECHECK)
 
   /**
     This gives the minimal distance counting the number of hops between switches.
@@ -207,7 +207,7 @@ public:
     @param dest. The destination switch.
     @return The number of hops to final destination
   */
-  virtual int minimal_distance(switch_id src, switch_id dst) const; // DONE (PLEASE RECHECK)
+  virtual int minimal_distance(switch_id src, switch_id dst) const final; // DONE (PLEASE RECHECK)
   	//return topology_diameter_;
 
   /**
@@ -216,7 +216,7 @@ public:
     @param dest. The destination node.
     @return The number of hops to final destination
   */
-  virtual int num_hops_to_node(node_id src, node_id dst) const;
+  virtual int num_hops_to_node(node_id src, node_id dst) const final;
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -225,7 +225,7 @@ public:
      @return The nodes connected to switch for injection
   */
   virtual void nodes_connected_to_injection_switch(switch_id swid,
-                          std::vector<injection_port>& nodes) const;
+                          std::vector<injection_port>& nodes) const final;
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -234,7 +234,7 @@ public:
      @return The nodes connected to switch for ejection
   */
   virtual void nodes_connected_to_ejection_switch(switch_id swid,
-                          std::vector<injection_port>& nodes) const;
+                          std::vector<injection_port>& nodes) const final;
 
   /**
      Given the current location and a destination,
@@ -251,9 +251,9 @@ public:
   virtual void minimal_route_to_switch( //this is really the key
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const;
+    routable::path& path) const final;
 
-  virtual bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const;
+  virtual bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const final;
   
   virtual void configure_metis(metis_config* configuration) const;
 

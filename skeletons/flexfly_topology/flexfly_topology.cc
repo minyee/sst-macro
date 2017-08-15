@@ -107,6 +107,7 @@ namespace hw {
  	if (!valid_switch_id(src) || switch_connection_map_.count(src) == 0) 
  		return;
   int cidx = 0;
+  std::cout << "kaninia chao jibai" << std::endl;
   std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator got = switch_connection_map_.find (src);
   //std::vector<switch_link*>& switch_link_vectors = (switch_connection_map_[src]).second;
   std::vector<switch_link*> switch_link_vectors = got->second;//->second();

@@ -1,10 +1,10 @@
-TARGET := runsstmac
-SRC := $(shell ls *.cc)
+TARGET := librunsstmac.so
+SRC := xpressring.cc
 
 CXX :=      sst++
 CC :=       sstcc
-CXXFLAGS :=
-CPPFLAGS :=
+CXXFLAGS := -fPIC
+CPPFLAGS := -I. -I$(HOME)/Programs/install/sst-core/clang/include
 LIBDIR :=
 PREFIX :=
 LDFLAGS :=  -Wl,-rpath,$(PREFIX)/lib
