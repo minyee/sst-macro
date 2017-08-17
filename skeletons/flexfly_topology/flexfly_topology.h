@@ -96,7 +96,7 @@ public:
      @return The total number of switches
   */
   virtual int num_switches() const override { //DONE
-    std::cout << "num_switches?" << std::endl;
+    std::cout << "flexfly c++ code: num_switches?" << std::endl;
   	return num_groups_ * switches_per_group_ + num_optical_switches_;
   };
 
@@ -337,6 +337,9 @@ public:
  	return switches_per_group_;
  }
 
+ int num_optical_switches_per_group() {
+  return num_optical_switches_per_group_;
+ }
 
 };
 
