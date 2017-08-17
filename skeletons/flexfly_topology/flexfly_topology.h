@@ -8,12 +8,13 @@
 #include <algorithm>
 #include <vector>
 #include <sstmac/hardware/topology/topology.h>
+#include <sstmac/hardware/topology/structured_topology.h>
 #include <unordered_map>
 
 namespace sstmac{
 namespace hw {
 
-class flexfly_topology : public topology {
+class flexfly_topology : public structured_topology {
 public:
 FactoryRegister("flexfly", topology, flexfly_topology, "This is flexfly topology for Flexfly project");
 /*
@@ -21,6 +22,9 @@ RegisterComponent("flexfly", topology, flexfly_topology,
            "topol", COMPONENT_CATEGORY_NETWORK,
            "The flexfly topology")
 */
+// this is for the structured_topology inheritance since structured_topology requires diameter
+virtual int diameter() const override {return 3;};
+
 protected:
   struct switch_link {
     switch_id dest_sid; // switch_id of the destination switch
@@ -42,7 +46,7 @@ public:
    *        this returns true.
    * @return
    */
-  virtual bool uniform_network_ports() const final { //DONE
+  virtual bool uniform_network_ports() const override { //DONE
   	return false;
   };
 
@@ -51,7 +55,7 @@ public:
    *        having slightly different latency/bandwidth configurations
    * @return
    */
-  virtual bool uniform_switches_non_uniform_network_ports() const final{ //DONE
+  virtual bool uniform_switches_non_uniform_network_ports() const override{ //DONE
   	//no this is false because we have both electrical and optical switches
   	return false; 
   };
@@ -61,7 +65,7 @@ public:
    *        have exactly the same configuration
    * @return
    */
-  virtual bool uniform_switches() const final { //DONE
+  virtual bool uniform_switches() const override { //DONE
   	return false;
   };
 
@@ -74,7 +78,7 @@ public:
    *              and the port numbers for each connection
    */
   virtual void connected_outports(switch_id src,
-                     std::vector<topology::connection>& conns) const final; //DONE
+                     std::vector<topology::connection>& conns) const override; //DONE
 
   /**
    * @brief configure_individual_port_params.  The port-specific parameters
@@ -83,7 +87,7 @@ public:
    * @param [inout] switch_params
    */
   virtual void configure_individual_port_params(switch_id src,
-          sprockit::sim_parameters* switch_params) const final; //DONE (RECHECK)
+          sprockit::sim_parameters* switch_params) const override; //DONE (RECHECK)
 
   /**
      For indirect networks, this includes all switches -
@@ -169,7 +173,7 @@ public:
      @return The switch that injects from the node
   */
   virtual switch_id netlink_to_injection_switch(
-        netlink_id nodeaddr, uint16_t& switch_port) const final;
+        netlink_id nodeaddr, uint16_t& switch_port) const override;
 
   /**
      For a given node, determine the ejection switch
@@ -180,14 +184,14 @@ public:
      @return The switch that ejects into the node
   */
   virtual switch_id netlink_to_ejection_switch(
-        netlink_id nodeaddr, uint16_t& switch_port) const final;
+        netlink_id nodeaddr, uint16_t& switch_port) const override;
 
   /**
    * @brief configure_vc_routing  Configure the number of virtual channels
    *        required for all supported routing algorithms
    * @param [inout] m
    */
-  virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const final; // DONE (RECHECK)
+  virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override; // DONE (RECHECK)
 
   /**
    * @brief node_to_ejection_switch Given a destination node,
@@ -197,17 +201,17 @@ public:
    *              to the particular node
    * @return
    */
-  virtual switch_id node_to_ejection_switch(node_id addr, uint16_t& port) const final; // DONE (RECHECK)
+  virtual switch_id node_to_ejection_switch(node_id addr, uint16_t& port) const override; // DONE (RECHECK)
 
-  virtual switch_id node_to_injection_switch(node_id addr, uint16_t& port) const final; // DONE (RECHECK)
+  virtual switch_id node_to_injection_switch(node_id addr, uint16_t& port) const override; // DONE (RECHECK)
 
   /**
     This gives the minimal distance counting the number of hops between switches.
     @param src. The source switch.
     @param dest. The destination switch.
-    @return The number of hops to final destination
+    @return The number of hops to fibal destination
   */
-  virtual int minimal_distance(switch_id src, switch_id dst) const final; // DONE (PLEASE RECHECK)
+  virtual int minimal_distance(switch_id src, switch_id dst) const override; // DONE (PLEASE RECHECK)
   	//return topology_diameter_;
 
   /**
@@ -216,7 +220,7 @@ public:
     @param dest. The destination node.
     @return The number of hops to final destination
   */
-  virtual int num_hops_to_node(node_id src, node_id dst) const final;
+  virtual int num_hops_to_node(node_id src, node_id dst) const override;
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -225,7 +229,7 @@ public:
      @return The nodes connected to switch for injection
   */
   virtual void nodes_connected_to_injection_switch(switch_id swid,
-                          std::vector<injection_port>& nodes) const final;
+                          std::vector<injection_port>& nodes) const override;
 
   /**
      For a given input switch, return all nodes connected to it.
@@ -234,8 +238,11 @@ public:
      @return The nodes connected to switch for ejection
   */
   virtual void nodes_connected_to_ejection_switch(switch_id swid,
-                          std::vector<injection_port>& nodes) const final;
+                          std::vector<injection_port>& nodes) const override;
 
+  virtual int num_leaf_switches() const override {
+    return num_groups_ * switches_per_group_;
+  };
   /**
      Given the current location and a destination,
      compute the minimal path to the destination.
@@ -251,9 +258,9 @@ public:
   virtual void minimal_route_to_switch( //this is really the key
     switch_id current_sw_addr,
     switch_id dest_sw_addr,
-    routable::path& path) const final;
+    routable::path& path) const override;
 
-  virtual bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const final;
+  virtual bool node_to_netlink(node_id nid, node_id& net_id, int& offset) const override;
   
   virtual void configure_metis(metis_config* configuration) const override;
 
@@ -263,6 +270,7 @@ public:
 
   flexfly_topology(sprockit::sim_parameters* params); 
 
+  switch_id node_to_logp_switch(node_id nid) const;
 protected:
  
  void configure_optical_or_electrical_port_params(switch_id swid, std::string& str, sprockit::sim_parameters* sim_params) const;

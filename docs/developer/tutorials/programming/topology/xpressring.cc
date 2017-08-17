@@ -61,7 +61,7 @@ void
 xpress_ring::connected_outports(switch_id src,
                             std::vector<connection>& conns) const
 {
-  std::cout << "hello lskahgoai egoiaerygivaey" << std::endl;
+  std::cout << "6" << std::endl;
   conns.resize(4); //+1/-1 conns, +jump,-jump conns
   conns[0].src = src;
   conns[0].dst = (src+1) % ring_size_;
@@ -88,13 +88,14 @@ xpress_ring::connected_outports(switch_id src,
 void
 xpress_ring::configure_individual_port_params(switch_id src, sprockit::sim_parameters *switch_params) const
 {
-  std::cout << "configure individual port params" << std::endl;
+  std::cout << "7" << std::endl;
   topology::configure_individual_port_params(0, 4, switch_params);
 }
 
 void
 xpress_ring::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const 
 {
+  std::cout << "8" << std::endl;
   m[routing::minimal] = 1;
   m[routing::valiant] = 2;
   m[routing::ugal] = 3;
@@ -106,7 +107,7 @@ xpress_ring::minimal_route_to_switch(
   switch_id dest,
   routable::path& path) const
 {
-  std::cout << "is the minimal_route_to_switch function in the xpressring class actually called or not?" << std::endl;
+  std::cout << "9" << std::endl;
   //can route up or down
   int up_distance = dest - src;
   int down_distance = src + ring_size_ - dest;
@@ -138,6 +139,7 @@ xpress_ring::minimal_route_to_switch(
 int
 xpress_ring::num_hops(int total_distance) const
 {
+  std::cout << "10" << std::endl;
   int num_jumps = total_distance / jump_size_;
   int num_steps = total_distance % jump_size_;
   int half_jump = jump_size_ / 2;
@@ -155,7 +157,8 @@ xpress_ring::minimal_distance(
   switch_id src,
   switch_id dest) const
 {
-  std::cout << "src swid: " << std::to_string(src) << " and dst swid: " << std::to_string(dest) << std::endl;
+  std::cout << "11" << std::endl;
+  //std::cout << "src swid: " << std::to_string(src) << " and dst swid: " << std::to_string(dest) << std::endl;
   int up_distance = dest - src;
   int down_distance = src + ring_size_ - dest;
 
@@ -167,6 +170,8 @@ int
 xpress_ring::diameter() const
 {
   //half-way around the ring is the biggest
+  std::cout << "12" << std::endl;
+  std::cout << "is diameter called in xpress ring topology?" << std::endl;
   int halfway = ring_size_ / 2;
   return num_hops(halfway);
 }

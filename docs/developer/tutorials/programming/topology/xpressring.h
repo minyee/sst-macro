@@ -52,7 +52,7 @@ class xpress_ring :
   public structured_topology
 {
 public:
-  FactoryRegister("xpress", topology, xpress_ring,
+  FactoryRegister("xpress", structured_topology, xpress_ring,
               "A ring topology with express cables that make large jumps");
  public:
   typedef enum {
@@ -68,23 +68,27 @@ public:
   virtual ~xpress_ring() {}
 
   virtual int num_leaf_switches() const override {
-    std::cout << "xpress ring calls num_leaf_switches" << std::endl;
+    std::cout << "1" << std::endl;
     return num_switches();
   };
 
   bool uniform_switches() const override {
+    std::cout << "2" << std::endl;
     return true;
   }
 
   bool uniform_network_ports() const override {
+    std::cout << "3" << std::endl;
     return true;
   }
 
   bool uniform_switches_non_uniform_network_ports() const override {
+    std::cout << "4" << std::endl;
     return true;
   }
 
   std::string to_string() const override {
+    std::cout << "5" << std::endl;
     return "xpress ring topology";
   }
 

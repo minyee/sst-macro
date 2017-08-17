@@ -16,7 +16,7 @@
 namespace sstmac {
 namespace hw {
 
- flexfly_topology::flexfly_topology(sprockit::sim_parameters* params) : topology(params) {
+ flexfly_topology::flexfly_topology(sprockit::sim_parameters* params) : structured_topology(params,InitMaxPortsIntra::I_Remembered, InitGeomEjectID::I_Remembered) {
 
  	// initialization of the private class member variables 
  	// intra_group_diameter_ = 1; // this assumes that intra group topology is all to all
@@ -415,7 +415,7 @@ namespace hw {
    */
   int flexfly_topology::num_netlinks() const {
     std::cout << "num_netlinks?" << std::endl;
-    return 1;
+    return 4;
   }; 
 
   switch_id flexfly_topology::max_netlink_id() const {
@@ -459,6 +459,11 @@ namespace hw {
   bool flexfly_topology::node_to_netlink(node_id nid, node_id& net_id, int& offset) const {
     std::cout << "node_to_netlink?" << std::endl;
     return true;
+  };
+
+  switch_id flexfly_topology::node_to_logp_switch(node_id nid) const {
+    switch_id swid = nid / (switches_per_group_);
+    return swid;
   };
 }
 }
