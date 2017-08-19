@@ -107,16 +107,19 @@ namespace hw {
  	if (!valid_switch_id(src) || switch_connection_map_.count(src) == 0) 
  		return;
   int cidx = 0;
-  std::cout << "kaninia chao jibai" << std::endl;
-  std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator got = switch_connection_map_.find (src);
+  std::cout << "flexfly c++: connected_outports " << std::to_string(src) << std::endl;
+
+  std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator got = switch_connection_map_.find(src);
   //std::vector<switch_link*>& switch_link_vectors = (switch_connection_map_[src]).second;
   std::vector<switch_link*> switch_link_vectors = got->second;//->second();
   for (switch_link* current_switch_link : switch_link_vectors) {
+    std::cout << "C++: for src switch of: " << std::to_string(src) << " the size of links is ";
     conns[cidx].src = src;
     conns[cidx].dst = current_switch_link->dest_sid;
     conns[cidx].src_outport = cidx; // TODO: CHECK THIS
     conns[cidx].dst_inport = current_switch_link->dest_inport;
     conns[cidx].link_type = current_switch_link->type;
+    std::cout << std::to_string(cidx) << std::endl;
     cidx++;
   }
  }  

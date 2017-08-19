@@ -45,30 +45,58 @@ class Interconnect:
 		return
 
 	def buildOpticalSwitches(self):
-		
+		switchParams = self.params["switch"]
+		switchName = "logp" + "_switch"
+		#switchName = switchParams["model"] + "_switch"
+		for group in range(self.num_groups):
+			group_index_offset = group * (self.switches_per_group + self.optical_switches_per_group) \
+									+ self.switches_per_group
+			for i in range(self.optical_switches_per_group):
+				optical_switch_id = group_index_offset + i
+				switch = sst.Component("Switch %d" % optical_switch_id, "macro.%s" % switchName)
+				switch.addParam("id" , i)
+				switch.addParams(macroToCoreParams(switchParams))
+				switch.addParam("switch_type" , "optical")
+				self.switches[group_index_offset + i] = switch
 		return
 
 	def buildElectricalSwitches(self):
 		switchParams = self.params["switch"]
-		switchName = switchParams["model"] + "_switch"
+		switchName = "logp" + "_switch"
+		#switchName = switchParams["model"] + "_switch"
+		totalSwitchesPerGroup = self.optical_switches_per_group + self.switches_per_group
 		for i in range(self.num_switches):
-			#if self.containsOptics and :
-
+			if self.containsOptics and i % (totalSwitchesPerGroup) >= self.switches_per_group:
+				continue
 			switch = sst.Component("Switch %d" % i, "macro.%s" % switchName)
 			switch.addParam("id" , i) 
 			switch.addParams(macroToCoreParams(switchParams))
-			switch_type = ""
-			if self.containsOptics:
-				switch_type = "optical"
-			else:
-				switch_type = "electrical"
-			switch.addParam("switch_type", switch_type)
+			switch.addParam("switch_type" , "electrical")
 			self.switches[i] = switch  
-			
-
 		return
 
+	def latency(self, params):
+		if params.has_key("latency"):
+			return params["latency"]
+		elif params.has_key("send_latency"):
+			return params["send_latency"]
+		else:
+			sys.exit("need link latency in parameters")
+
 	def buildTopology(self):
+		switchParams = self.params["switch"]
+		for i in range(self.num_switches):
+			linkParams = switchParams["link"]
+			connections = self.system.switchConnections(i)
+			srcSwitch = self.switches[i]
+			lat = self.latency(linkParams)
+			print "cibai"
+			for srcId, dstId, srcOutport, dstInport in connections:
+				print "srcId: %d and dstId: %d srcOutport: %d, dstInport: %d" % (srcId, dstId, srcOutport, dstInport)
+				dstSwitch, dstParams = self.switches[dstId]
+				makeUniNetworkLink(srcSwitch, srcId, srcOutport,
+									dstSwitch, dstId, dstInport, 
+									lat)
 		return
 
 	def build(self):
@@ -106,13 +134,10 @@ def macroToCoreParams(theDict):
 		newDict[key] = val
 	return newDict
 
+
 def setupTopology():
 	import sys
-	#import sys.macro
-	#print dir(sys)
-	#print sys.getattr()
 	params = readCmdLineParams()
-	#print("helllloooooo")
 	builtinApps = [
    		"apitest",
        	"global_test",

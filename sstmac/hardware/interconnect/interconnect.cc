@@ -125,8 +125,6 @@ interconnect::~interconnect()
 interconnect::interconnect(sprockit::sim_parameters *params, event_manager *mgr,
                            partition *part, parallel_runtime *rt)
 {
-  std::cout << "WE ARE IN INTERCONNECT" << std::endl;
-
   if (!static_interconnect_) static_interconnect_ = this;
   topology_ = topology::static_topology(params);
   num_nodes_ = topology_->num_nodes();
