@@ -282,8 +282,6 @@ private:
  uint32_t num_groups_; // equivalent to parameter g in Kim's paper
  uint32_t switches_per_group_; // equivalent to parameter a in Kim's paper
  uint32_t nodes_per_switch_; // equivalent to parameter p in Kim's paper
-
- //uint32_t topology_diameter_; // need to figure out if the diameter needs to take into account optical hops or not
  
  //int intra_group_diameter_;
  uint32_t num_optical_switches_;
@@ -295,6 +293,7 @@ private:
  switch_id max_switch_id_;
 
  node_id max_node_id_;
+
 //maps a switch_id to a vector of connections of said switch
  std::unordered_map<switch_id, std::vector<switch_link*>> switch_connection_map_;
 //maps a switch_id (must be electrical) to a vector of all the nodes (end-point compute) it is connected to

@@ -90,9 +90,9 @@ class Interconnect:
 			connections = self.system.switchConnections(i)
 			srcSwitch = self.switches[i]
 			lat = self.latency(linkParams)
-			print "cibai"
 			for srcId, dstId, srcOutport, dstInport in connections:
 				print "srcId: %d and dstId: %d srcOutport: %d, dstInport: %d" % (srcId, dstId, srcOutport, dstInport)
+				print self.switches
 				dstSwitch, dstParams = self.switches[dstId]
 				makeUniNetworkLink(srcSwitch, srcId, srcOutport,
 									dstSwitch, dstId, dstInport, 

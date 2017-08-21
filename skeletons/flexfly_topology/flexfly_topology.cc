@@ -39,7 +39,6 @@ namespace hw {
 
  // need to deallocate everything at the deconstructor
  flexfly_topology::~flexfly_topology() {
-  std::cout << "Flexfly_topology destructor is being called" << std::endl;
   for (const std::pair<switch_id, std::vector<switch_link*>> elem : switch_connection_map_) {
     const std::vector<switch_link*>& conn_vector = elem.second;  
     //for (auto it = switch_connection_map_.begin(); it != switch_connection_map_.end(); ++it){  
@@ -101,29 +100,6 @@ namespace hw {
 	configuration->nvtxs = (idx_t) num_groups_ * switches_per_group_;
  }
 
- // DONE
- void flexfly_topology::connected_outports(const switch_id src, 
- 											                      std::vector<topology::connection>& conns) const {
- 	if (!valid_switch_id(src) || switch_connection_map_.count(src) == 0) 
- 		return;
-  int cidx = 0;
-  std::cout << "flexfly c++: connected_outports " << std::to_string(src) << std::endl;
-
-  std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator got = switch_connection_map_.find(src);
-  //std::vector<switch_link*>& switch_link_vectors = (switch_connection_map_[src]).second;
-  std::vector<switch_link*> switch_link_vectors = got->second;//->second();
-  for (switch_link* current_switch_link : switch_link_vectors) {
-    std::cout << "C++: for src switch of: " << std::to_string(src) << " the size of links is ";
-    conns[cidx].src = src;
-    conns[cidx].dst = current_switch_link->dest_sid;
-    conns[cidx].src_outport = cidx; // TODO: CHECK THIS
-    conns[cidx].dst_inport = current_switch_link->dest_inport;
-    conns[cidx].link_type = current_switch_link->type;
-    std::cout << std::to_string(cidx) << std::endl;
-    cidx++;
-  }
- }  
-
  void flexfly_topology::minimal_route_to_switch(switch_id current_sw_addr, 
  												switch_id dest_sw_addr, 
  												routable::path& path) const {
@@ -137,7 +113,7 @@ namespace hw {
   * checks if a given switch id in the topology is an optical switch or not
   */
  bool flexfly_topology::is_optical_switch(switch_id swid) const {
- 	if (!valid_switch_id(swid)) {
+  if (!valid_switch_id(swid)) {
  		return false;
  	} 
   int group_num = swid / (switches_per_group_ + num_optical_switches_per_group_);
@@ -164,7 +140,6 @@ namespace hw {
                                                                     std::string& str, 
                                                                     sprockit::sim_parameters* switch_params) const {
  	if (!switch_params) {
- 		//spkt_throw_printf("switch_link params fed in is a null pointer, switch_link params not defined?");
  		return;
  	}
  	
@@ -207,29 +182,52 @@ namespace hw {
   * dest switch
   * NOTE: This member function should form a bidirectional switch_link
   */
-  void flexfly_topology::connect_switches(switch_id source, switch_id dest, Link_Type ltype) {
-  //std::string msg = (ltype == Link_Type::electrical) ? "electrical" : "optical";
-  //std::cout << "connect switches " << std::to_string(source) << " and " << std::to_string(dest) 
-  //          << " using " << msg << std::endl;
- 	if (switch_connection_map_.count(source) == 0) {
-    //std::cout << "INSERTION FOR SWITCH_ID = " << std::to_string(source) << std::endl;
-    switch_connection_map_[source] = std::vector<switch_link*>();
- 	}
-  if (switch_connection_map_.count(dest) == 0) {
-    //std::cout << "INSERTION FOR SWITCH_ID = " << std::to_string(dest) << std::endl;
-    switch_connection_map_[dest] = std::vector<switch_link*>();
-  }
- 	std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp = switch_connection_map_.find(source);
-  const std::vector<switch_link*>& source_switch_connection_vector = tmp->second;
-  tmp = switch_connection_map_.find(dest);
-  const std::vector<switch_link*>& dest_switch_connection_vector = tmp->second;
-  int src_outport = source_switch_connection_vector.size();
-  int dest_inport = dest_switch_connection_vector.size();
-  switch_link* src_switch_link = (switch_link *) malloc(sizeof(switch_link));
-  src_switch_link->dest_sid = dest;
-  src_switch_link->dest_inport = dest_inport;
-  src_switch_link->type = ltype;
+  void flexfly_topology::connect_switches(switch_id src, switch_id dst, Link_Type ltype) {
+    std::vector<switch_link*>& src_connection_vector = switch_connection_map_[src];
+    switch_link *conns = new switch_link();
+    conns->dest_sid = dst;
+    conns->dest_inport = switch_connection_map_[dst].size(); 
+    conns->type = ltype;
+    int src_port = src_connection_vector.size();
+    src_connection_vector.push_back(conns);
+    printf("Value of src_connection_vector:  %p\n", &(src_connection_vector[0]) );
+    return;
+    /*
+ 	  std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp = switch_connection_map_.find(source);
+    const std::vector<switch_link*>& source_switch_connection_vector = tmp->second;
+    tmp = switch_connection_map_.find(dest);
+    const std::vector<switch_link*>& dest_switch_connection_vector = tmp->second;
+    int src_outport = source_switch_connection_vector.size();
+    int dest_inport = dest_switch_connection_vector.size();
+    switch_link* src_switch_link = (switch_link *) malloc(sizeof(switch_link));
+    src_switch_link->dest_sid = dest;
+    src_switch_link->dest_inport = dest_inport;
+    src_switch_link->type = ltype;
+    */
  }
+
+
+void flexfly_topology::connected_outports(const switch_id src, 
+                                            std::vector<topology::connection>& conns) const {
+  std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator got = switch_connection_map_.find(src);
+  //int cidx = 0;
+  //printf("The pointer for input argument conn: %p\n", &(conns.at[0]));
+  if (got != switch_connection_map_.end()) {
+    const std::vector<switch_link*>& switch_link_vectors = got->second;
+    for (switch_link* current_switch_link : switch_link_vectors) {
+      conns.push_back(topology::connection());
+      int cidx = conns.size() - 1;
+      std::cout << "FIUAGIAYEIGYAILEGBYAERIYGAWELTYALT" << std::endl;
+      printf("The value for the pointer is: %p\n", &(conns[cidx]));
+      conns[cidx].src = src;
+      conns[cidx].dst = current_switch_link->dest_sid;
+      conns[cidx].src_outport = cidx; 
+      conns[cidx].dst_inport = current_switch_link->dest_inport;
+      conns[cidx].link_type = current_switch_link->type;
+    }
+  }
+}
+
 
  bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
   return (sid < max_switch_id_);
