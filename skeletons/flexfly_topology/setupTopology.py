@@ -2,6 +2,26 @@ import sst
 import sst.macro
 
 opticalLatency = "0ps"
+smallLatency = "1ps"
+
+def makeUniLink(linkType,srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat=None,inLat=None):
+	if not outLat : outLat = inLat
+	if not inLat: inLat = outLat
+	if not outLat: sys.exit("must specify at least one latency for link")
+
+	linkName = "%s%d:%d->%d:%d" % (linkType,srcId,srcPort,dstId,dstPort)
+	link = sst.Link(linkName)
+	portName = "output %d %d" % (srcPort, dstPort)
+	srcComp.addLink(link,portName,outLat)
+	portName = "input %d %d" % (srcPort, dstPort)
+	dstComp.addLink(link,portName,inLat)
+
+def makeUniNetworkLink(srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat=None,inLat=None):
+	makeUniLink("network",srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat,inLat)
+
+def makeBiLink(linkType,comp1,id1,port1,comp2,id2,port2,outLat=None,inLat=None):
+	makeUniLink(linkType,comp1,id1,port1,comp2,id2,port2,outLat,inLat)
+	makeUniLink(linkType,comp2,id2,port2,comp1,id1,port1,outLat,inLat)
 
 class Interconnect:
 	def __init__(self, params):
@@ -92,12 +112,38 @@ class Interconnect:
 			lat = self.latency(linkParams)
 			for srcId, dstId, srcOutport, dstInport in connections:
 				print "srcId: %d and dstId: %d srcOutport: %d, dstInport: %d" % (srcId, dstId, srcOutport, dstInport)
-				print self.switches
-				dstSwitch, dstParams = self.switches[dstId]
-				makeUniNetworkLink(srcSwitch, srcId, srcOutport,
-									dstSwitch, dstId, dstInport, 
-									lat)
+				#print self.switches
+
+				dstSwitch = self.switches[dstId]
+				linkName = "logPnetwork%d->%d" % (srcId,dstId)
+        		link = sst.Link(linkName)
+        		portName = "in-out %d %d" % (dstId, sst.macro.SwitchLogPNetworkPort)
+        		srcSwitch.addLink(link, portName, lat)
+        		portName = "in-out %d %d" % (i, sst.macro.SwitchLogPNetworkPort)
+        		dstSwitch.addLink(link, portName, lat)
+				#makeUniNetworkLink(srcSwitch, srcId, srcOutport,
+				#					dstSwitch, dstId, dstInport, 
+				#					lat)
 		return
+
+	def buildNodeConnections(self):
+		linkCnt = 0
+		for i in range(self.num_nodes):
+			print "node%d" % (i)
+			switchId = self.system.nodeToLogPSwitch(i)
+			linkname = "InjectionLink%d:Node%d->Switch%d" % (linkCnt, i, switchId)
+			link = sst.Link(linkname)
+			portName1 = "srcPort: %d -> dstPort: %d" % (linkCnt,linkCnt)
+			portName2 = "srcPort: %d -> dstPort: %d" % (linkCnt,linkCnt)
+			node = self.nodes[i]
+			
+			switch = self.switches[switchId]
+			portName1 = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
+			portName2 = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
+			node.addLink(link, portName1, smallLatency)
+			switch.addLink(link, portName2, smallLatency)
+			linkCnt += 1
+			print "node%d is out" % (i)
 
 	def build(self):
 		self.buildEndpoints()
@@ -107,6 +153,7 @@ class Interconnect:
 		if self.containsOptics:
 			self.buildOpticalSwitches()
 		self.buildTopology()
+		self.buildNodeConnections()
 
     ## Returns the command line argv in terms of a vector that is 0-indexed
 def readCmdLineParams():

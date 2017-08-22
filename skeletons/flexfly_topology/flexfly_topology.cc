@@ -190,7 +190,7 @@ namespace hw {
     conns->type = ltype;
     int src_port = src_connection_vector.size();
     src_connection_vector.push_back(conns);
-    printf("Value of src_connection_vector:  %p\n", &(src_connection_vector[0]) );
+    //printf("Value of src_connection_vector:  %p\n", &(src_connection_vector[0]) );
     return;
     /*
  	  std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp = switch_connection_map_.find(source);
@@ -217,8 +217,6 @@ void flexfly_topology::connected_outports(const switch_id src,
     for (switch_link* current_switch_link : switch_link_vectors) {
       conns.push_back(topology::connection());
       int cidx = conns.size() - 1;
-      std::cout << "FIUAGIAYEIGYAILEGBYAERIYGAWELTYALT" << std::endl;
-      printf("The value for the pointer is: %p\n", &(conns[cidx]));
       conns[cidx].src = src;
       conns[cidx].dst = current_switch_link->dest_sid;
       conns[cidx].src_outport = cidx; 
@@ -463,8 +461,8 @@ void flexfly_topology::connected_outports(const switch_id src,
   };
 
   switch_id flexfly_topology::node_to_logp_switch(node_id nid) const {
-    switch_id swid = nid / (switches_per_group_);
-    return swid;
+    switch_id swid = nid / (nodes_per_switch_);
+    return public_swid_to_private_swid(swid);
   };
 }
 }
