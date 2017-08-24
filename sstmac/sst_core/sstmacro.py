@@ -214,7 +214,6 @@ class Interconnect:
     if self.system.isLogP():
       self.buildLogP(epFxn)
     else:
-      print "ISGIAEURTVNYEIVYNEIYGERHUGDAUHGAGUI"
       self.buildFull(epFxn)
 
 def readCmdLineParams():

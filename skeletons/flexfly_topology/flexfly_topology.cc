@@ -20,6 +20,7 @@ namespace hw {
 
  	// initialization of the private class member variables 
  	// intra_group_diameter_ = 1; // this assumes that intra group topology is all to all
+  std::cout << "FLEXFLY_TOPOLOGY CONSTRUCTOR" << std::endl;
  	num_groups_ = params->get_optional_int_param("groups", 7);
  	num_optical_switches_per_group_ = 1; 
  	switches_per_group_ = params->get_optional_int_param("switches_per_group", 6);

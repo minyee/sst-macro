@@ -111,7 +111,7 @@ class Interconnect:
 			srcSwitch = self.switches[i]
 			lat = self.latency(linkParams)
 			for srcId, dstId, srcOutport, dstInport in connections:
-				print "srcId: %d and dstId: %d srcOutport: %d, dstInport: %d" % (srcId, dstId, srcOutport, dstInport)
+				#print "srcId: %d and dstId: %d srcOutport: %d, dstInport: %d" % (srcId, dstId, srcOutport, dstInport)
 				#print self.switches
 
 				dstSwitch = self.switches[dstId]
@@ -129,7 +129,6 @@ class Interconnect:
 	def buildNodeConnections(self):
 		linkCnt = 0
 		for i in range(self.num_nodes):
-			print "node%d" % (i)
 			switchId = self.system.nodeToLogPSwitch(i)
 			linkname = "InjectionLink%d:Node%d->Switch%d" % (linkCnt, i, switchId)
 			link = sst.Link(linkname)
@@ -143,7 +142,6 @@ class Interconnect:
 			node.addLink(link, portName1, smallLatency)
 			switch.addLink(link, portName2, smallLatency)
 			linkCnt += 1
-			print "node%d is out" % (i)
 
 	def build(self):
 		self.buildEndpoints()

@@ -129,7 +129,7 @@ logp_switch::connect_output(sprockit::sim_parameters *params,
                               int src_outport, int dst_inport,
                               event_handler *mod)
 {
-  std::cout << "LogPSwitch->Connect Output: Src_outport: " << std::to_string(src_outport) << " Dst_inport: " << std::to_string(dst_inport) <<std::endl; 
+  //std::cout << "LogPSwitch->Connect Output: Src_outport: " << std::to_string(src_outport) << " Dst_inport: " << std::to_string(dst_inport) <<std::endl; 
   if (dst_inport == Node){
     node_id nid = src_outport;
     switch_debug("Connecting LogP to NIC %d", nid);
