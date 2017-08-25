@@ -122,8 +122,7 @@ class Interconnect:
         		portName = "in-out %d %d" % (i, sst.macro.SwitchLogPNetworkPort)
         		dstSwitch.addLink(link, portName, lat)
 				#makeUniNetworkLink(srcSwitch, srcId, srcOutport,
-				#					dstSwitch, dstId, dstInport, 
-				#					lat)
+				#					dstSwitch, dstId, dstInport, lat)
 		return
 
 	def buildNodeConnections(self):
@@ -143,17 +142,28 @@ class Interconnect:
 			switch.addLink(link, portName2, smallLatency)
 			linkCnt += 1
 
+	def makeOneOpticalSwitch(self, switchParams, i):
+		opticalSwitchName = "macro." + "flexfly_optical_switch"
+		opticalSwitch = sst.Component("Switch %d" % i, opticalSwitchName)
+		opticalSwitch.addParam("id" , i) 
+		opticalSwitch.addParams(macroToCoreParams(switchParams))
+		opticalSwitch.addParam("switch_type" , "optical")
+		opticalSwitch.addParam("optical_switch_radix", self.opticalSwitchRadix)
+
 	def build(self):
 		self.buildEndpoints()
 		topologyParams = self.params["topology"]
 		topologyName = topologyParams["name"]
+		self.opticalSwitchRadix = topologyParams["optical_switch_radix"]
 		self.buildElectricalSwitches()
 		if self.containsOptics:
 			self.buildOpticalSwitches()
 		self.buildTopology()
 		self.buildNodeConnections()
+		switchParams = self.params["switch"]
+		self.makeOneOpticalSwitch(switchParams, 3000)
 
-    ## Returns the command line argv in terms of a vector that is 0-indexed
+## Returns the command line argv in terms of a vector that is 0-indexed
 def readCmdLineParams():
 	import sys
 	return sst.macro.readParams(sys.argv)
@@ -178,7 +188,6 @@ def macroToCoreParams(theDict):
 	for key, val in allParams:
 		newDict[key] = val
 	return newDict
-
 
 def setupTopology():
 	import sys

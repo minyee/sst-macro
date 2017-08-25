@@ -12,6 +12,7 @@
 #include <sstmac/hardware/topology/topology.h>
 //#include <sstmac/common/event_scheduler.h>
 #include <sprockit/sim_parameters_fwd.h>
+#include <sstmac/hardware/switch/network_switch.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/integrated_component.h>
@@ -44,7 +45,7 @@ namespace hw {
 
 class optical_switch : public connectable_component {
   public:
-  DeclareFactory(optical_switch, uint64_t, event_manager*);
+  DeclareFactory(optical_switch,uint64_t,event_manager*)
 
   optical_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr) :
     connectable_component(params,id,
@@ -60,10 +61,9 @@ class flexfly_optical_switch :
   public optical_switch
 {
   
-  FactoryRegister("flexfly optical switch", 
-                    optical_switch, 
-                    flexfly_optical_switch, 
-                    "This is flexfly optical switch");
+  RegisterComponent("flexfly_optical_switch | flexfly_optical", optical_switch, flexfly_optical_switch,
+         "macro", COMPONENT_CATEGORY_NETWORK,
+         "An optical switch used in the Flexfly project");
  public:
   flexfly_optical_switch(
     sprockit::sim_parameters* params,
@@ -76,7 +76,7 @@ class flexfly_optical_switch :
     return "Flexfly Optical Switch";
   };
 
-  virtual void init(unsigned int phase) override;
+  //virtual void init(unsigned int phase) override;
 
   virtual void deadlock_check() override;
 
@@ -127,20 +127,22 @@ class flexfly_optical_switch :
     return my_addr_;
   }; 
 
+  bool outport_connected(int outport) const;
+
 protected:
   void recv_payload(event* ev);
   void recv_credit(event* ev);
 
- private: 
+private: 
   switch_id my_addr_;
-  topology* top_;
-
+  int num_ports_;
   std::vector<event_handler*> outport_handler_;
   std::vector<event_handler*> inport_handler_;
-  std::vector<topology::connection*> outport_connection_;
-  std::vector<topology::connection*> inport_connection_;
+  // given an index, the value of the entry is the output port that said inport is currently connected to
+  int* inout_connection_; 
+  
 
-  int num_ports_;
+  
 
 };
 

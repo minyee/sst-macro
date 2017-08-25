@@ -6,22 +6,28 @@
 namespace sstmac {
 namespace hw {
 	flexfly_optical_switch::flexfly_optical_switch(sprockit::sim_parameters* params,
-    uint64_t id,
-    event_manager* mgr) : optical_switch(params, id, mgr) {
-		//init_connection(params); // this has to be called upon class initialization
-		//std
+    												uint64_t id,
+    												event_manager* mgr) : optical_switch(params, id, mgr) {
+		init_links(params); // this has to be called upon class initialization
+		num_ports_ = params->get_int_param("optical_switch_radix");
+		
+		inout_connection_ = new int[num_ports_];
+		for (int i = 0; i < num_ports_; i++) {
+			inout_connection_[i] = i;
+		}
 	};
 
 	flexfly_optical_switch::~flexfly_optical_switch() {
-
+		std::cout << "FLEXFLY_OPTICAL_SWITCH DECONSTRUCTOR" << std::endl;
+		delete [] inout_connection_;
 	}
-
+	/*
 	void flexfly_optical_switch::init(unsigned int phase) {
 		init(phase);
 		//connection::init(phase);
 		return; 
 	};
-
+	*/
 	void flexfly_optical_switch::setup() {
 		//init(phase);
 		//connection::init(phase);makes
@@ -67,5 +73,14 @@ namespace hw {
 	void flexfly_optical_switch::recv_payload(event* ev) {
 		return;
 	};
+
+	bool flexfly_optical_switch::outport_connected(int outport) const {
+		for (int i = 0; i < num_ports_; i++) {
+			if (inout_connection_[i] == outport) {
+				return true;
+			}
+		}
+		return false;
+	}
 }
 }

@@ -40,6 +40,7 @@ namespace hw {
 
  // need to deallocate everything at the deconstructor
  flexfly_topology::~flexfly_topology() {
+  std::cout << "FLEXFLY_TOPOLOGY DECONSTRUCTOR" << std::endl;
   for (const std::pair<switch_id, std::vector<switch_link*>> elem : switch_connection_map_) {
     const std::vector<switch_link*>& conn_vector = elem.second;  
     //for (auto it = switch_connection_map_.begin(); it != switch_connection_map_.end(); ++it){  
