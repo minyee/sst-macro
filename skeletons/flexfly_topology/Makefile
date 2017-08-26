@@ -1,5 +1,5 @@
 TARGET := libflexfly.so 
-SRC := flexfly_topology.cc flexfly_optical_switch.cc 
+SRC := flexfly_topology.cc flexfly_optical_switch.cc flexfly_electrical_switch.cc 
 
 CXX :=    libsst++
 CC :=     libsstcc

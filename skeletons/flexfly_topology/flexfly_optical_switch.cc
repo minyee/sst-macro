@@ -10,7 +10,8 @@ namespace hw {
     												event_manager* mgr) : optical_switch(params, id, mgr) {
 		init_links(params); // this has to be called upon class initialization
 		num_ports_ = params->get_int_param("optical_switch_radix");
-		
+		//outport_handler_ = new std::vector<event_handler*>(num_ports_);
+		//inport_handler_ = new std::vector<event_handler*>(num_ports_);
 		inout_connection_ = new int[num_ports_];
 		for (int i = 0; i < num_ports_; i++) {
 			inout_connection_[i] = i;
@@ -18,7 +19,7 @@ namespace hw {
 	};
 
 	flexfly_optical_switch::~flexfly_optical_switch() {
-		std::cout << "FLEXFLY_OPTICAL_SWITCH DECONSTRUCTOR" << std::endl;
+		//std::cout << "FLEXFLY_OPTICAL_SWITCH DECONSTRUCTOR" << std::endl;
 		delete [] inout_connection_;
 	}
 	/*
@@ -38,7 +39,8 @@ namespace hw {
                               					int src_outport, 
                               					int dst_inport,
                               					event_handler* credit_handler) {
-		inport_handler_[src_outport] = credit_handler;
+		std::cout << "input src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
+ 		inport_handler_[2] = credit_handler;
 		return;
 	};
 
@@ -46,7 +48,10 @@ namespace hw {
                               					int src_outport, 
                               					int dst_inport,
                               					event_handler* payload_handler) {
-		outport_handler_[src_outport] = payload_handler;
+		//std::cout << "src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
+		//outport_handler_[src_outport] = payload_handler;
+		std::cout << "src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
+ 		outport_handler_[0] = payload_handler;
 		return;
 	};
 

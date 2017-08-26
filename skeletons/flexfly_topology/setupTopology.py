@@ -66,7 +66,7 @@ class Interconnect:
 
 	def buildOpticalSwitches(self):
 		switchParams = self.params["switch"]
-		switchName = "logp" + "_switch"
+		switchName = "flexfly_optical" + "_switch"
 		#switchName = switchParams["model"] + "_switch"
 		for group in range(self.num_groups):
 			group_index_offset = group * (self.switches_per_group + self.optical_switches_per_group) \
@@ -77,12 +77,13 @@ class Interconnect:
 				switch.addParam("id" , i)
 				switch.addParams(macroToCoreParams(switchParams))
 				switch.addParam("switch_type" , "optical")
+				switch.addParam("optical_switch_radix", self.opticalSwitchRadix)
 				self.switches[group_index_offset + i] = switch
 		return
 
 	def buildElectricalSwitches(self):
 		switchParams = self.params["switch"]
-		switchName = "logp" + "_switch"
+		switchName = "flexfly_electrical" + "_switch"
 		#switchName = switchParams["model"] + "_switch"
 		totalSwitchesPerGroup = self.optical_switches_per_group + self.switches_per_group
 		for i in range(self.num_switches):
@@ -117,13 +118,35 @@ class Interconnect:
 				dstSwitch = self.switches[dstId]
 				linkName = "logPnetwork%d->%d" % (srcId,dstId)
         		link = sst.Link(linkName)
-        		portName = "in-out %d %d" % (dstId, sst.macro.SwitchLogPNetworkPort)
+        		portName = "output %d %d" % (dstId, sst.macro.SwitchLogPNetworkPort)
         		srcSwitch.addLink(link, portName, lat)
-        		portName = "in-out %d %d" % (i, sst.macro.SwitchLogPNetworkPort)
+        		portName = "input %d %d" % (i, sst.macro.SwitchLogPNetworkPort)
         		dstSwitch.addLink(link, portName, lat)
 				#makeUniNetworkLink(srcSwitch, srcId, srcOutport,
 				#					dstSwitch, dstId, dstInport, lat)
 		return
+
+	def buildTopology2(self):
+		switchParams = self.params["switch"]
+		for i in range(self.num_switches):
+			linkParams = switchParams["link"]
+			connections = self.system.switchConnections(i)
+			srcSwitch = self.switches[i]
+			lat = self.latency(linkParams)
+			for srcId, dstId, srcOutport, dstInport in connections:
+				#print "srcId: %d and dstId: %d srcOutport: %d, dstInport: %d" % (srcId, dstId, srcOutport, dstInport)
+				#print self.switches
+
+				dstSwitch = self.switches[dstId]
+				linkName = "logPnetwork%d->%d" % (srcId,dstId)
+        		link = sst.Link(linkName)
+        		portName = "output %d %d" % (srcOutport, dstInport)
+        		srcSwitch.addLink(link, portName, lat)
+        		portName = "input %d %d" % (srcOutport, dstInport)
+        		dstSwitch.addLink(link, portName, lat)
+				#makeUniNetworkLink(srcSwitch, srcId, srcOutport,
+				#					dstSwitch, dstId, dstInport, lat)
+		return		
 
 	def buildNodeConnections(self):
 		linkCnt = 0
@@ -154,14 +177,15 @@ class Interconnect:
 		self.buildEndpoints()
 		topologyParams = self.params["topology"]
 		topologyName = topologyParams["name"]
-		self.opticalSwitchRadix = topologyParams["optical_switch_radix"]
 		self.buildElectricalSwitches()
 		if self.containsOptics:
+			self.opticalSwitchRadix = topologyParams["optical_switch_radix"]
 			self.buildOpticalSwitches()
-		self.buildTopology()
+		#self.buildTopology()
+		self.buildTopology2()
 		self.buildNodeConnections()
-		switchParams = self.params["switch"]
-		self.makeOneOpticalSwitch(switchParams, 3000)
+		#switchParams = self.params["switch"]
+		#self.makeOneOpticalSwitch(switchParams, 3000)
 
 ## Returns the command line argv in terms of a vector that is 0-indexed
 def readCmdLineParams():

@@ -18,7 +18,7 @@
 #include <sstmac/sst_core/integrated_component.h>
 #endif
 
-#include <vector>
+#include <unordered_map>
 //#include <sst/core/event.h>
 
 //DeclareDebugSlot(network_switch)
@@ -136,8 +136,9 @@ protected:
 private: 
   switch_id my_addr_;
   int num_ports_;
-  std::vector<event_handler*> outport_handler_;
-  std::vector<event_handler*> inport_handler_;
+  std::unordered_map<int,event_handler*> outport_handler_;
+  std::unordered_map<int,event_handler*> inport_handler_;
+  
   // given an index, the value of the entry is the output port that said inport is currently connected to
   int* inout_connection_; 
   
