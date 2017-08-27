@@ -100,7 +100,7 @@ class dummy_switch : public test_component {
     //this has to be called in the base child class
     init_links(params);
     //init params
-    num_ping_pongs_ = params->get_optional_int_param("num_ping_pongs", 2);
+    num_ping_pongs_ = params->get_optional_int_param("num_ping_pongs", 10);
     latency_ = params->get_time_param("latency");
   }
 
@@ -161,10 +161,12 @@ class dummy_switch : public test_component {
   }
 
   link_handler* credit_handler(int port) const override {
+    std::cout << "id: " << std::to_string(id_) << " receiving credit from port: " << std::to_string(port) << std::endl;
     return new_link_handler(this, &dummy_switch::recv_credit);
   }
 
   link_handler* payload_handler(int port) const override {
+    std::cout << "id: " << std::to_string(id_) << " receiving payload from port: " << std::to_string(port) << std::endl;
     return new_link_handler(this, &dummy_switch::recv_payload);
   }
 

@@ -74,7 +74,8 @@ class Interconnect:
 			for i in range(self.optical_switches_per_group):
 				optical_switch_id = group_index_offset + i
 				switch = sst.Component("Switch %d" % optical_switch_id, "macro.%s" % switchName)
-				switch.addParam("id" , i)
+				#sid = group_index_offset + i
+				switch.addParam("id" , optical_switch_id)
 				switch.addParams(macroToCoreParams(switchParams))
 				switch.addParam("switch_type" , "optical")
 				switch.addParam("optical_switch_radix", self.opticalSwitchRadix)
@@ -84,7 +85,6 @@ class Interconnect:
 	def buildElectricalSwitches(self):
 		switchParams = self.params["switch"]
 		switchName = "flexfly_electrical" + "_switch"
-		#switchName = switchParams["model"] + "_switch"
 		totalSwitchesPerGroup = self.optical_switches_per_group + self.switches_per_group
 		for i in range(self.num_switches):
 			if self.containsOptics and i % (totalSwitchesPerGroup) >= self.switches_per_group:
@@ -111,16 +111,17 @@ class Interconnect:
 			connections = self.system.switchConnections(i)
 			srcSwitch = self.switches[i]
 			lat = self.latency(linkParams)
+			print "akgaaodgiergqerguehrberuqigbqe;piurgberugh"
 			for srcId, dstId, srcOutport, dstInport in connections:
 				#print "srcId: %d and dstId: %d srcOutport: %d, dstInport: %d" % (srcId, dstId, srcOutport, dstInport)
 				#print self.switches
-
+				print "connecting - srcID: %d -> dstID: %d" % (srcId, dstId)
 				dstSwitch = self.switches[dstId]
-				linkName = "logPnetwork%d->%d" % (srcId,dstId)
+				linkName = "network %d:%d->%d:%d" % (srcId, srcOutport ,dstId, dstInport)
         		link = sst.Link(linkName)
-        		portName = "output %d %d" % (dstId, sst.macro.SwitchLogPNetworkPort)
+        		portName = "output %d %d" % (srcOutport, dstInport)
         		srcSwitch.addLink(link, portName, lat)
-        		portName = "input %d %d" % (i, sst.macro.SwitchLogPNetworkPort)
+        		portName = "input %d %d" % (srcOutport, dstInport)
         		dstSwitch.addLink(link, portName, lat)
 				#makeUniNetworkLink(srcSwitch, srcId, srcOutport,
 				#					dstSwitch, dstId, dstInport, lat)
@@ -136,16 +137,15 @@ class Interconnect:
 			for srcId, dstId, srcOutport, dstInport in connections:
 				#print "srcId: %d and dstId: %d srcOutport: %d, dstInport: %d" % (srcId, dstId, srcOutport, dstInport)
 				#print self.switches
-
+				print "connecting - srcID: %d -> dstID: %d" % (srcId, dstId)
 				dstSwitch = self.switches[dstId]
-				linkName = "logPnetwork%d->%d" % (srcId,dstId)
+				linkName = "network %d:%d->%d:%d" % (srcId, srcOutport ,dstId, dstInport)
         		link = sst.Link(linkName)
         		portName = "output %d %d" % (srcOutport, dstInport)
         		srcSwitch.addLink(link, portName, lat)
         		portName = "input %d %d" % (srcOutport, dstInport)
         		dstSwitch.addLink(link, portName, lat)
-				#makeUniNetworkLink(srcSwitch, srcId, srcOutport,
-				#					dstSwitch, dstId, dstInport, lat)
+
 		return		
 
 	def buildNodeConnections(self):

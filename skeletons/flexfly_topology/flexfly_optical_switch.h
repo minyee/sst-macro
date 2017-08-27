@@ -129,10 +129,21 @@ class flexfly_optical_switch :
 
   bool outport_connected(int outport) const;
 
+
 protected:
   void recv_payload(event* ev);
   void recv_credit(event* ev);
 
+private:
+  // sooner or later we need to simulate the fact that there will be configuration messages 
+  void receive_configure_msg();
+  
+  /*
+   * This is called by the
+   */
+  void forward_message();
+
+  bool setup_inout_connection(int inport, int outport);
 private: 
   switch_id my_addr_;
   int num_ports_;
@@ -142,8 +153,7 @@ private:
   // given an index, the value of the entry is the output port that said inport is currently connected to
   int* inout_connection_; 
   
-
-  
+  void teardown_outport_connection(int outport);
 
 };
 

@@ -12,7 +12,11 @@ namespace hw {
 																				id,
 																				mgr, 
 																				device_id::logp_overlay) {
-		std::cout << "FLEXFLY ELECTRICAL SWITCH CONSTRUCTOR" << std::endl;
+		//std::cout << "FLEXFLY ELECTRICAL SWITCH CONSTRUCTOR" << std::endl;
+		my_addr_ = params->get_int_param("id");
+		std::cout << "FLEXFLY ELECTRICAL SWITCH" << std::endl;
+		std::cout << "The address of this electrical switch is: "<< std::to_string(my_addr_) << std::endl;
+		init_links(params);
 		queue_length_ = new int[10];
 	}
 

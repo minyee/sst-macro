@@ -276,9 +276,6 @@ protected:
  void configure_optical_or_electrical_port_params(switch_id swid, std::string& str, sprockit::sim_parameters* sim_params) const;
 
 private:
- // wires the dragonfly or flexfly using  
- void dfly_wire(std::string& filename); // NOTE: CAN BE IMPLEMENTED AT A LATER TIME
-
  uint32_t num_groups_; // equivalent to parameter g in Kim's paper
  uint32_t switches_per_group_; // equivalent to parameter a in Kim's paper
  uint32_t nodes_per_switch_; // equivalent to parameter p in Kim's paper

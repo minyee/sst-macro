@@ -16,11 +16,10 @@
 namespace sstmac {
 namespace hw {
 
- flexfly_topology::flexfly_topology(sprockit::sim_parameters* params) : structured_topology(params,InitMaxPortsIntra::I_Remembered, InitGeomEjectID::I_Remembered) {
+ flexfly_topology::flexfly_topology(sprockit::sim_parameters* params) : 
+      structured_topology(params,InitMaxPortsIntra::I_Remembered, InitGeomEjectID::I_Remembered) {
 
  	// initialization of the private class member variables 
- 	// intra_group_diameter_ = 1; // this assumes that intra group topology is all to all
-  std::cout << "FLEXFLY_TOPOLOGY CONSTRUCTOR" << std::endl;
  	num_groups_ = params->get_optional_int_param("groups", 7);
  	num_optical_switches_per_group_ = 1; 
  	switches_per_group_ = params->get_optional_int_param("switches_per_group", 6);
@@ -40,7 +39,6 @@ namespace hw {
 
  // need to deallocate everything at the deconstructor
  flexfly_topology::~flexfly_topology() {
-  std::cout << "FLEXFLY_TOPOLOGY DECONSTRUCTOR" << std::endl;
   for (const std::pair<switch_id, std::vector<switch_link*>> elem : switch_connection_map_) {
     const std::vector<switch_link*>& conn_vector = elem.second;  
     //for (auto it = switch_connection_map_.begin(); it != switch_connection_map_.end(); ++it){  
@@ -129,14 +127,6 @@ namespace hw {
   return valid_switch_id(swid) && !is_optical_switch(swid);
  };
 
- /**
-  * NOTE: This can wait, DON'T IMPLEMENT FOR NOW
-  */
- void flexfly_topology::dfly_wire(std::string& filename) {
- 	// TODO: Implement this in the future to configure things from say an input adjacency graph
- 	return;
- };
-
  // DONE (RECHECK)
  void flexfly_topology::configure_optical_or_electrical_port_params(switch_id swid, 
                                                                     std::string& str, 
@@ -161,13 +151,6 @@ namespace hw {
  // DONE
  void flexfly_topology::configure_individual_port_params(switch_id src,
           												 sprockit::sim_parameters* switch_params) const {
- 	std::cout << "configure_individual_port_params" << std::endl;
-  if (!switch_params) {
- 		//spkt_throw_printf("switch_params is null");
- 	}
-
- 	//sim_params* switch_link_params = switch_params->get_namespace("switch_link");
- 	//sim_params* switch_params = switch_params->get_namespace("switch_link");
  	if (valid_switch_id(src)) {
  		std::string str;
  		if (is_optical_switch(src)) {
@@ -194,18 +177,6 @@ namespace hw {
     src_connection_vector.push_back(conns);
     //printf("Value of src_connection_vector:  %p\n", &(src_connection_vector[0]) );
     return;
-    /*
- 	  std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp = switch_connection_map_.find(source);
-    const std::vector<switch_link*>& source_switch_connection_vector = tmp->second;
-    tmp = switch_connection_map_.find(dest);
-    const std::vector<switch_link*>& dest_switch_connection_vector = tmp->second;
-    int src_outport = source_switch_connection_vector.size();
-    int dest_inport = dest_switch_connection_vector.size();
-    switch_link* src_switch_link = (switch_link *) malloc(sizeof(switch_link));
-    src_switch_link->dest_sid = dest;
-    src_switch_link->dest_inport = dest_inport;
-    src_switch_link->type = ltype;
-    */
  }
 
 
@@ -229,9 +200,9 @@ void flexfly_topology::connected_outports(const switch_id src,
 }
 
 
- bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
+bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
   return (sid < max_switch_id_);
- }
+}
 
 
  // TODO: FIGURE OUT HOW THIS FUNCTION WORKS

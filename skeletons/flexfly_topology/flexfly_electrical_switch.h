@@ -74,7 +74,7 @@ void recv_credit(event* ev);
 
 private:
 int* queue_length_;
-	
+switch_id my_addr_;
 int port_cnt_;
 
  //void (std::vector<>)
