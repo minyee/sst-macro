@@ -277,24 +277,22 @@ protected:
 
 private:
  uint32_t num_groups_; // equivalent to parameter g in Kim's paper
+ 
  uint32_t switches_per_group_; // equivalent to parameter a in Kim's paper
+ 
  uint32_t nodes_per_switch_; // equivalent to parameter p in Kim's paper
  
- //int intra_group_diameter_;
  uint32_t num_optical_switches_;
 
  uint32_t num_total_switches_;
+ 
  uint32_t optical_switch_radix_;
- uint32_t num_optical_switches_per_group_;
  
  switch_id max_switch_id_;
 
  node_id max_node_id_;
 
-//maps a switch_id to a vector of connections of said switch
  std::unordered_map<switch_id, std::vector<switch_link*>> switch_connection_map_;
-//maps a switch_id (must be electrical) to a vector of all the nodes (end-point compute) it is connected to
- //std::unordered_map<switch_id, std::vector<node_id>> node_connection_map_;
 
  void setup_flexfly_topology();
 
@@ -331,10 +329,6 @@ public:
  
  int switches_per_group() {
  	return switches_per_group_;
- }
-
- int num_optical_switches_per_group() {
-  return num_optical_switches_per_group_;
  }
 
 };

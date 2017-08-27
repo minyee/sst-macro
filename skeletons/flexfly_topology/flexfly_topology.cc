@@ -17,23 +17,16 @@ namespace sstmac {
 namespace hw {
 
  flexfly_topology::flexfly_topology(sprockit::sim_parameters* params) : 
-      structured_topology(params,InitMaxPortsIntra::I_Remembered, InitGeomEjectID::I_Remembered) {
-
- 	// initialization of the private class member variables 
- 	num_groups_ = params->get_optional_int_param("groups", 7);
- 	num_optical_switches_per_group_ = 1; 
- 	switches_per_group_ = params->get_optional_int_param("switches_per_group", 6);
- 	nodes_per_switch_ = params->get_optional_int_param("nodes_per_switch", 7);
+                              structured_topology(params,InitMaxPortsIntra::I_Remembered, 
+                                                  InitGeomEjectID::I_Remembered) {
+ 	num_groups_ = params->get_optional_int_param("groups", 7); // controls g
+ 	switches_per_group_ = params->get_optional_int_param("switches_per_group", 6); // controls a
+  switches_per_group_ = num_groups_ - 1;
+ 	nodes_per_switch_ = params->get_optional_int_param("nodes_per_switch", 4);
   optical_switch_radix_ = params->get_optional_int_param("optical_switch_radix", switches_per_group_);
- 	num_optical_switches_ = num_groups_ * num_optical_switches_per_group_; // for now, assume that each group will have one optical switch attached to itself.
+ 	num_optical_switches_ = switches_per_group_;
  	num_total_switches_ = num_optical_switches_ + num_groups_ * switches_per_group_;
- 	//switch_id sid = 0;
-  bool force_set_opt_switch_params = 
-              params->get_optional_bool_param("force_set_opt_switch_params", true);
-  num_optical_switches_per_group_ = (switches_per_group_ / optical_switch_radix_) + 
-                                        ((switches_per_group_ % optical_switch_radix_ == 0) ? 0 : 1);
-  num_optical_switches_per_group_ = force_set_opt_switch_params ? 1 : num_optical_switches_per_group_;
-  optical_switch_radix_ = force_set_opt_switch_params ? switches_per_group_ : optical_switch_radix_;
+  optical_switch_radix_ = num_groups_;
  	setup_flexfly_topology();
  }
 
@@ -49,7 +42,31 @@ namespace hw {
 
  }
 
+ /**
+  * the implementation is the one where the optical radix is the same as the # of 
+  * groups, and there will be switches_per_group_ number of optical switches
+  */
+ void flexfly_topology::setup_flexfly_topology() {
+   // first step: connect all the switches within the same group together
+   for (int group = 0; group < num_groups_; group++) {
+     switch_id group_offset = group * switches_per_group_;
+     for (int index = 0; index < switches_per_group_; index++) {
+       switch_id swid = group_offset + index;
+       for (int target_index = index + 1; target_index < switches_per_group_; target_index++) {
+         switch_id target_swid = group_offset + target_index;
+         connect_switches(swid, target_swid, Link_Type::electrical);
+         connect_switches(target_swid, swid, Link_Type::electrical);
+       }
+     }  
+   }
 
+   // second step: connect all the switches within groups to the 
+   switch_id *last_used_id = new switch_id[num_groups_];
+
+   //delete [] last_used_id;
+ }
+
+ /*
  void flexfly_topology::setup_flexfly_topology() {
   // setup the intra-group all-to-all connection first.
   for (int group = 0; group < num_groups_; group++) {
@@ -92,6 +109,7 @@ namespace hw {
   max_switch_id_ = num_groups_ * (switches_per_group_ + num_optical_switches_per_group_) - 1;
   max_node_id_ = num_groups_ * switches_per_group_ * nodes_per_switch_ - 1;
  }
+*/
 
  void flexfly_topology::configure_metis(metis_config* configuration) const {
 	if (!configuration) {
@@ -116,8 +134,7 @@ namespace hw {
   if (!valid_switch_id(swid)) {
  		return false;
  	} 
-  int group_num = swid / (switches_per_group_ + num_optical_switches_per_group_);
- 	return swid >= group_num * (switches_per_group_ + num_optical_switches_per_group_) + switches_per_group_;
+ 	return swid >= num_groups_ * switches_per_group_;
  };
 
  /**
@@ -246,7 +263,7 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
     } else { // different group but can reach either by 1 global and 1 local or 1 local and then 1 global
       std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_iter = switch_connection_map_.find(src);
       const std::vector<switch_link*>& conn_vector = tmp_iter->second;
-      int dest_group = dst / (switches_per_group_ + num_optical_switches_per_group_);
+      //int dest_group = dst / (switches_per_group_ + num_optical_switches_per_group_);
       bool two_or_three = true; 
       // 1) have to search through the vector of all port connections of it's own global link
       // 2) also to search through the connection vectors of all of the switch's neighbors
@@ -255,8 +272,8 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
       for (switch_link* tmp_link : conn_vector ) {
         if (tmp_link->type == electrical)
           continue;
-        if (tmp_link->dest_sid / (switches_per_group_ + num_optical_switches_per_group_) == dest_group)
-          return 2;
+        //if (tmp_link->dest_sid / (switches_per_group_ + num_optical_switches_per_group_) == dest_group)
+          //return 2;
       }
 
       //if (conn_vector)
@@ -266,14 +283,12 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
   };
 
   int flexfly_topology::num_hops_to_node(node_id src, node_id dst) const {
-    //std::cout << "num_hops_to_node?" << std::endl;
-    int supposed_src_swid = src / (nodes_per_switch_);
-    int supposed_dst_swid = dst / (nodes_per_switch_);
-    int src_group = supposed_src_swid / switches_per_group_;
-    int dst_group = supposed_dst_swid / switches_per_group_;
-    switch_id actual_src_swid = src_group * (switches_per_group_ + num_optical_switches_per_group_) + supposed_src_swid % switches_per_group_;
-    switch_id actual_dst_swid = dst_group * (switches_per_group_ + num_optical_switches_per_group_) + supposed_dst_swid % switches_per_group_;
-    int min_dist = minimal_distance(actual_dst_swid, actual_dst_swid);
+    int src_swid = src / (nodes_per_switch_);
+    int dst_swid = dst / (nodes_per_switch_);
+    //int src_group = supposed_src_swid / switches_per_group_;
+    //int dst_group = supposed_dst_swid / switches_per_group_;
+    
+    int min_dist = minimal_distance(src_swid, dst_swid);
     //std::cout << std::to_string(min_dist) << std::endl;
     return min_dist + 2; // added by 2 because each node is 1 hop away from it's switch
   };
@@ -317,14 +332,14 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
   };
 
   inline switch_id flexfly_topology::public_swid_to_private_swid(switch_id swid) const {
-    switch_id offset = swid % (switches_per_group_ + num_optical_switches_per_group_);
-    switch_id group = swid / (switches_per_group_ + num_optical_switches_per_group_);
+    switch_id offset = swid % (switches_per_group_);
+    switch_id group = swid / (switches_per_group_);
     return group + offset;
   };
 
   // returns the group id of a given switch
   inline int flexfly_topology::group_from_swid(switch_id swid) const {
-    return swid / (switches_per_group_ + num_optical_switches_per_group_);
+    return swid / (switches_per_group_);
   };
 
   /**
