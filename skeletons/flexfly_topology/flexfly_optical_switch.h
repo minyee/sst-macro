@@ -50,6 +50,7 @@ class optical_switch : public connectable_component {
   optical_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr) :
     connectable_component(params,id,
       device_id(params->get_int_param("id"),device_id::router),mgr) {
+      std::cout << "CIBAI THE SWITCH PARAM IS? " << std::to_string(params->get_int_param("id")) << std::endl;
     };
 };  
 /**
@@ -149,7 +150,6 @@ private:
   int num_ports_;
   std::unordered_map<int,event_handler*> outport_handler_;
   std::unordered_map<int,event_handler*> inport_handler_;
-  
   // given an index, the value of the entry is the output port that said inport is currently connected to
   int* inout_connection_; 
   

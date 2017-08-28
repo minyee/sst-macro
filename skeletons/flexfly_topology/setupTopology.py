@@ -41,8 +41,10 @@ class Interconnect:
 			self.optical_topology_params = self.params["topology"]
 			self.num_groups = int(self.optical_topology_params["groups"])
 			self.switches_per_group = int(self.optical_topology_params["switches_per_group"])
+			self.num_elec_switches = self.num_groups * self.switches_per_group
 			self.nodes_per_switch = int(self.optical_topology_params["nodes_per_switch"])
 			self.optical_switch_radix = int(self.optical_topology_params["optical_switch_radix"])
+			self.optical_switch_radix = self.num_groups
 			if self.optical_topology_params.has_key("link_multiplicity"):
 				self.link_multiplicity = int(self.optical_topology_params["link_multiplicity"])
 			else:
@@ -68,32 +70,28 @@ class Interconnect:
 		switchParams = self.params["switch"]
 		switchName = "flexfly_optical" + "_switch"
 		#switchName = switchParams["model"] + "_switch"
-		for group in range(self.num_groups):
-			group_index_offset = group * (self.switches_per_group + self.optical_switches_per_group) \
-									+ self.switches_per_group
-			for i in range(self.optical_switches_per_group):
-				optical_switch_id = group_index_offset + i
-				switch = sst.Component("Switch %d" % optical_switch_id, "macro.%s" % switchName)
-				#sid = group_index_offset + i
-				switch.addParam("id" , optical_switch_id)
-				switch.addParams(macroToCoreParams(switchParams))
-				switch.addParam("switch_type" , "optical")
-				switch.addParam("optical_switch_radix", self.opticalSwitchRadix)
-				self.switches[group_index_offset + i] = switch
+		for index in range(self.switches_per_group):
+			optical_switch_id = index + self.num_elec_switches
+			switch = sst.Component("Switch %d" % optical_switch_id, "macro.%s" % switchName)
+			switch.addParam("id" , optical_switch_id)
+			switch.addParams(macroToCoreParams(switchParams))
+			switch.addParam("switch_type" , "optical")
+			switch.addParam("optical_switch_radix", self.opticalSwitchRadix)
+			self.switches[optical_switch_id] = switch
 		return
 
 	def buildElectricalSwitches(self):
 		switchParams = self.params["switch"]
 		switchName = "flexfly_electrical" + "_switch"
-		totalSwitchesPerGroup = self.optical_switches_per_group + self.switches_per_group
-		for i in range(self.num_switches):
-			if self.containsOptics and i % (totalSwitchesPerGroup) >= self.switches_per_group:
-				continue
+		#totalSwitchesPerGroup = self.optical_switches_per_group + self.switches_per_group
+		for i in range(self.num_elec_switches):
+			#if self.containsOptics and i % (totalSwitchesPerGroup) >= self.switches_per_group:
+				#continue
 			switch = sst.Component("Switch %d" % i, "macro.%s" % switchName)
 			switch.addParam("id" , i) 
 			switch.addParams(macroToCoreParams(switchParams))
 			switch.addParam("switch_type" , "electrical")
-			self.switches[i] = switch  
+			self.switches[i] = switch 
 		return
 
 	def latency(self, params):
@@ -111,7 +109,6 @@ class Interconnect:
 			connections = self.system.switchConnections(i)
 			srcSwitch = self.switches[i]
 			lat = self.latency(linkParams)
-			print "akgaaodgiergqerguehrberuqigbqe;piurgberugh"
 			for srcId, dstId, srcOutport, dstInport in connections:
 				#print "srcId: %d and dstId: %d srcOutport: %d, dstInport: %d" % (srcId, dstId, srcOutport, dstInport)
 				#print self.switches
@@ -137,7 +134,7 @@ class Interconnect:
 			for srcId, dstId, srcOutport, dstInport in connections:
 				#print "srcId: %d and dstId: %d srcOutport: %d, dstInport: %d" % (srcId, dstId, srcOutport, dstInport)
 				#print self.switches
-				print "connecting - srcID: %d -> dstID: %d" % (srcId, dstId)
+				print "connecting - srcID: %d port %d -> dstID: %d port %d" % (srcId, srcOutport, dstId, dstInport)
 				dstSwitch = self.switches[dstId]
 				linkName = "network %d:%d->%d:%d" % (srcId, srcOutport ,dstId, dstInport)
         		link = sst.Link(linkName)

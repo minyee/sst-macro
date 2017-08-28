@@ -27,19 +27,20 @@ namespace hw {
  	num_optical_switches_ = switches_per_group_;
  	num_total_switches_ = num_optical_switches_ + num_groups_ * switches_per_group_;
   optical_switch_radix_ = num_groups_;
+  max_switch_id_ = num_total_switches_ - 1;
+  max_node_id_ = num_groups_ * switches_per_group_ * nodes_per_switch_ - 1;
  	setup_flexfly_topology();
  }
 
  // need to deallocate everything at the deconstructor
  flexfly_topology::~flexfly_topology() {
-  for (const std::pair<switch_id, std::vector<switch_link*>> elem : switch_connection_map_) {
-    const std::vector<switch_link*>& conn_vector = elem.second;  
-    //for (auto it = switch_connection_map_.begin(); it != switch_connection_map_.end(); ++it){  
-    for (auto const&  switch_link_ptr : conn_vector) {
-      free(switch_link_ptr);
-    }
-  }
-
+   for (const std::pair<switch_id, std::vector<switch_link*>> elem : switch_connection_map_) {
+     const std::vector<switch_link*>& conn_vector = elem.second;  
+     //for (auto it = switch_connection_map_.begin(); it != switch_connection_map_.end(); ++it){  
+     for (auto const&  switch_link_ptr : conn_vector) {
+       free(switch_link_ptr);
+     }
+   }
  }
 
  /**
@@ -60,10 +61,20 @@ namespace hw {
      }  
    }
 
-   // second step: connect all the switches within groups to the 
-   switch_id *last_used_id = new switch_id[num_groups_];
+   // second step: connect all the switches within groups to the optical switches
+   for (int group = 0; group < num_groups_; group++) {
+     switch_id group_offset = group * switches_per_group_;
+     for (int index = 0; index < switches_per_group_; index++) {
+       switch_id swid = group_offset + index;
+       switch_id optical_swid = num_groups_ * switches_per_group_ + index;
+       //std::cout << "optical_swid is: " << std::to_string(optical_swid) << std::endl;
+       connect_switches(swid, optical_swid, Link_Type::optical);
+       connect_switches(optical_swid, swid, Link_Type::optical);
+     }
+   }
 
-   //delete [] last_used_id;
+
+   std::cout << "The size of unordered_map: " << std::to_string(switch_connection_map_.size()) << std::endl;
  }
 
  /*
@@ -192,7 +203,6 @@ namespace hw {
     conns->type = ltype;
     int src_port = src_connection_vector.size();
     src_connection_vector.push_back(conns);
-    //printf("Value of src_connection_vector:  %p\n", &(src_connection_vector[0]) );
     return;
  }
 

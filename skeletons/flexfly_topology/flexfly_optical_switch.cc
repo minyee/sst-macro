@@ -12,7 +12,7 @@ namespace hw {
 		init_links(params); // this has to be called upon class initialization
 		my_addr_ = params->get_int_param("id");
 		std::cout << "FLEXFLY_OPTICAL_SWITCH" << std::endl;
-		std::cout << "This address of this switch is: " << std::to_string(my_addr_) << std::endl;
+		std::printf("This address of this switch is: %d with pointer: %p\n", this->my_addr_, this);
 		num_ports_ = params->get_int_param("optical_switch_radix");
 		inout_connection_ = new int[num_ports_];
 		for (int i = 0; i < num_ports_; i++) {
@@ -21,7 +21,7 @@ namespace hw {
 	};
 
 	flexfly_optical_switch::~flexfly_optical_switch() {
-		//std::cout << "FLEXFLY_OPTICAL_SWITCH DECONSTRUCTOR" << std::endl;
+		//std::printf("FLEXFLY_OPTICAL_SWITCH DECONSTRUCTOR pointer: %p with id: %d\n", this, this->my_addr_);
 		delete [] inout_connection_;
 	}
 
@@ -56,12 +56,14 @@ namespace hw {
 	};
 
 	link_handler* flexfly_optical_switch::payload_handler(int port) const {
-		std::printf("payload handler being called on switch with address: %p and addr is %d\n", this, my_addr_);
+		std::printf("payload handler being called on switch with address: %p and addr is %d\n", this, this->my_addr_);
+		//int corresponding_outport = inout_connection_[port];
+		//event_handler* handler = inout_connection_[corresponding_outport];
 		return new_link_handler(this, &flexfly_optical_switch::recv_payload);
 	};
 
 	link_handler* flexfly_optical_switch::credit_handler(int port) const {
-		std::printf("credit handler being called on switch with address: %p and addr is %d\n", this, my_addr_);
+		std::printf("credit handler being called on switch with address: %p and addr is %d\n", this, this->my_addr_);
 		return new_link_handler(this, &flexfly_optical_switch::recv_credit);
 	};
 
@@ -78,6 +80,10 @@ namespace hw {
 	};
 
 	void flexfly_optical_switch::recv_payload(event* ev) {
+		// figure out which link handler this is supposed to 
+		//int corresponding_outport
+		//event_handler* handler = inout_connection_[corresponding_outport];
+		//send_to_link(handler, new event());
 		return;
 	};
 
@@ -105,7 +111,6 @@ namespace hw {
 		for (int i = 0; i < num_ports_; i++) {
 			if (inout_connection_[i] == outport) {
 				inout_connection_[i] = -1;
-				// schedule some sort of delay maybe?
 			}	
 		}
 	}

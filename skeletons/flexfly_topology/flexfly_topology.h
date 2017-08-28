@@ -95,8 +95,7 @@ public:
      switches that are only a part of the network
      @return The total number of switches
   */
-  virtual int num_switches() const override { //DONE
-    std::cout << "flexfly c++ code: num_switches?" << std::endl;
+  virtual int num_switches() const override { 
   	return num_groups_ * switches_per_group_ + num_optical_switches_;
   };
 
@@ -119,7 +118,7 @@ public:
 
   virtual int num_nodes() const override { // DONE
     int node_num = num_groups_ * switches_per_group_ * nodes_per_switch_;
-    //std::cout << "num_nodes?" << std::endl;
+    //std::cout << "num_nodes: " << std::to_string(node_num) << std::endl;
     return node_num;
   };
 
@@ -129,7 +128,7 @@ public:
    * @return The max node id
    */
   virtual node_id max_node_id() const override{ // DONE
-    std::cout << "max_node_id?" << std::endl;
+    //std::cout << "max_node_id?" << std::endl;
     return max_node_id_;
   };
 
@@ -139,7 +138,7 @@ public:
    * @return Whether a node object should be built for a given node_id
    */
   virtual bool node_id_slot_filled(node_id nid) const override { // DONE
-    std::cout << "node_id_slot_filled?" << std::endl;
+    //std::cout << "node_id_slot_filled?" << std::endl;
     return (nid < flexfly_topology::max_node_id());
   };
 
