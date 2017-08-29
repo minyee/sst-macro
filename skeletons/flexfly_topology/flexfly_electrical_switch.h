@@ -1,7 +1,10 @@
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <vector> 
-
+#include <sstmac/hardware/router/router_fwd.h>
+#include <sstmac/hardware/router/router.h>
+#include <sstmac/hardware/router/minimal_routing.h>
+//RegisterNamespaces("switch");
 namespace sstmac {
 namespace hw {
 
@@ -72,7 +75,12 @@ void recv_payload(event* ev);
 
 void recv_credit(event* ev);
 
+protected:
+router* router_;
+
 private:
+int radix_;
+
 int* queue_length_;
 switch_id my_addr_;
 int port_cnt_;

@@ -100,6 +100,7 @@ pisces_abstract_switch::pisces_abstract_switch(
 
   sprockit::sim_parameters* ej_params = params->get_optional_namespace("ejection");
   std::vector<topology::injection_port> conns;
+  //using namespace std;
   top_->nodes_connected_to_ejection_switch(my_addr_, conns);
   if (!ej_params->has_param("credits")){
     //never be limited by credits

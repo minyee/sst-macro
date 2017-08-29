@@ -1,3 +1,8 @@
+/**
+ * These are just essentially classes that represent the packets in the Flexfly 
+ * interconnect network
+ */
+
 #include <sstmac/common/sst_event.h>
 
 namespace sstmac {
