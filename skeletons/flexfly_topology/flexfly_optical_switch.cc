@@ -1,7 +1,11 @@
 #include "flexfly_optical_switch.h"
+#include "flexfly_events.h"
 #include <sstmac/hardware/common/connection.h>
 #include <iostream>
 #include <stdio.h>
+
+#define DONT_CARE 1000
+
 
 namespace sstmac {
 namespace hw {
@@ -26,8 +30,6 @@ namespace hw {
 	}
 
 	void flexfly_optical_switch::setup() {
-		//init(phase);
-		//connection::init(phase);makes
 		return; 
 	};
 
@@ -39,9 +41,12 @@ namespace hw {
                               					int src_outport, 
                               					int dst_inport,
                               					event_handler* credit_handler) {
-		std::cout << "input src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
- 		
- 		inport_handler_[2] = credit_handler;
+		//std::cout << "input src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << " ";
+ 		//std::printf(" and the pointer is: %p\n", credit_handler);
+ 		// the port in this switch from which an event has been received is the dst_inport
+ 		inport_connections_[dst_inport] = src_outport;
+ 		int input_port = dst_inport;
+ 		inport_handler_[input_port] = credit_handler;
 		return;
 	};
 
@@ -50,15 +55,15 @@ namespace hw {
                               					int dst_inport,
                               					event_handler* payload_handler) {
 		//std::cout << "src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
-		std::cout << "src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
- 		outport_handler_[0] = payload_handler;
+		//std::cout << "src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
+ 		outport_connections_[src_outport] = dst_inport;
+ 		int output_port = src_outport;
+ 		outport_handler_[output_port] = payload_handler;
 		return;
 	};
 
 	link_handler* flexfly_optical_switch::payload_handler(int port) const {
 		std::printf("payload handler being called on switch with address: %p and addr is %d\n", this, this->my_addr_);
-		//int corresponding_outport = inout_connection_[port];
-		//event_handler* handler = inout_connection_[corresponding_outport];
 		return new_link_handler(this, &flexfly_optical_switch::recv_payload);
 	};
 
@@ -81,9 +86,16 @@ namespace hw {
 
 	void flexfly_optical_switch::recv_payload(event* ev) {
 		// figure out which link handler this is supposed to 
-		//int corresponding_outport
-		//event_handler* handler = inout_connection_[corresponding_outport];
-		//send_to_link(handler, new event());
+		flexfly_payload_event* fev = dynamic_cast<flexfly_payload_event*>(ev);
+		if (fev == nullptr) {
+			return;
+		}
+		int switch_inport = fev->dst_inport();
+		int switch_outport = inout_connection_[switch_inport];
+		event_handler* handler = outport_handler_[switch_outport];
+		int dst_inport = outport_connections_[switch_outport];
+		//delete fev;
+		send_to_link(handler, new flexfly_payload_event(my_addr_, switch_outport, DONT_CARE, dst_inport));
 		return;
 	};
 

@@ -146,21 +146,28 @@ class Interconnect:
 		return		
 
 	def buildNodeConnections(self):
-		linkCnt = 0
-		for i in range(self.num_nodes):
-			switchId = self.system.nodeToLogPSwitch(i)
-			linkname = "InjectionLink%d:Node%d->Switch%d" % (linkCnt, i, switchId)
-			link = sst.Link(linkname)
-			portName1 = "srcPort: %d -> dstPort: %d" % (linkCnt,linkCnt)
-			portName2 = "srcPort: %d -> dstPort: %d" % (linkCnt,linkCnt)
-			node = self.nodes[i]
+		for i in range(self.num_groups * self.switches_per_group):
+			switch = self.switches[i];
+			for nodeIndex in range(self.nodes_per_switch):
+				index = nodeIndex + (i * self.nodes_per_switch)
+				node = self.nodes[index]
+				switchPortIndex = self.switches_per_group - 1 + 1 + nodeIndex
+				makeUniLink("injection",node,index,0,switch,i,switchPortIndex,smallLatency)
+				makeUniLink("ejection",switch,i,switchPortIndex,node,index,0,smallLatency)
+			#switchId = self.system.nodeToLogPSwitch(i)
+			#switchId = i / self.nodes_per_switch
+			#linkname = "InjectionLink%d:Node%d->Switch%d" % (linkCnt, i, switchId)
+			#link = sst.Link(linkname)
+			#portName1 = "srcPort: %d -> dstPort: %d" % (linkCnt,linkCnt)
+			#portName2 = "srcPort: %d -> dstPort: %d" % (linkCnt,linkCnt)
+			#node = self.nodes[i]
 			
-			switch = self.switches[switchId]
-			portName1 = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
-			portName2 = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
-			node.addLink(link, portName1, smallLatency)
-			switch.addLink(link, portName2, smallLatency)
-			linkCnt += 1
+			#switch = self.switches[switchId]
+			#portName1 = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
+			#portName2 = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
+			#node.addLink(link, portName1, smallLatency)
+			#switch.addLink(link, portName2, smallLatency)
+			#linkCnt += 1
 
 	def makeOneOpticalSwitch(self, switchParams, i):
 		opticalSwitchName = "macro." + "flexfly_optical_switch"
@@ -213,6 +220,9 @@ def macroToCoreParams(theDict):
 def setupTopology():
 	import sys
 	params = readCmdLineParams()
+	nodeParams = params["node"]
+	swParams = params["switch"]
+	
 	builtinApps = [
    		"apitest",
        	"global_test",
@@ -228,7 +238,7 @@ def setupTopology():
        	"user_app_cxx_full_main",
 	]
 
-	for appIdx in range(15):
+	for appIdx in range(10):
 		appKey = "app%d" % (appIdx + 1)
 		nodeParams = params["node"]
 		if nodeParams.has_key(appKey):
@@ -237,6 +247,33 @@ def setupTopology():
 			if not appName in builtinApps:
 				cmd = "import sst.%s" % appName
 				exec(cmd)
-			del nodeParams[appKey]    
+			del nodeParams[appKey]
+
+	debugList = []
+	if params.has_key("debug"):
+		debugList = params["debug"].strip().split()
+	for i in range(len(sys.argv)):
+		if sys.argv[i] == "-d" or sys.argv[i] == "--debug":
+			debugList.extend(sys.argv[i+1].split(","))
+
+	icParams = {}
+	icParams["topology"] = params["topology"]
+	nodeParams["interconnect"] = icParams
+	if debugList:
+		nodeParams["debug"] = " ".join(debugList)
+	swParams["topology"] = params["topology"]
+
+	swParams["topology"] = "torus"
+
+	#move every param in the global namespace 
+	#into the individal namespaces
+	for ns in "node", "switch":
+		nsParams = params[ns]
+		for key in params:
+			val = params[key]
+			if isinstance(val, str):
+				if not nsParams.has_key(key):
+					nsParams[key] = val    
+	
 	interconnect = Interconnect(params)
 	interconnect.build()

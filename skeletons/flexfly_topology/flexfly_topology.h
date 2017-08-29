@@ -27,7 +27,9 @@ virtual int diameter() const override {return 3;};
 
 protected:
   struct switch_link {
+    switch_id src_sid;
     switch_id dest_sid; // switch_id of the destination switch
+    int src_outport;
     int dest_inport; // port of the destination switch
     Link_Type type; 
   };
@@ -291,7 +293,9 @@ private:
 
  node_id max_node_id_;
 
- std::unordered_map<switch_id, std::vector<switch_link*>> switch_connection_map_;
+ std::unordered_map<switch_id, std::vector<switch_link*>> switch_outport_connection_map_;
+
+ std::unordered_map<switch_id, std::vector<switch_link*>> switch_inport_connection_map_;
 
  void setup_flexfly_topology();
 

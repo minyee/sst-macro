@@ -100,6 +100,7 @@ class dummy_switch : public test_component {
     //this has to be called in the base child class
     init_links(params);
     //init params
+    std::cout << "id: " << std::to_string(id) << " constructor" << std::endl;
     num_ping_pongs_ = params->get_optional_int_param("num_ping_pongs", 10);
     latency_ = params->get_time_param("latency");
   }
@@ -181,5 +182,4 @@ class dummy_switch : public test_component {
   timestamp latency_;
   int num_ping_pongs_;
   uint64_t id_;
-
 };
