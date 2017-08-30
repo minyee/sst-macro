@@ -36,7 +36,6 @@ namespace hw {
  flexfly_topology::~flexfly_topology() {
    for (const std::pair<switch_id, std::vector<switch_link*>> elem : switch_outport_connection_map_) {
      const std::vector<switch_link*>& conn_vector = elem.second;  
-     //for (auto it = switch_outport_connection_map_.begin(); it != switch_outport_connection_map_.end(); ++it){  
      for (auto const&  switch_link_ptr : conn_vector) {
        free(switch_link_ptr);
      }
@@ -72,9 +71,6 @@ namespace hw {
        connect_switches(optical_swid, swid, Link_Type::optical);
      }
    }
-
-
-   std::cout << "The size of unordered_map: " << std::to_string(switch_outport_connection_map_.size()) << std::endl;
  }
 
  /*
@@ -162,10 +158,9 @@ namespace hw {
  	if (!switch_params) {
  		return;
  	}
- 	
- 	sprockit::sim_parameters* specific_switch_params = switch_params->get_namespace(str); // refers to either optical or electrical
+ 	// refers to either optical or electrical
+ 	sprockit::sim_parameters* specific_switch_params = switch_params->get_namespace(str); 
   sprockit::sim_parameters* switch_link_params = specific_switch_params->get_namespace("switch_link");
-
  	double bandwidth = switch_link_params->get_bandwidth_param("bandwidth"); // in units of bytes/sec I think
  	int port_count = switch_link_params->get_int_param("port_count");
  	long buf_space = switch_link_params->get_byte_length_param("buffer_size");

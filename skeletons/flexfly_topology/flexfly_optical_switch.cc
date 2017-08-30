@@ -15,8 +15,8 @@ namespace hw {
 		//std::cout << "FLEXFLY OPTICAL SWITCH CONSTRUCTOR" << std::endl;
 		init_links(params); // this has to be called upon class initialization
 		my_addr_ = params->get_int_param("id");
-		std::cout << "FLEXFLY_OPTICAL_SWITCH" << std::endl;
-		std::printf("This address of this switch is: %d with pointer: %p\n", this->my_addr_, this);
+		//std::cout << "FLEXFLY_OPTICAL_SWITCH" << std::endl;
+		//std::printf("This address of this switch is: %d with pointer: %p\n", this->my_addr_, this);
 		num_ports_ = params->get_int_param("optical_switch_radix");
 		inout_connection_ = new int[num_ports_];
 		for (int i = 0; i < num_ports_; i++) {
@@ -63,12 +63,12 @@ namespace hw {
 	};
 
 	link_handler* flexfly_optical_switch::payload_handler(int port) const {
-		std::printf("payload handler being called on switch with address: %p and addr is %d\n", this, this->my_addr_);
+		//std::printf("payload handler being called on switch with address: %p and addr is %d\n", this, this->my_addr_);
 		return new_link_handler(this, &flexfly_optical_switch::recv_payload);
 	};
 
 	link_handler* flexfly_optical_switch::credit_handler(int port) const {
-		std::printf("credit handler being called on switch with address: %p and addr is %d\n", this, this->my_addr_);
+		//std::printf("credit handler being called on switch with address: %p and addr is %d\n", this, this->my_addr_);
 		return new_link_handler(this, &flexfly_optical_switch::recv_credit);
 	};
 
@@ -94,7 +94,6 @@ namespace hw {
 		int switch_outport = inout_connection_[switch_inport];
 		event_handler* handler = outport_handler_[switch_outport];
 		int dst_inport = outport_connections_[switch_outport];
-		//delete fev;
 		send_to_link(handler, new flexfly_payload_event(my_addr_, switch_outport, DONT_CARE, dst_inport));
 		return;
 	};

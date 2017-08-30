@@ -91,6 +91,7 @@ class Interconnect:
 			switch.addParam("id" , i) 
 			switch.addParams(macroToCoreParams(switchParams))
 			switch.addParam("switch_type" , "electrical")
+			switch.addParam("total_radix", self.switches_per_group + self.nodes_per_switch)
 			self.switches[i] = switch 
 		return
 
@@ -136,12 +137,13 @@ class Interconnect:
 				#print self.switches
 				print "connecting - srcID: %d port %d -> dstID: %d port %d" % (srcId, srcOutport, dstId, dstInport)
 				dstSwitch = self.switches[dstId]
-				linkName = "network %d:%d->%d:%d" % (srcId, srcOutport ,dstId, dstInport)
-        		link = sst.Link(linkName)
-        		portName = "output %d %d" % (srcOutport, dstInport)
-        		srcSwitch.addLink(link, portName, lat)
-        		portName = "input %d %d" % (srcOutport, dstInport)
-        		dstSwitch.addLink(link, portName, lat)
+				makeUniLink("network", srcSwitch, srcId, srcOutport, dstSwitch, dstId, dstInport, smallLatency)
+				#linkName = "network %d:%d->%d:%d" % (srcId, srcOutport ,dstId, dstInport)
+        		#link = sst.Link(linkName)
+        		#portName = "output %d %d" % (srcOutport, dstInport)
+        		#srcSwitch.addLink(link, portName, lat)
+        		#portName = "input %d %d" % (srcOutport, dstInport)
+        		#dstSwitch.addLink(link, portName, lat)
 
 		return		
 
@@ -168,6 +170,52 @@ class Interconnect:
 			#node.addLink(link, portName1, smallLatency)
 			#switch.addLink(link, portName2, smallLatency)
 			#linkCnt += 1
+	def buildLogPNetwork(self):
+		import re
+		print "CIBAIIIIIII"
+		nproc = sst.getMPIRankCount() * sst.getThreadCount()
+		switchParams = self.params["switch"]
+		linkParams = switchParams["link"]
+		ejParams = switchParams["ejection"]
+		lat = self.latency(ejParams)
+		#gotta multiply the lat by 2
+		match = re.compile("(\d+[.]?\d*)(.*)").search(lat)
+		if not match:
+			sys.exit("improperly formatted latency %s" % lat)
+		num, units = match.groups()
+		num = eval(num) * 2
+		lat = "%8.4f%s" % (num,units.strip())
+		switches = []
+		print "nproc: %d" % nproc
+		for i in range(nproc):
+			switch = sst.Component("LogP %d" % i, "macro.logp_switch")
+			switch.addParams(macroToCoreParams(switchParams))
+			switch.addParam("id", i)
+			switches.append(switch)
+
+		for i in range(nproc):
+			sw_i = switches[i]
+			for j in range(nproc):
+				sw_j = switches[j]
+				if i==j: continue
+
+				linkName = "logPnetwork%d->%d" % (i,j)
+				link = sst.Link(linkName)
+				portName = "in-out %d %d" % (j, sst.macro.SwitchLogPNetworkPort)
+				sw_i.addLink(link, portName, lat)
+				portName = "in-out %d %d" % (i, sst.macro.SwitchLogPNetworkPort)
+				sw_j.addLink(link, portName, lat)			
+
+		for i in range(self.num_nodes):
+			injSW = self.system.nodeToLogPSwitch(i)
+			ep = self.nodes[i]
+			sw = switches[injSW]
+			linkName = "logPinjection%d->%d" % (i, injSW)
+			link = sst.Link(linkName)
+			portName = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
+			ep.addLink(link, portName, smallLatency) #put no latency here
+			portName = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
+			sw.addLink(link, portName, smallLatency)
 
 	def makeOneOpticalSwitch(self, switchParams, i):
 		opticalSwitchName = "macro." + "flexfly_optical_switch"
@@ -188,6 +236,7 @@ class Interconnect:
 		#self.buildTopology()
 		self.buildTopology2()
 		self.buildNodeConnections()
+		#self.buildLogPNetwork()
 		#switchParams = self.params["switch"]
 		#self.makeOneOpticalSwitch(switchParams, 3000)
 

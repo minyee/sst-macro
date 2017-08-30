@@ -75,16 +75,17 @@ void recv_payload(event* ev);
 
 void recv_credit(event* ev);
 
+void recv_nodal_msg(event* ev);
 protected:
 router* router_;
+std::vector<event_handler*> inport_handlers_;
+std::vector<event_handler*> outport_handlers_;
 
 private:
 int radix_;
-
 int* queue_length_;
 switch_id my_addr_;
 int port_cnt_;
-
  //void (std::vector<>)
  //std::unordered_map<port_>
 	//need a data structure that links a port id to a switch_id or 

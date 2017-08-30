@@ -2,15 +2,9 @@
  * Author: Min Yee Teh
  *
  */
-#include <sprockit/factories/factory.h>
-#include <sprockit/debug.h>
-
-//#include <sstmac/hardware/common/connection.h> // have to import connection because it contains the prototype for connectable_component
-                                              // which flexfly_optical_switch inherits
+#include <sprockit/debug.h>                   
 #include <sstmac/hardware/router/router_fwd.h>
-//#include <sstmac/hardware/topology/topology_fwd.h>
 #include <sstmac/hardware/topology/topology.h>
-//#include <sstmac/common/event_scheduler.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sstmac/hardware/switch/network_switch.h>
 
@@ -19,25 +13,11 @@
 #endif
 
 #include <unordered_map>
-//#include <sst/core/event.h>
 
 //DeclareDebugSlot(network_switch)
 #define switch_debug(...) \
   debug_printf(sprockit::dbg::network_switch, "Switch %d: %s", \
     int(addr()), sprockit::printf(__VA_ARGS__).c_str())
-//using namespace sstmac;
-//using namespace sstmac::hw;
-//using namespace SST;
-
-//template <class T, class Fxn>
-//sstmac::link_handler*
-//new_link_handler(const T* t, Fxn fxn){
-// return new_handler<T,Fxn>(const_cast<T*>(t), fxn);
-//}
-//template <class T, class Fxn>
-//sstmac::link_handler* new_link_handler(const T* t, Fxn fxn){
-  //return new SST::Event::Handler<T>(const_cast<T*>(t), fxn);
-//}
 
 
 namespace sstmac {
@@ -51,32 +31,28 @@ class optical_switch : public connectable_component {
     connectable_component(params,id,
       device_id(params->get_int_param("id"),device_id::router),mgr) {
     };
-};  
+};
+
 /**
  * @brief The network_switch class
  * A class encapsulating a network switch that packets must traverse on the network.
  * The network switch performs both routing computations and congestion modeling.
  */
 class flexfly_optical_switch :
-  public optical_switch
-{
-  
-  RegisterComponent("flexfly_optical_switch | flexfly_optical", optical_switch, flexfly_optical_switch,
-         "macro", COMPONENT_CATEGORY_NETWORK,
-         "An optical switch used in the Flexfly project");
+  public optical_switch {
+
+RegisterComponent("flexfly_optical_switch | flexfly_optical", optical_switch, flexfly_optical_switch,
+        "macro", COMPONENT_CATEGORY_NETWORK,
+        "An optical switch used in the Flexfly project");
+
  public:
-  flexfly_optical_switch(
-    sprockit::sim_parameters* params,
-    uint64_t id,
-    event_manager* mgr);
+  flexfly_optical_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 
   virtual ~flexfly_optical_switch();
 
   virtual std::string to_string() const override {
     return "Flexfly Optical Switch";
   };
-
-  //virtual void init(unsigned int phase) override;
 
   virtual void deadlock_check() override;
 
@@ -141,9 +117,10 @@ private:
   /*
    * This is called by the
    */
-  void forward_message();
+  //void forward_message();
 
   bool setup_inout_connection(int inport, int outport);
+
 private: 
   switch_id my_addr_;
   int num_ports_;
@@ -157,8 +134,6 @@ private:
 
 };
 
-
 }
 }
 
-//#endif

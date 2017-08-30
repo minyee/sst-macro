@@ -1,8 +1,9 @@
 #include "flexfly_electrical_switch.h"
+#include "flexfly_events.h"
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sprockit/sim_parameters.h>
-#include <sstmac/hardware/nic/nic.h>
+//#include <sstmac/hardware/nic/nic.h>
 #include <sprockit/util.h>
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/switch/network_switch.h>
@@ -20,9 +21,9 @@ namespace hw {
 																				mgr, 
 																				device_id::logp_overlay) {
 		my_addr_ = params->get_int_param("id");
-		radix_ = params->get_int_param("radix");
-		// std::cout << "FLEXFLY ELECTRICAL SWITCH" << std::endl;
-		std::cout << "The address of this electrical switch is: "<< std::to_string(my_addr_) << std::endl;
+		radix_ = params->get_int_param("total_radix");
+		inport_handlers_.reserve(radix_);
+		outport_handlers_.reserve(radix_);
 		init_links(params);
 		queue_length_ = new int[10];
 		sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
@@ -42,17 +43,19 @@ namespace hw {
                               						int src_outport, 
                               						int dst_inport,
                               						event_handler* credit_handler) {
-		inport_handlers[dst_inport] = credit_handler;
+		inport_handlers_[dst_inport] = credit_handler;
 	}
 
 	void flexfly_electrical_switch::connect_output(sprockit::sim_parameters* params, 
                               						int src_outport, 
                               						int dst_inport,
                               						event_handler* payload_handler) {
-		outport_handlers[src_outport] = payload_handler;
+		outport_handlers_[src_outport] = payload_handler;
 	}
 
 	link_handler* flexfly_electrical_switch::credit_handler(int port) const {
+		if (port == radix_ - 1) 
+			return new_link_handler(this, &flexfly_electrical_switch::recv_nodal_msg);
 		return new_link_handler(this, &flexfly_electrical_switch::recv_credit);
 	}
 
@@ -61,8 +64,18 @@ namespace hw {
 	}
 
 	void flexfly_electrical_switch::recv_payload(event* ev) {
-		return;
+		auto* fev = dynamic_cast<flexfly_payload_event*>(ev);
+		if (fev == nullptr) {
+			std::cout << "SHIT SHIT SHIT" << std::endl;
+			return;
+		}
+		//fev->
+
 	}
+
+	void flexfly_electrical_switch::recv_nodal_msg(event* ev) {
+		std::cout << "RECEIVED A NODAL MESSAGE" << std::endl;
+	};
 
 	void flexfly_electrical_switch::recv_credit(event* ev) {
 		return;
