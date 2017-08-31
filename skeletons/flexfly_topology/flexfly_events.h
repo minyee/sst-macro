@@ -2,14 +2,16 @@
  * These are just essentially classes that represent the packets in the Flexfly 
  * interconnect network
  */
-
+#include <sstmac/hardware/common/connection.h>
+#include <sstmac/common/sstmac_config.h>
 #include <sstmac/common/sst_event.h>
-
-namespace sstmac {
 typedef uint32_t byte_size;
+namespace sstmac {
+
+
 class flexfly_event : public event {
 public:
-	ImplementSerializable(flexfly_event);
+ImplementSerializable(flexfly_event)
 };
 
 class flexfly_credit_event : public flexfly_event {

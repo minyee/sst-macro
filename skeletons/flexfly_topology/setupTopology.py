@@ -2,7 +2,7 @@ import sst
 import sst.macro
 
 opticalLatency = "0ps"
-smallLatency = "1ps"
+smallLatency = "1us"
 
 def makeUniLink(linkType,srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat=None,inLat=None):
 	if not outLat : outLat = inLat
@@ -124,7 +124,7 @@ class Interconnect:
 				#makeUniNetworkLink(srcSwitch, srcId, srcOutport,
 				#					dstSwitch, dstId, dstInport, lat)
 		return
-
+	## THIS ONE DOES NOT BUILD IT LIKE LOGP
 	def buildTopology2(self):
 		switchParams = self.params["switch"]
 		for i in range(self.num_switches):
@@ -172,7 +172,6 @@ class Interconnect:
 			#linkCnt += 1
 	def buildLogPNetwork(self):
 		import re
-		print "CIBAIIIIIII"
 		nproc = sst.getMPIRankCount() * sst.getThreadCount()
 		switchParams = self.params["switch"]
 		linkParams = switchParams["link"]
@@ -186,7 +185,7 @@ class Interconnect:
 		num = eval(num) * 2
 		lat = "%8.4f%s" % (num,units.strip())
 		switches = []
-		print "nproc: %d" % nproc
+		#print "nproc: %d" % nproc
 		for i in range(nproc):
 			switch = sst.Component("LogP %d" % i, "macro.logp_switch")
 			switch.addParams(macroToCoreParams(switchParams))
@@ -236,9 +235,8 @@ class Interconnect:
 		#self.buildTopology()
 		self.buildTopology2()
 		self.buildNodeConnections()
-		#self.buildLogPNetwork()
-		#switchParams = self.params["switch"]
-		#self.makeOneOpticalSwitch(switchParams, 3000)
+		self.buildLogPNetwork()
+		
 
 ## Returns the command line argv in terms of a vector that is 0-indexed
 def readCmdLineParams():
@@ -288,15 +286,16 @@ def setupTopology():
 	]
 
 	for appIdx in range(10):
-		appKey = "app%d" % (appIdx + 1)
-		nodeParams = params["node"]
-		if nodeParams.has_key(appKey):
-			appParams = nodeParams[appKey]
+		appKey = "app%d" % (appIdx)
+		#nodeParams = params["node"]
+		if params.has_key(appKey):
+			appParams = params[appKey]
+			nodeParams[appKey] = appParams
 			appName = appParams["name"]
 			if not appName in builtinApps:
 				cmd = "import sst.%s" % appName
 				exec(cmd)
-			del nodeParams[appKey]
+			del params[appKey]
 
 	debugList = []
 	if params.has_key("debug"):

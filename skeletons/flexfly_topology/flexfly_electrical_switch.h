@@ -4,6 +4,7 @@
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/router/minimal_routing.h>
+#include "flexfly_events.h"
 //RegisterNamespaces("switch");
 namespace sstmac {
 namespace hw {
@@ -76,6 +77,9 @@ void recv_payload(event* ev);
 void recv_credit(event* ev);
 
 void recv_nodal_msg(event* ev);
+
+flexfly_payload_event* random_forward(switch_id src_id, int src_outport) const;
+
 protected:
 router* router_;
 std::vector<event_handler*> inport_handlers_;

@@ -1,5 +1,5 @@
 #include "flexfly_electrical_switch.h"
-#include "flexfly_events.h"
+//#include "flexfly_events.h"
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sprockit/sim_parameters.h>
@@ -54,21 +54,25 @@ namespace hw {
 	}
 
 	link_handler* flexfly_electrical_switch::credit_handler(int port) const {
+		//std::cout << "CREDIT HANDLERRRRR" << std::endl;
 		if (port == radix_ - 1) 
 			return new_link_handler(this, &flexfly_electrical_switch::recv_nodal_msg);
 		return new_link_handler(this, &flexfly_electrical_switch::recv_credit);
 	}
 
 	link_handler* flexfly_electrical_switch::payload_handler(int port) const {
+		//std::cout << "PAYYLOADD HANDLER" << std::endl;
 		return new_link_handler(this, &flexfly_electrical_switch::recv_payload);
 	}
 
 	void flexfly_electrical_switch::recv_payload(event* ev) {
 		auto* fev = dynamic_cast<flexfly_payload_event*>(ev);
+		std::cout << "RECEIVED A NODAL MESSAGE" << std::endl;
 		if (fev == nullptr) {
 			std::cout << "SHIT SHIT SHIT" << std::endl;
 			return;
 		}
+		send_to_link(outport_handlers_[1], random_forward(1,1));
 		//fev->
 
 	}
@@ -78,7 +82,14 @@ namespace hw {
 	};
 
 	void flexfly_electrical_switch::recv_credit(event* ev) {
+		std::cout << "RECEIVED A NODAL MESSAGE" << std::endl;
 		return;
-	}
+	};
+
+	flexfly_payload_event* flexfly_electrical_switch::random_forward(switch_id src_id, int src_outport) const {
+		int dst_inport = 1;
+		switch_id  dst_id = 1;
+		return new flexfly_payload_event(src_id, src_outport, dst_id, dst_inport);
+	};
 }
 }

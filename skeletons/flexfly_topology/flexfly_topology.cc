@@ -73,50 +73,6 @@ namespace hw {
    }
  }
 
- /*
- void flexfly_topology::setup_flexfly_topology() {
-  // setup the intra-group all-to-all connection first.
-  for (int group = 0; group < num_groups_; group++) {
-    for (int intra_group_index = 0; intra_group_index < switches_per_group_ - 1; intra_group_index++) {
-      switch_id swid = group * (switches_per_group_ + num_optical_switches_per_group_) + intra_group_index;
-      for (int other_intra_group_indices = intra_group_index + 1; 
-            other_intra_group_indices < switches_per_group_; 
-            other_intra_group_indices++) {
-        switch_id dest_id = group * (switches_per_group_ + num_optical_switches_per_group_) + other_intra_group_indices;
-        // form all intra-group electrical connections first
-        connect_switches(swid, dest_id, Link_Type::electrical); 
-        connect_switches(dest_id, swid, Link_Type::electrical);
-      }
-    }
-  }
-
-  // tells us what the last switch was used in this group, each index represents a group
-  switch_id *last_used_id = (switch_id *) std::calloc(num_groups_, sizeof(switch_id));
-  // SETUP OPTICAL SWITCHES
-  for (int g = 0; g < num_groups_; g++) {
-    for (int opt_switch = 0; opt_switch < num_optical_switches_per_group_; opt_switch++) {
-      switch_id opt_swid = (g * (switches_per_group_ + num_optical_switches_per_group_)) + switches_per_group_ + opt_switch;
-      //for (int opt_radix = 0; opt_radix < optical_switch_radix_; opt_radix++) {
-        int opt_radix = 0;
-        for (int gg = 0; gg < num_groups_ ; gg++) {
-          if (opt_radix >= optical_switch_radix_) {
-            break;
-          }
-          if (gg == g)
-            continue;
-          switch_id elec_swid = gg * (switches_per_group_ + num_optical_switches_per_group_) + (int)(last_used_id[gg]);
-          last_used_id[gg] = (last_used_id[gg] + 1) % switches_per_group_;
-          connect_switches(opt_swid, elec_swid, Link_Type::optical);
-          connect_switches(elec_swid, opt_swid, Link_Type::optical);
-          opt_radix++;
-        }
-    }
-  }
-  free(last_used_id);
-  max_switch_id_ = num_groups_ * (switches_per_group_ + num_optical_switches_per_group_) - 1;
-  max_node_id_ = num_groups_ * switches_per_group_ * nodes_per_switch_ - 1;
- }
-*/
 
  void flexfly_topology::configure_metis(metis_config* configuration) const {
 	if (!configuration) {

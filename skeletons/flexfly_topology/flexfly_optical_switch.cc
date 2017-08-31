@@ -64,11 +64,13 @@ namespace hw {
 
 	link_handler* flexfly_optical_switch::payload_handler(int port) const {
 		//std::printf("payload handler being called on switch with address: %p and addr is %d\n", this, this->my_addr_);
+		std::cout << "OPTICAL_SWITCHL: PAYLOAD HANDLER" << std::endl;
 		return new_link_handler(this, &flexfly_optical_switch::recv_payload);
 	};
 
 	link_handler* flexfly_optical_switch::credit_handler(int port) const {
 		//std::printf("credit handler being called on switch with address: %p and addr is %d\n", this, this->my_addr_);
+		std::cout << "OPTICAL_SWITCHL: CREDIT HANDLER" << std::endl;
 		return new_link_handler(this, &flexfly_optical_switch::recv_credit);
 	};
 
@@ -86,6 +88,7 @@ namespace hw {
 
 	void flexfly_optical_switch::recv_payload(event* ev) {
 		// figure out which link handler this is supposed to 
+		std::cout << "RECV PAYLOAD ON AN OPTICAL SWITCH YABADABA" << std::endl;
 		flexfly_payload_event* fev = dynamic_cast<flexfly_payload_event*>(ev);
 		if (fev == nullptr) {
 			return;

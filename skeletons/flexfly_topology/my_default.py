@@ -1,4 +1,4 @@
-from sst.macro import *
+#from sst.macro import *
 import sys
 import os
 import sst

@@ -212,8 +212,10 @@ class Interconnect:
     if epFxn == None:
       epFxn = self.defaultEpFxn
     if self.system.isLogP():
+      #self.buildFull(epFxn) #delete this line for original form
       self.buildLogP(epFxn)
     else:
+      print "here????????"
       self.buildFull(epFxn)
 
 def readCmdLineParams():
@@ -223,7 +225,6 @@ def readCmdLineParams():
 def setupDeprecated():
   import sys
   params = readCmdLineParams()
-
   nodeParams = params["node"]
   swParams = params["switch"]
   builtinApps = [

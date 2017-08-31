@@ -18,9 +18,9 @@ bool greedy_job_launcher::handle_launch_request(app_launch_request* request,
 	if (required_nodes > topology_->num_nodes())
 		spkt_abort_printf("more nodes requested that what the hardware of the system can offer");
 	bool success = request->request_allocation(available_, allocation);
-	std::cout << "AM I CALLED AT ALL?" << std::endl;
+	//std::cout << "AM I CALLED AT ALL?" << std::endl;
 	if (!success) {
-		std::cout << "Should see this 3 times?" << std::endl;
+		//std::cout << "Should see this 3 times?" << std::endl;
 		pending_jobs_.push_back(request);
 		if (pending_jobs_.empty()) {
 			std::cout << "SHOULD NOT SEE THIS AT ALL" << std::endl;
