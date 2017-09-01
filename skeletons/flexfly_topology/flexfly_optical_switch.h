@@ -7,6 +7,7 @@
 #include <sstmac/hardware/topology/topology.h>
 #include <sprockit/sim_parameters_fwd.h>
 #include <sstmac/hardware/switch/network_switch.h>
+//#include <sstmac/hardware/pisces/pisces.h>
 
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/integrated_component.h>
@@ -106,7 +107,7 @@ RegisterComponent("flexfly_optical_switch | flexfly_optical", optical_switch, fl
   bool outport_connected(int outport) const;
 
 
-protected:
+public:
   void recv_payload(event* ev);
   void recv_credit(event* ev);
 

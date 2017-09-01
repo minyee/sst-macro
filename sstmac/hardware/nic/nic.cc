@@ -97,7 +97,6 @@ nic::nic(sprockit::sim_parameters* params, node* parent) :
 {
   event_mtl_handler_ = new_handler(this, &nic::mtl_handle);
   node_handler_ = new_handler(parent, &node::handle);
-
   if (params->has_param("post_latency")){
     post_latency_ = params->get_time_param("post_latency");
     sprockit::sim_parameters* inj_params = params->get_namespace("injection");

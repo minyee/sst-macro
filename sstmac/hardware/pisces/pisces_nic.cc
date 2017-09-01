@@ -75,7 +75,7 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
   packetizer_(nullptr)
 {
   sprockit::sim_parameters* inj_params = params->get_namespace("injection");
-
+  std::cout << "PISCES NIC IS BEING CONSTRUCEDDDDDDDDDDD" << std::endl;
 
   packetizer_ = packetizer::factory::get_optional_param("packetizer", "cut_through",
                                               inj_params, parent);
@@ -148,7 +148,10 @@ pisces_nic::connect_output(
   int dst_inport,
   event_handler* mod)
 {
+  std::cout << "CONNECT OURPUT ON PISCES NIC YEEPEE" << std::endl;
+  std::cout << "value of Injection is: " << std::to_string(Injection) << " and LogP is: " << std::to_string(LogP) << std::endl;
   if (src_outport == Injection){
+    std::cout << "WENT TO INJECTION ICIBAI" << std::endl;
     pisces_packetizer* packer = safe_cast(pisces_packetizer, packetizer_);
     packer->set_output(params, dst_inport, mod);
   } else if (src_outport == LogP){

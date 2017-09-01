@@ -15,6 +15,7 @@ bool greedy_job_launcher::handle_launch_request(app_launch_request* request,
                                      ordered_node_set& allocation) {
 	int required_nodes = request->nproc() / request->procs_per_node();
 	required_nodes = request->nproc() % request->procs_per_node() ? required_nodes + 1 : required_nodes;
+	std::cout << "WE ARE IN GREEDY JOB LAUNCHER: HANDLE LAUNCH REQUEST" << std::endl;
 	if (required_nodes > topology_->num_nodes())
 		spkt_abort_printf("more nodes requested that what the hardware of the system can offer");
 	bool success = request->request_allocation(available_, allocation);

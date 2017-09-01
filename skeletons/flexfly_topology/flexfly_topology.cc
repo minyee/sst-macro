@@ -115,15 +115,16 @@ namespace hw {
  		return;
  	}
  	// refers to either optical or electrical
- 	sprockit::sim_parameters* specific_switch_params = switch_params->get_namespace(str); 
-  sprockit::sim_parameters* switch_link_params = specific_switch_params->get_namespace("switch_link");
- 	double bandwidth = switch_link_params->get_bandwidth_param("bandwidth"); // in units of bytes/sec I think
- 	int port_count = switch_link_params->get_int_param("port_count");
- 	long buf_space = switch_link_params->get_byte_length_param("buffer_size");
- 	int switch_link_redundancy = switch_link_params->get_optional_int_param("switch_link_redundancy", 1);
- 	int credits = ((int) buf_space)*switch_link_redundancy;
+ 	//sprockit::sim_parameters* specific_switch_params = switch_params->get_namespace(str); 
+  //sprockit::sim_parameters* switch_link_params = switch_params->get_namespace("switch_link");
+  sprockit::sim_parameters* link_params = switch_params->get_namespace("link");
+ 	double bandwidth = switch_params->get_optional_bandwidth_param("bandwidth",1000); // in units of bytes/sec I think
+ 	long buf_space = switch_params->get_optional_byte_length_param("buffer_size", 1024);
+  int switch_link_redundancy = switch_params->get_optional_int_param("switch_link_redundancy", 1);
+  int credits = ((int) buf_space)*switch_link_redundancy;
+  int port_count = is_optical_switch(swid) ? this->num_groups_ : this->switches_per_group_ + this->nodes_per_switch_;
  	for (int i = 0; i < port_count; i++) {
- 		topology::setup_port_params(i, credits, bandwidth, switch_link_params, switch_params);
+ 		topology::setup_port_params(i, credits, bandwidth, link_params, switch_params);
  	}
  };
 

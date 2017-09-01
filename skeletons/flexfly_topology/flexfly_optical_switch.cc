@@ -3,6 +3,9 @@
 #include <sstmac/hardware/common/connection.h>
 #include <iostream>
 #include <stdio.h>
+#include <sstmac/hardware/pisces/pisces.h>
+#include <sprockit/util.h>
+//#include <sstmac/hardware/network/network_message.h>
 
 #define DONT_CARE 1000
 
@@ -88,7 +91,8 @@ namespace hw {
 
 	void flexfly_optical_switch::recv_payload(event* ev) {
 		// figure out which link handler this is supposed to 
-		std::cout << "RECV PAYLOAD ON AN OPTICAL SWITCH YABADABA" << std::endl;
+		std::cout << "RECV PAYLOAD ON AN OPTICAL SWITCH YABADABA optical swid: " << std::to_string(my_addr_) << std::endl;
+		/*
 		flexfly_payload_event* fev = dynamic_cast<flexfly_payload_event*>(ev);
 		if (fev == nullptr) {
 			return;
@@ -97,8 +101,14 @@ namespace hw {
 		int switch_outport = inout_connection_[switch_inport];
 		event_handler* handler = outport_handler_[switch_outport];
 		int dst_inport = outport_connections_[switch_outport];
-		send_to_link(handler, new flexfly_payload_event(my_addr_, switch_outport, DONT_CARE, dst_inport));
-		return;
+		*/
+
+		pisces_payload* msg = safe_cast(pisces_payload, ev);
+		int switch_inport = msg->inport();
+		int switch_outport = inout_connection_[switch_inport];
+		event_handler* handler = outport_handler_[switch_outport];
+		printf("the event has pointer: %p\n", ev);
+		//send_to_link(handler, msg);
 	};
 
 	bool flexfly_optical_switch::outport_connected(int outport) const {

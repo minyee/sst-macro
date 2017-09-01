@@ -57,6 +57,7 @@ logp_nic::logp_nic(sprockit::sim_parameters* params, node* parent) :
   next_free_(0),
   nic(params, parent)
 {
+  std::cout << "LOGP NIC IS BEING CONSTRUCEDDDDDDDDDDD" << std::endl;
   ack_handler_ = new_handler(parent, &node::handle);
   sprockit::sim_parameters* inj_params = params->get_namespace("injection");
   double inj_bw = inj_params->get_bandwidth_param("bandwidth");

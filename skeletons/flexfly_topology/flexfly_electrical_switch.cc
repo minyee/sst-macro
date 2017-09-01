@@ -9,6 +9,9 @@
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sprockit/factories/factory.h>
 #include <sstmac/hardware/router/minimal_routing.h>
+#include <sstmac/hardware/pisces/pisces.h>
+
+#include <sstmac/hardware/network/network_message.h>
 namespace sstmac {
 namespace hw {
 
@@ -20,6 +23,7 @@ namespace hw {
 																				id,
 																				mgr, 
 																				device_id::logp_overlay) {
+		my_id_ = id;
 		my_addr_ = params->get_int_param("id");
 		radix_ = params->get_int_param("total_radix");
 		inport_handlers_.reserve(radix_);
@@ -29,6 +33,7 @@ namespace hw {
 		sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
 		rtr_params->add_param_override_recursive("id", int(my_addr_));
 		router_ = router::factory::get_param("name", rtr_params, top_, this);
+		std::cout << "FLEXFLY_ELECTRICAL_SWITCH CONSTRUCTOR for swid: " << std::to_string(my_addr_) << std::endl;
 	}
 
 	flexfly_electrical_switch::~flexfly_electrical_switch() {
@@ -66,13 +71,27 @@ namespace hw {
 	}
 
 	void flexfly_electrical_switch::recv_payload(event* ev) {
-		auto* fev = dynamic_cast<flexfly_payload_event*>(ev);
-		std::cout << "RECEIVED A NODAL MESSAGE" << std::endl;
+		//flexfly_payload_event* fev = dynamic_cast<flexfly_payload_event*>(ev);
+		std::cout << "RECEIVED A RECV_PAYLOAD at switch id: " << std::to_string(my_addr_) << " and argument id: " << std::to_string(my_id_) << std::endl;
+		/*
 		if (fev == nullptr) {
 			std::cout << "SHIT SHIT SHIT" << std::endl;
-			return;
+			network_message* nm = dynamic_cast<network_message*>(ev);
+			if (nm == nullptr) {
+				std::cout << "SHIT SHIT SHIT NOW WE'RE REALLY FUCKED" << std::endl;
+			} 
+			//	return;
 		}
-		send_to_link(outport_handlers_[1], random_forward(1,1));
+		*/
+		pisces_payload* msg = safe_cast(pisces_payload, ev);
+		std::cout << "The to_addr is: " << std::to_string(msg->toaddr()) << std::endl;
+		std::cout << "The from_addr is: " << std::to_string(msg->fromaddr()) << std::endl;
+		std::cout << "The num_bytes is: " << std::to_string(msg->num_bytes()) << std::endl;
+		//uint64_t flow_id = msg->flow_id();
+		//node_id dst = msg->toaddr();
+  		//node_id src = msg->fromaddr();
+  		//std::cout << "dst nodeid: " << std::to_string(dst) << " and src nodeid: " << std::to_string(src) << std::endl;
+		send_to_link(outport_handlers_[0], msg);
 		//fev->
 
 	}
@@ -82,7 +101,7 @@ namespace hw {
 	};
 
 	void flexfly_electrical_switch::recv_credit(event* ev) {
-		std::cout << "RECEIVED A NODAL MESSAGE" << std::endl;
+		std::cout << "RECEIVED A NODAL RECV_CREDIT" << std::endl;
 		return;
 	};
 

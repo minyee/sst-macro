@@ -191,7 +191,8 @@ class Interconnect:
 			switch.addParams(macroToCoreParams(switchParams))
 			switch.addParam("id", i)
 			switches.append(switch)
-
+		print "nproc is : %d" % nproc
+		print "MPIRank: %d" % sst.getMPIRankCount()
 		for i in range(nproc):
 			sw_i = switches[i]
 			for j in range(nproc):
@@ -225,6 +226,7 @@ class Interconnect:
 		opticalSwitch.addParam("optical_switch_radix", self.opticalSwitchRadix)
 
 	def build(self):
+		print "HARLOOOOOO THIS IS JASON"
 		self.buildEndpoints()
 		topologyParams = self.params["topology"]
 		topologyName = topologyParams["name"]
@@ -235,7 +237,7 @@ class Interconnect:
 		#self.buildTopology()
 		self.buildTopology2()
 		self.buildNodeConnections()
-		self.buildLogPNetwork()
+		#self.buildLogPNetwork()
 		
 
 ## Returns the command line argv in terms of a vector that is 0-indexed
@@ -322,6 +324,5 @@ def setupTopology():
 			if isinstance(val, str):
 				if not nsParams.has_key(key):
 					nsParams[key] = val    
-	
 	interconnect = Interconnect(params)
 	interconnect.build()

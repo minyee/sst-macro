@@ -68,6 +68,7 @@ pisces_payload::pisces_payload(
   bw_(uninitialized_bw),
   max_in_bw_(1.0)
 {
+  std::cout << "CONSTRUCTOR FOR PISCES_PAYLOAD WOOOHOOOOOO" << std::endl;
 }
 
 void
