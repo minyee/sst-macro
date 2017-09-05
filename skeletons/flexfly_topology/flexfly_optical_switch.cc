@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sprockit/util.h>
+
+#include <sstmac/software/launch/launch_event.h>
+#include <sstmac/hardware/network/network_message.h>
 //#include <sstmac/hardware/network/network_message.h>
 
 #define DONT_CARE 1000
@@ -16,15 +19,21 @@ namespace hw {
     												uint64_t id,
     												event_manager* mgr) : optical_switch(params, id, mgr) {
 		//std::cout << "FLEXFLY OPTICAL SWITCH CONSTRUCTOR" << std::endl;
-		init_links(params); // this has to be called upon class initialization
+		
 		my_addr_ = params->get_int_param("id");
 		//std::cout << "FLEXFLY_OPTICAL_SWITCH" << std::endl;
 		//std::printf("This address of this switch is: %d with pointer: %p\n", this->my_addr_, this);
 		num_ports_ = params->get_int_param("optical_switch_radix");
+		std::cout << "Number of ports in optical switch is: " <<std::to_string(num_ports_) << std::endl;
+		num_ports_ = 100;
+		inport_handler_.reserve(num_ports_);
+		outport_handler_.reserve(num_ports_);
 		inout_connection_ = new int[num_ports_];
 		for (int i = 0; i < num_ports_; i++) {
 			inout_connection_[i] = i;
 		}
+		top_ = topology::static_topology(params);
+		init_links(params); // this has to be called upon class initialization
 	};
 
 	flexfly_optical_switch::~flexfly_optical_switch() {
@@ -44,13 +53,12 @@ namespace hw {
                               					int src_outport, 
                               					int dst_inport,
                               					event_handler* credit_handler) {
-		//std::cout << "input src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << " ";
- 		//std::printf(" and the pointer is: %p\n", credit_handler);
- 		// the port in this switch from which an event has been received is the dst_inport
+		
  		inport_connections_[dst_inport] = src_outport;
  		int input_port = dst_inport;
  		inport_handler_[input_port] = credit_handler;
 		return;
+		
 	};
 
 	void flexfly_optical_switch::connect_output(sprockit::sim_parameters* params, 
@@ -59,6 +67,7 @@ namespace hw {
                               					event_handler* payload_handler) {
 		//std::cout << "src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
 		//std::cout << "src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
+ 		
  		outport_connections_[src_outport] = dst_inport;
  		int output_port = src_outport;
  		outport_handler_[output_port] = payload_handler;
@@ -102,12 +111,22 @@ namespace hw {
 		event_handler* handler = outport_handler_[switch_outport];
 		int dst_inport = outport_connections_[switch_outport];
 		*/
-
-		pisces_payload* msg = safe_cast(pisces_payload, ev);
-		int switch_inport = msg->inport();
-		int switch_outport = inout_connection_[switch_inport];
-		event_handler* handler = outport_handler_[switch_outport];
-		printf("the event has pointer: %p\n", ev);
+		if (!ev) {
+			return;
+		}
+		message* msg = safe_cast(message, ev);
+		//pisces_payload* msg = safe_cast(pisces_payload, ev);
+		//int switch_inport = msg->inport();
+		//int switch_outport = inout_connection_[switch_inport];
+		//event_handler* handler = outport_handler_[switch_outport];
+		node_id dst_id = msg->toaddr();
+		node_id src_id = msg->fromaddr();
+		switch_id dst_swid = top_->node_to_logp_switch(dst_id);
+		int outport = 0;
+		if (dst_id == 1) {
+			outport = 1;
+		}
+		send_to_link(outport_handler_[outport],ev);
 		//send_to_link(handler, msg);
 	};
 

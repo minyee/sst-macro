@@ -149,7 +149,7 @@ class Interconnect:
 
 	def buildNodeConnections(self):
 		for i in range(self.num_groups * self.switches_per_group):
-			switch = self.switches[i];
+			switch = self.switches[i]
 			for nodeIndex in range(self.nodes_per_switch):
 				index = nodeIndex + (i * self.nodes_per_switch)
 				node = self.nodes[index]
@@ -170,6 +170,22 @@ class Interconnect:
 			#node.addLink(link, portName1, smallLatency)
 			#switch.addLink(link, portName2, smallLatency)
 			#linkCnt += 1
+
+	def buildNodeConnections2(self):
+		for i in range(self.num_groups * self.switches_per_group):
+			switch = self.switches[i]
+			for nodeIndex in range(self.nodes_per_switch):
+				index = nodeIndex + (i * self.nodes_per_switch)
+				node = self.nodes[index]
+				switchPortIndex = self.switches_per_group + nodeIndex
+				linkName = "logP: node%d -> switch%d" % (index, i)
+				link = sst.Link(linkName)
+				portName = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
+				node.addLink(link, portName, smallLatency)
+				portName = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
+				switch.addLink(link, portName, smallLatency)
+
+
 	def buildLogPNetwork(self):
 		import re
 		nproc = sst.getMPIRankCount() * sst.getThreadCount()
@@ -187,25 +203,28 @@ class Interconnect:
 		switches = []
 		#print "nproc: %d" % nproc
 		for i in range(nproc):
-			switch = sst.Component("LogP %d" % i, "macro.logp_switch")
+			#switch = sst.Component("flexfly_electrical %d" % i, "macro.flexfly_electrical_switch")
+			switch = sst.Component("my_logp %d" % i, "macro.my_logp_switch")
 			switch.addParams(macroToCoreParams(switchParams))
 			switch.addParam("id", i)
 			switches.append(switch)
-		print "nproc is : %d" % nproc
-		print "MPIRank: %d" % sst.getMPIRankCount()
+			#NEWLY ADDED BEGIN
+			switch.addParam("switch_type" , "electrical")
+			switch.addParam("total_radix", self.num_nodes)
+			#NEWLY ADDED END
 		for i in range(nproc):
 			sw_i = switches[i]
 			for j in range(nproc):
 				sw_j = switches[j]
 				if i==j: continue
-
+				print "WALAWALA"
 				linkName = "logPnetwork%d->%d" % (i,j)
 				link = sst.Link(linkName)
 				portName = "in-out %d %d" % (j, sst.macro.SwitchLogPNetworkPort)
 				sw_i.addLink(link, portName, lat)
 				portName = "in-out %d %d" % (i, sst.macro.SwitchLogPNetworkPort)
 				sw_j.addLink(link, portName, lat)			
-
+		
 		for i in range(self.num_nodes):
 			injSW = self.system.nodeToLogPSwitch(i)
 			ep = self.nodes[i]
@@ -213,8 +232,10 @@ class Interconnect:
 			linkName = "logPinjection%d->%d" % (i, injSW)
 			link = sst.Link(linkName)
 			portName = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
+			#portName = "injection %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
 			ep.addLink(link, portName, smallLatency) #put no latency here
 			portName = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
+			#portName = "ejection %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
 			sw.addLink(link, portName, smallLatency)
 
 	def makeOneOpticalSwitch(self, switchParams, i):
@@ -226,7 +247,6 @@ class Interconnect:
 		opticalSwitch.addParam("optical_switch_radix", self.opticalSwitchRadix)
 
 	def build(self):
-		print "HARLOOOOOO THIS IS JASON"
 		self.buildEndpoints()
 		topologyParams = self.params["topology"]
 		topologyName = topologyParams["name"]
@@ -237,6 +257,7 @@ class Interconnect:
 		#self.buildTopology()
 		self.buildTopology2()
 		self.buildNodeConnections()
+		#self. buildNodeConnections2()
 		#self.buildLogPNetwork()
 		
 

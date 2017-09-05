@@ -70,6 +70,9 @@ virtual link_handler* payload_handler(int port) const override;
 
 virtual int queue_length(int port) const override;
 
+void bcast_local_message(message* msg, node_id src);
+
+
 protected:
 
 void recv_payload(event* ev);

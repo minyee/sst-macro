@@ -148,10 +148,7 @@ pisces_nic::connect_output(
   int dst_inport,
   event_handler* mod)
 {
-  std::cout << "CONNECT OURPUT ON PISCES NIC YEEPEE" << std::endl;
-  std::cout << "value of Injection is: " << std::to_string(Injection) << " and LogP is: " << std::to_string(LogP) << std::endl;
   if (src_outport == Injection){
-    std::cout << "WENT TO INJECTION ICIBAI" << std::endl;
     pisces_packetizer* packer = safe_cast(pisces_packetizer, packetizer_);
     packer->set_output(params, dst_inport, mod);
   } else if (src_outport == LogP){

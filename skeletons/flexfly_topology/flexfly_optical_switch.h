@@ -132,7 +132,7 @@ private:
   std::unordered_map<int, int> inport_connections_; // maps this switch's inport to the source switch's outport
   std::unordered_map<int, int> outport_connections_; // maps this switch's outport to the destination's inport
   void teardown_outport_connection(int outport);
-
+  topology* top_;
 };
 
 }

@@ -1,49 +1,3 @@
-/**
-Copyright 2009-2017 National Technology and Engineering Solutions of Sandia, 
-LLC (NTESS).  Under the terms of Contract DE-NA-0003525, the U.S.  Government 
-retains certain rights in this software.
-
-Sandia National Laboratories is a multimission laboratory managed and operated
-by National Technology and Engineering Solutions of Sandia, LLC., a wholly 
-owned subsidiary of Honeywell International, Inc., for the U.S. Department of 
-Energy's National Nuclear Security Administration under contract DE-NA0003525.
-
-Copyright (c) 2009-2017, NTESS
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, 
-are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-
-    * Neither the name of Sandia Corporation nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-Questions? Contact sst-macro-help@sandia.gov
-*/
-
-#ifndef simple_switch_CC
-#define simple_switch_CC
 
 /*
  *  This file is part of SST/macroscale:
@@ -57,7 +11,8 @@ Questions? Contact sst-macro-help@sandia.gov
  */
 
 #include <sstmac/hardware/switch/network_switch.h>
-#include <sstmac/hardware/logp/logp_switch.h>
+//#include <sstmac/hardware/logp/my_logp_switch.h>
+#include "my_logp_switch.h"
 #include <sstmac/hardware/nic/nic.h>
 #include <sstmac/hardware/switch/dist_dummyswitch.h>
 #include <sstmac/hardware/topology/topology.h>
@@ -70,13 +25,13 @@ Questions? Contact sst-macro-help@sandia.gov
 namespace sstmac {
 namespace hw {
 
-logp_switch::logp_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
+my_logp_switch::my_logp_switch(sprockit::sim_parameters *params, uint64_t id, event_manager *mgr) :
   network_switch(params, id, mgr, device_id::logp_overlay)
 {
   sprockit::sim_parameters* link_params = params->get_namespace("link");
   sprockit::sim_parameters* ej_params = params->get_namespace("ejection");
   int my_id = params->get_int_param("id");
-  std::cout << "LOG_P switch constructor with id: " << std::to_string(my_id) << std::endl;
+  std::cout << "YEAY HAHAHAHAH MY_LOG_P switch constructor with id: " << std::to_string(my_id) << std::endl;
   double net_bw = link_params->get_bandwidth_param("bandwidth");
   inverse_bw_ = 1.0/net_bw;
   if (link_params->has_param("send_latency")){
@@ -103,11 +58,11 @@ logp_switch::logp_switch(sprockit::sim_parameters *params, uint64_t id, event_ma
 
   init_links(params);
 #if !SSTMAC_INTEGRATED_SST_CORE
-  mtl_handler_ = new_handler(this, &logp_switch::handle);
+  mtl_handler_ = new_handler(this, &my_logp_switch::handle);
 #endif
 }
 
-logp_switch::~logp_switch()
+my_logp_switch::~my_logp_switch()
 {
 #if !SSTMAC_INTEGRATED_SST_CORE
   delete mtl_handler_;
@@ -115,18 +70,18 @@ logp_switch::~logp_switch()
 }
 
 link_handler*
-logp_switch::payload_handler(int port) const
+my_logp_switch::payload_handler(int port) const
 {
 #if SSTMAC_INTEGRATED_SST_CORE
-  return new SST::Event::Handler<logp_switch>(
-        const_cast<logp_switch*>(this), &logp_switch::handle);
+  return new SST::Event::Handler<my_logp_switch>(
+        const_cast<my_logp_switch*>(this), &my_logp_switch::handle);
 #else
   return mtl_handler_;
 #endif
 }
 
 void
-logp_switch::connect_output(sprockit::sim_parameters *params,
+my_logp_switch::connect_output(sprockit::sim_parameters *params,
                               int src_outport, int dst_inport,
                               event_handler *mod)
 {
@@ -143,12 +98,12 @@ logp_switch::connect_output(sprockit::sim_parameters *params,
     }
     neighbors_[sid] = mod;
   } else {
-    spkt_abort_printf("Invalid inport %d in logp_switch::connect_output", dst_inport);
+    spkt_abort_printf("Invalid inport %d in my_logp_switch::connect_output", dst_inport);
   }
 }
 
 void
-logp_switch::connect_input(sprockit::sim_parameters *params,
+my_logp_switch::connect_input(sprockit::sim_parameters *params,
                               int src_outport, int dst_inport,
                               event_handler *mod)
 {
@@ -156,7 +111,7 @@ logp_switch::connect_input(sprockit::sim_parameters *params,
 }
 
 void
-logp_switch::incoming_message(message* msg, node_id src, node_id dst)
+my_logp_switch::incoming_message(message* msg, node_id src, node_id dst)
 {
   bool local_src = nics_[src];
   timestamp delay(inv_min_bw_ * msg->byte_length()); //bw term
@@ -172,7 +127,7 @@ logp_switch::incoming_message(message* msg, node_id src, node_id dst)
 }
 
 void
-logp_switch::outgoing_message(message* msg, node_id src, node_id dst)
+my_logp_switch::outgoing_message(message* msg, node_id src, node_id dst)
 {
   //local going remote - just accumulate latency delay
   int num_hops = top_->num_hops_to_node(src, dst);
@@ -185,7 +140,7 @@ logp_switch::outgoing_message(message* msg, node_id src, node_id dst)
 }
 
 void
-logp_switch::bcast_local_message(message* msg, node_id src)
+my_logp_switch::bcast_local_message(message* msg, node_id src)
 {
   sw::start_app_event* lev = safe_cast(sw::start_app_event, msg);
   sw::task_mapping::ptr mapping = lev->mapping();
@@ -208,10 +163,11 @@ logp_switch::bcast_local_message(message* msg, node_id src)
   }
   //this one not needed anymore
   delete lev;
+  std::cout << "going out of bcast_local_message" << std::endl;
 }
 
 void
-logp_switch::forward_bcast_message(message* msg, node_id dst)
+my_logp_switch::forward_bcast_message(message* msg, node_id dst)
 {
   int dst_switch = interconn_->node_to_logp_switch(dst);
   //only accumulate inj lat - exact hop latency gets added on the other side
@@ -219,9 +175,10 @@ logp_switch::forward_bcast_message(message* msg, node_id dst)
 }
 
 void
-logp_switch::handle(event* ev)
+my_logp_switch::handle(event* ev)
 {
   //this should only handle messages
+  std::cout << "handle more than once is just pretty bad" << std::endl;
   message* msg = safe_cast(message, ev);
   node_id dst = msg->toaddr();
   node_id src = msg->fromaddr();
@@ -248,5 +205,3 @@ logp_switch::handle(event* ev)
 
 }
 }
-
-#endif // simple_switch_CC
