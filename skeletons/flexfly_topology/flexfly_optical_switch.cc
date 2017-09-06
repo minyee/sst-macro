@@ -18,8 +18,6 @@ namespace hw {
 	flexfly_optical_switch::flexfly_optical_switch(sprockit::sim_parameters* params,
     												uint64_t id,
     												event_manager* mgr) : optical_switch(params, id, mgr) {
-		//std::cout << "FLEXFLY OPTICAL SWITCH CONSTRUCTOR" << std::endl;
-		
 		my_addr_ = params->get_int_param("id");
 		//std::cout << "FLEXFLY_OPTICAL_SWITCH" << std::endl;
 		//std::printf("This address of this switch is: %d with pointer: %p\n", this->my_addr_, this);
