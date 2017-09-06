@@ -70,18 +70,15 @@ virtual link_handler* payload_handler(int port) const override;
 
 virtual int queue_length(int port) const override;
 
-void bcast_local_message(message* msg, node_id src);
-
-
 protected:
 
 void recv_payload(event* ev);
 
 void recv_credit(event* ev);
 
-void recv_nodal_msg(event* ev);
+void recv_nodal_payload(event* ev);
 
-flexfly_payload_event* random_forward(switch_id src_id, int src_outport) const;
+void recv_nodal_credit(event* ev);
 
 protected:
 router* router_;
@@ -94,6 +91,8 @@ int radix_;
 int* queue_length_;
 switch_id my_addr_;
 int port_cnt_;
+int switches_per_group_;
+int nodes_per_switch_;
  //void (std::vector<>)
  //std::unordered_map<port_>
 	//need a data structure that links a port id to a switch_id or 

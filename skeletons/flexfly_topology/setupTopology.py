@@ -92,6 +92,7 @@ class Interconnect:
 			switch.addParams(macroToCoreParams(switchParams))
 			switch.addParam("switch_type" , "electrical")
 			switch.addParam("total_radix", self.switches_per_group + self.nodes_per_switch)
+			switch.addParam("switches_per_group", self.switches_per_group)
 			self.switches[i] = switch 
 		return
 
@@ -178,10 +179,13 @@ class Interconnect:
 				index = nodeIndex + (i * self.nodes_per_switch)
 				node = self.nodes[index]
 				switchPortIndex = self.switches_per_group + nodeIndex
-				linkName = "logP: node%d -> switch%d" % (index, i)
+				linkName = "logP %d -> %d" % (index, i)
 				link = sst.Link(linkName)
+				print "NICLogInjectionPort: %d and SwitchLogPInjectionPort: %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
 				portName = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
+				#portName = "in-out %d %d" % (0, self.switches_per_group - 1 + nodeIndex)
 				node.addLink(link, portName, smallLatency)
+				#portName = "in-out %d %d" % (0, self.switches_per_group - 1 + nodeIndex)
 				portName = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
 				switch.addLink(link, portName, smallLatency)
 
@@ -217,7 +221,6 @@ class Interconnect:
 			for j in range(nproc):
 				sw_j = switches[j]
 				if i==j: continue
-				print "WALAWALA"
 				linkName = "logPnetwork%d->%d" % (i,j)
 				link = sst.Link(linkName)
 				portName = "in-out %d %d" % (j, sst.macro.SwitchLogPNetworkPort)
@@ -258,7 +261,7 @@ class Interconnect:
 		self.buildTopology2()
 		self.buildNodeConnections()
 		#self. buildNodeConnections2()
-		#self.buildLogPNetwork()
+		self.buildLogPNetwork()
 		
 
 ## Returns the command line argv in terms of a vector that is 0-indexed

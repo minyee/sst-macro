@@ -1,4 +1,5 @@
 #include "flexfly_electrical_switch.h"
+#include "flexfly_topology.h"
 //#include "flexfly_events.h"
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/topology/topology.h>
@@ -26,6 +27,8 @@ namespace hw {
 		my_id_ = id;
 		my_addr_ = params->get_int_param("id");
 		radix_ = params->get_int_param("total_radix");
+		switches_per_group_ = params->get_int_param("switches_per_group");
+		nodes_per_switch_ = radix_ - switches_per_group_;
 		inport_handlers_.reserve(radix_);
 		outport_handlers_.reserve(radix_);
 		
@@ -49,6 +52,8 @@ namespace hw {
                               						int src_outport, 
                               						int dst_inport,
                               						event_handler* credit_handler) {
+		if (dst_inport < 0 || dst_inport >= radix_)
+			spkt_abort_printf("Invalid inport %d in flexfly_electrical_switch::connect_input", dst_inport);
 		inport_handlers_[dst_inport] = credit_handler;
 	}
 
@@ -56,124 +61,64 @@ namespace hw {
                               						int src_outport, 
                               						int dst_inport,
                               						event_handler* payload_handler) {
+		if (src_outport == 1) 
+			std::cout << "I PRAY TO GOD THIS PRINTS AT LEAST ONCE IN ELECTRICAL SWITCH" << std::endl;
+		if (src_outport < 0 || src_outport >= radix_)
+			spkt_abort_printf("Invalid inport %d in flexfly_electrical_switch::connect_output", src_outport);
 		outport_handlers_[src_outport] = payload_handler;
 	}
 
 	link_handler* flexfly_electrical_switch::credit_handler(int port) const {
-		//std::cout << "CREDIT HANDLERRRRR" << std::endl;
-		//return nullptr;
-		//if (port == radix_ - 1) 
-		//	return new_link_handler(this, &flexfly_electrical_switch::recv_nodal_msg);
-		return new_link_handler(this, &flexfly_electrical_switch::recv_credit);
+		if (port < switches_per_group_) {
+			return new_link_handler(this, &flexfly_electrical_switch::recv_credit);
+		} else {
+			return new_link_handler(this, &flexfly_electrical_switch::recv_nodal_credit);
+		}
 	}
 
 	link_handler* flexfly_electrical_switch::payload_handler(int port) const {
-		//std::cout << "PAYYLOADD HANDLER" << std::endl;
-		return new_link_handler(this, &flexfly_electrical_switch::recv_payload);
-	}
-
-	void flexfly_electrical_switch::bcast_local_message(message* msg, node_id src) {
-		
-  		sw::start_app_event* lev = safe_cast(sw::start_app_event, msg);
-  		sw::task_mapping::ptr mapping = lev->mapping();
-  		int num_ranks = mapping->num_ranks();
-  		std::cout << "num_ranks is: " << std::to_string(num_ranks) << std::endl;
-  		
-  		for (int i=0; i < num_ranks; ++i){
-    		node_id dst_node = mapping->rank_to_node(i);
-    		std::cout << "Rank : " << std::to_string(i) << " in Node: " << std::to_string(dst_node) << std::endl;
-    		std::cout << "dst_node : " << std::to_string(i) << " my_addr_: " << std::to_string(my_addr_) << std::endl;
-    		if (dst_node != my_addr_) {
-    			sw::start_app_event* new_lev = lev->clone(i,src, dst_node);
-    			std::printf("pointer to outport handler 0 : %p\n",outport_handlers_[0]);
-    			send_to_link(outport_handlers_[0], new_lev);
-    			std::cout << "here?" << std::endl;
-    		} else {
-
-    		}
-    		//auto dst_nic = nics_[dst_node];
-    		//bool local_dst = dst_nic;
-    		//bool local_src = nics_[src];
-    		/*
-    		if (local_dst) {
-      			sw::start_app_event* new_lev = lev->clone(i, src, dst_node);
-      			int num_hops = top_->num_hops_to_node(src, dst_node);
-      			timestamp delay = num_hops * hop_latency_;
-      			if (local_src){ //have to accumulate inj latency here
-        			delay += dbl_inj_lat_; //factor of 2 for in-out
-      			}
-      			send_delayed_to_link(delay, dst_nic, new_lev);
-    		}
-    		*/
-  		}
-  		
-  		//this one not needed anymore
-  		delete lev;
-  		
-	}
-
-	void flexfly_electrical_switch::recv_payload(event* ev) {
-		//flexfly_payload_event* fev = dynamic_cast<flexfly_payload_event*>(ev);
-		std::cout << "RECEIVED A RECV_PAYLOAD at switch id: " << std::to_string(my_addr_) << " and argument id: " << std::to_string(my_id_) << std::endl;
-		pisces_payload* msg1 = safe_cast(pisces_payload, ev);
-		message* msg = safe_cast(message, ev);
-		if (!msg) {
-			return;
+		if (port < switches_per_group_) {
+			return new_link_handler(this, &flexfly_electrical_switch::recv_payload);
+		} else {
+			return new_link_handler(this, &flexfly_electrical_switch::recv_nodal_payload);
 		}
+	}
+
+	/**
+	 * Receiving a packet or message from another switch, not from a node.
+	 **/
+	void flexfly_electrical_switch::recv_payload(event* ev) {
+		//std::cout << "RECEIVED A RECV_PAYLOAD at switch id: " << std::to_string(my_addr_) << " and argument id: " << std::to_string(my_id_) << std::endl;
+		pisces_default_packet* msg = safe_cast(pisces_default_packet, ev);
 		node_id dst = msg->toaddr();
   		node_id src = msg->fromaddr();
-  		//if (dst == my_addr_) {
-  			//send_to_link(outport_handlers_[radix_ - 1], ev);
-  			//return;
-  		//}
 
-  		if (msg->is_bcast()) {
-  			sw::start_app_event* lev = safe_cast(sw::start_app_event, msg);
-  			sw::task_mapping::ptr mapping = lev->mapping();
-  			int num_ranks = mapping->num_ranks();
-  			std::cout << "IT IS A BCAST MESSAGE" << std::endl;
-  			for (int i = 0; i < num_ranks; i++) {
-  				node_id dst_node = mapping->rank_to_node(i);
-  				if (dst_node == my_addr_)
-  					bcast_local_message(msg, my_addr_);	
-  				else {
-  					std::cout << "guard1" << std::endl;
-  					std::printf("pointer to outport handler 0 : %p\n",outport_handlers_[0]);
-  					send_to_link(outport_handlers_[0], ev);
-  					std::cout << "guard2" << std::endl;
-  				}
-  			}
-  			
-  			//return;
+  		// Case 1: route it to a connecting node
+  		flexfly_topology* ftop = safe_cast(flexfly_topology, top_);
+  		if (my_addr_ == ftop->node_to_switch(dst)) {
+  			int port_num = dst - (my_addr_ * nodes_per_switch_) + switches_per_group_;
+  			std::cout << "dst : " << std::to_string(dst) << " and my_addr is: " << std::to_string(my_addr_) << std::endl;
+  			std::cout << "Port num is: " << std::to_string(port_num) << std::endl;
+  			send_to_link(outport_handlers_[port_num], ev);
+  		} else {
+  			//std::cout << "SHOULD NOT BE SEEING THIS EVER" << std::endl;
+  			send_to_link(outport_handlers_[0], ev);	
   		}
-		//pisces_payload* msg = dynamic_cast<pisces_payload*>(ev);
-		
-		//pisces_payload* msg = safe_cast(pisces_payload, ev);
-		std::cout << "The to_addr is: " << std::to_string(msg->toaddr()) << std::endl;
-		std::cout << "The from_addr is: " << std::to_string(msg->fromaddr()) << std::endl;
-		//std::cout << "The num_bytes is: " << std::to_string(msg->num_bytes()) << std::endl;
-		//uint64_t flow_id = msg->flow_id();
-		//node_id dst = msg->toaddr();
-  		//node_id src = msg->fromaddr();
-  		//std::cout << "dst nodeid: " << std::to_string(dst) << " and src nodeid: " << std::to_string(src) << std::endl;
-		//send_to_link(outport_handlers_[0], msg);
-		//fev->
-
+		//std::cout << "The to_addr is: " << std::to_string(msg->toaddr()) << std::endl;
+		//std::cout << "The from_addr is: " << std::to_string(msg->fromaddr()) << std::endl;
 	}
 
-	void flexfly_electrical_switch::recv_nodal_msg(event* ev) {
-		std::cout << "RECEIVED A NODAL MESSAGE" << std::endl;
+	/**
+	 * Receiving a packet or message from a node, not from a switch.
+	 * This can be said to be an injection packet
+	 **/
+	void flexfly_electrical_switch::recv_nodal_payload(event* ev) {
+		std::cout << "received nodal message" << std::endl;
+		send_to_link(outport_handlers_[0], ev);
 	};
 
-	void flexfly_electrical_switch::recv_credit(event* ev) {
-		std::cout << "RECEIVED A NODAL RECV_CREDIT" << std::endl;
-		return;
-	};
+	void flexfly_electrical_switch::recv_nodal_credit(event* ev) {};
 
-	flexfly_payload_event* flexfly_electrical_switch::random_forward(switch_id src_id, int src_outport) const {
-		int dst_inport = 1;
-		switch_id  dst_id = 1;
-		return new flexfly_payload_event(src_id, src_outport, dst_id, dst_inport);
-	};
+	void flexfly_electrical_switch::recv_credit(event* ev) {};
 }
 }

@@ -271,7 +271,7 @@ public:
 
   flexfly_topology(sprockit::sim_parameters* params); 
 
-  switch_id node_to_logp_switch(node_id nid) const;
+  switch_id node_to_switch(node_id nid) const;
 protected:
  
  void configure_optical_or_electrical_port_params(switch_id swid, std::string& str, sprockit::sim_parameters* sim_params) const;

@@ -422,7 +422,7 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
     return true;
   };
 
-  switch_id flexfly_topology::node_to_logp_switch(node_id nid) const {
+  switch_id flexfly_topology::node_to_switch(node_id nid) const {
     switch_id swid = nid / (nodes_per_switch_);
     return swid;
   };
