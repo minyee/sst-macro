@@ -4,7 +4,8 @@
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/router/minimal_routing.h>
-#include "flexfly_events.h"
+#include "flexfly_topology.h"
+
 //RegisterNamespaces("switch");
 namespace sstmac {
 namespace hw {
@@ -93,6 +94,7 @@ switch_id my_addr_;
 int port_cnt_;
 int switches_per_group_;
 int nodes_per_switch_;
+flexfly_topology* ftop_;
  //void (std::vector<>)
  //std::unordered_map<port_>
 	//need a data structure that links a port id to a switch_id or 

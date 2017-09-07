@@ -1,5 +1,4 @@
 #include "flexfly_electrical_switch.h"
-#include "flexfly_topology.h"
 //#include "flexfly_events.h"
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/topology/topology.h>
@@ -31,12 +30,11 @@ namespace hw {
 		nodes_per_switch_ = radix_ - switches_per_group_;
 		inport_handlers_.reserve(radix_);
 		outport_handlers_.reserve(radix_);
-		
 		queue_length_ = new int[10];
 		sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
 		rtr_params->add_param_override_recursive("id", int(my_addr_));
 		router_ = router::factory::get_param("name", rtr_params, top_, this);
-		std::cout << "FLEXFLY_ELECTRICAL_SWITCH CONSTRUCTOR for swid: " << std::to_string(my_addr_) << std::endl;
+		ftop_ = safe_cast(flexfly_topology, top_);
 		init_links(params);
 	}
 
@@ -61,8 +59,6 @@ namespace hw {
                               						int src_outport, 
                               						int dst_inport,
                               						event_handler* payload_handler) {
-		if (src_outport == 1) 
-			std::cout << "I PRAY TO GOD THIS PRINTS AT LEAST ONCE IN ELECTRICAL SWITCH" << std::endl;
 		if (src_outport < 0 || src_outport >= radix_)
 			spkt_abort_printf("Invalid inport %d in flexfly_electrical_switch::connect_output", src_outport);
 		outport_handlers_[src_outport] = payload_handler;
@@ -93,6 +89,8 @@ namespace hw {
 		node_id dst = msg->toaddr();
   		node_id src = msg->fromaddr();
 
+  		std::cout << "Electrical switch: " << std::to_string(my_addr_) << " received a packet" << std::endl;
+  		std::cout << "This packet has dst : " << std::to_string(dst) << " and src: " << std::to_string(src) << std::endl;
   		// Case 1: route it to a connecting node
   		flexfly_topology* ftop = safe_cast(flexfly_topology, top_);
   		if (my_addr_ == ftop->node_to_switch(dst)) {
@@ -101,11 +99,8 @@ namespace hw {
   			std::cout << "Port num is: " << std::to_string(port_num) << std::endl;
   			send_to_link(outport_handlers_[port_num], ev);
   		} else {
-  			//std::cout << "SHOULD NOT BE SEEING THIS EVER" << std::endl;
   			send_to_link(outport_handlers_[0], ev);	
   		}
-		//std::cout << "The to_addr is: " << std::to_string(msg->toaddr()) << std::endl;
-		//std::cout << "The from_addr is: " << std::to_string(msg->fromaddr()) << std::endl;
 	}
 
 	/**
@@ -113,8 +108,13 @@ namespace hw {
 	 * This can be said to be an injection packet
 	 **/
 	void flexfly_electrical_switch::recv_nodal_payload(event* ev) {
-		std::cout << "received nodal message" << std::endl;
-		send_to_link(outport_handlers_[0], ev);
+		std::cout << "received nodal message at switch " << std::to_string(my_addr_) << std::endl;
+		pisces_default_packet* msg = safe_cast(pisces_default_packet, ev);
+		if (ftop_->node_to_switch(msg->toaddr()) == my_addr_) {
+			send_to_link(outport_handlers_[1], ev);
+		} else {
+			send_to_link(outport_handlers_[0], ev);
+		}
 	};
 
 	void flexfly_electrical_switch::recv_nodal_credit(event* ev) {};

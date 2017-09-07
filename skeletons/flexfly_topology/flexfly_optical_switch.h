@@ -8,7 +8,7 @@
 #include <sprockit/sim_parameters_fwd.h>
 #include <sstmac/hardware/switch/network_switch.h>
 //#include <sstmac/hardware/pisces/pisces.h>
-
+#include "flexfly_topology.h"
 #if SSTMAC_INTEGRATED_SST_CORE
 #include <sstmac/sst_core/integrated_component.h>
 #endif
@@ -109,30 +109,36 @@ RegisterComponent("flexfly_optical_switch | flexfly_optical", optical_switch, fl
 
 public:
   void recv_payload(event* ev);
+  
   void recv_credit(event* ev);
+
+  void recv_config_msg(event* ev){};
 
 private:
   // sooner or later we need to simulate the fact that there will be configuration messages 
-  void receive_configure_msg();
   
-  /*
-   * This is called by the
-   */
-  //void forward_message();
 
   bool setup_inout_connection(int inport, int outport);
 
 private: 
   switch_id my_addr_;
+  
   int num_ports_;
+  
   std::unordered_map<int,event_handler*> outport_handler_;
+  
   std::unordered_map<int,event_handler*> inport_handler_;
   // given an index, the value of the entry is the output port that said inport is currently connected to
+  
   int* inout_connection_; 
+  
   std::unordered_map<int, int> inport_connections_; // maps this switch's inport to the source switch's outport
+  
   std::unordered_map<int, int> outport_connections_; // maps this switch's outport to the destination's inport
+  
   void teardown_outport_connection(int outport);
-  topology* top_;
+  
+  flexfly_topology* top_;
 };
 
 }

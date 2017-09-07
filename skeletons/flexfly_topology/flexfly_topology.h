@@ -267,11 +267,12 @@ public:
 
   void print_topology() const;
 
-  void print_connectivity_matrix() const; 
-
   flexfly_topology(sprockit::sim_parameters* params); 
 
   switch_id node_to_switch(node_id nid) const;
+
+  int group_from_swid (switch_id swid) const;
+
 protected:
  
  void configure_optical_or_electrical_port_params(switch_id swid, std::string& str, sprockit::sim_parameters* sim_params) const;
@@ -284,8 +285,6 @@ private:
  uint32_t nodes_per_switch_; // equivalent to parameter p in Kim's paper
  
  uint32_t num_optical_switches_;
-
- uint32_t num_total_switches_;
  
  uint32_t optical_switch_radix_;
  
@@ -296,6 +295,8 @@ private:
  std::unordered_map<switch_id, std::vector<switch_link*>> switch_outport_connection_map_;
 
  std::unordered_map<switch_id, std::vector<switch_link*>> switch_inport_connection_map_;
+
+ uint32_t **group_connectivity_matrix_;
 
  void setup_flexfly_topology();
 
@@ -308,22 +309,15 @@ private:
  bool is_optical_switch(switch_id sid) const;
 
  bool is_electrical_switch(switch_id sid) const;
- //std::vector<flexfly_optical_switch*> optical_switches_;
-
- //std::vector<flexfly_electrical_switch*> electrical_switches_;
- 
- 
 
  // figures out if two groups are currently connected to one another
  // also accounts for the connectivity within the optical switches
- bool is_group_connected(int src_group, int dst_group) const;
  
- inline int group_from_swid (switch_id swid) const;
  
- inline switch_id public_swid_to_private_swid(switch_id swid) const; 
  
  void print_port_connection_for_switch(switch_id swid) const;
 
+ void check_intergroup_connection() const;
 
 public:
  int num_groups() {

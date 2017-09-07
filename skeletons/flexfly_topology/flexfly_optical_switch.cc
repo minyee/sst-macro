@@ -6,11 +6,8 @@
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sprockit/util.h>
 
-#include <sstmac/software/launch/launch_event.h>
+//#include <sstmac/software/launch/launch_event.h>
 #include <sstmac/hardware/network/network_message.h>
-//#include <sstmac/hardware/network/network_message.h>
-
-#define DONT_CARE 1000
 
 
 namespace sstmac {
@@ -28,12 +25,13 @@ namespace hw {
 		for (int i = 0; i < num_ports_; i++) {
 			inout_connection_[i] = i;
 		}
-		top_ = topology::static_topology(params);
+		inout_connection_[0] = 1;
+		inout_connection_[1] = 0;
+		top_ = safe_cast(flexfly_topology, topology::static_topology(params));
 		init_links(params); // this has to be called upon class initialization
 	};
 
 	flexfly_optical_switch::~flexfly_optical_switch() {
-		//std::printf("FLEXFLY_OPTICAL_SWITCH DECONSTRUCTOR pointer: %p with id: %d\n", this, this->my_addr_);
 		delete [] inout_connection_;
 	}
 
@@ -73,14 +71,10 @@ namespace hw {
 	};
 
 	link_handler* flexfly_optical_switch::payload_handler(int port) const {
-		//std::printf("payload handler being called on switch with address: %p and addr is %d\n", this, this->my_addr_);
-		std::cout << "OPTICAL_SWITCHL: PAYLOAD HANDLER" << std::endl;
 		return new_link_handler(this, &flexfly_optical_switch::recv_payload);
 	};
 
 	link_handler* flexfly_optical_switch::credit_handler(int port) const {
-		//std::printf("credit handler being called on switch with address: %p and addr is %d\n", this, this->my_addr_);
-		std::cout << "OPTICAL_SWITCHL: CREDIT HANDLER" << std::endl;
 		return new_link_handler(this, &flexfly_optical_switch::recv_credit);
 	};
 
@@ -98,16 +92,19 @@ namespace hw {
 
 	void flexfly_optical_switch::recv_payload(event* ev) {
 		//message* msg = safe_cast(message, ev);
+		std::cout << "Optical Switch received a payload" << std::endl;
 		pisces_payload* msg = safe_cast(pisces_payload, ev);
 		node_id dst_id = msg->toaddr();
 		node_id src_id = msg->fromaddr();
-		switch_id dst_swid = top_->node_to_logp_switch(dst_id);
-		int outport = 0;
-		if (dst_id == 1) {
-			outport = 1;
-		}
+		switch_id src_swid = top_->node_to_switch(src_id);
+		
+		int src_group = top_->group_from_swid(src_swid);
+		int inport = src_group;
+		int outport = inout_connection_[inport];
+		std::cout << "inport is: " << std::to_string(inport) << " and outport is: " << std::to_string(outport) << std::endl; 
+		std::cout << "src_node is: " << std::to_string(src_id) << " and dst_node is: " << std::to_string(dst_id) << std::endl; 
+		std::cout << "src_swid is: " << std::to_string(src_swid) << std::endl;
 		send_to_link(outport_handler_[outport],ev);
-		//send_to_link(handler, msg);
 	};
 
 	bool flexfly_optical_switch::outport_connected(int outport) const {
@@ -137,5 +134,11 @@ namespace hw {
 			}	
 		}
 	}
+	/*
+	void flexfly_optical_switch::recv_config_msg(event* ev) {
+		optical_configuration* config = safe_cast(optical_configuration, ev);
+
+	}
+	*/
 }
 }
