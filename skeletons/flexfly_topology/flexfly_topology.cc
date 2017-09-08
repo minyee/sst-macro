@@ -405,6 +405,25 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
       }
     }
   };
+
+  void dfly_configuration(int num_optical_switches) {
+    int num_groups = num_optical_switches + 1;
+    
+    //std::vector<uint16_t> links_remaining;
+    //links_remaining.reserve(num_group);
+    std::set<int> group_connection_set;
+    for (int o = 0; o < num_groups; o++) {
+      group_connection_set.insert(o);
+    }
+    std::vector<std::set<int>> optical_switches;
+    optical_switches.reserve(num_optical_switches);
+    for (int o = 0; o < num_optical_switches; o++) {
+      optical_switches[o] = group_connection_set;
+    }
+    for (int i = 0; i < num_groups; i++) {
+      //for ()
+    }
+  }
 }
 }
 
