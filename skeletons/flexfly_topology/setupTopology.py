@@ -248,6 +248,14 @@ class Interconnect:
 		opticalSwitch.addParams(macroToCoreParams(switchParams))
 		opticalSwitch.addParam("switch_type" , "optical")
 		opticalSwitch.addParam("optical_switch_radix", self.opticalSwitchRadix)
+	
+	def buildNetworkMonitor(self):
+		nodeParams = self.params["node"]
+		self.network_manager_node = sst.Component("Node %d" % self*num_nodes, "macro.%s" % ("network_manager" + "_node"))
+		self.network_manager_node.addParams(macroToCoreParams(nodeParams))
+		id = self.num_nodes
+		self.network_manager_node.addParam("id", i);
+		return
 
 	def build(self):
 		self.buildEndpoints()

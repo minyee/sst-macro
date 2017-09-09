@@ -1,9 +1,9 @@
-#include ""
-#include "data_structures.h"
+#include "connectivity_matrix.h"
+#include <iostream>
 
 void node_configure(int** group_connectivity_matrix, size_t size) {
 	
-}
+};
 
 void node_configure_recursive(node* parent, std::vector<int> child_id, int depth) {
 	// base case
@@ -14,18 +14,21 @@ void node_configure_recursive(node* parent, std::vector<int> child_id, int depth
 		node* child = new node(child_id[i]);
 	}
 
-}
+};
 
-void generate_butterfly(int num_groups, ) {
+void generate_butterfly(int num_groups,  std::vector<node*>& groups, std::vector<node*>& optical_switches) {
 	//std::vector<node*>& groups = new std::vector<node*>[num_groups];
 	int num_optical_switches = num_groups - 1;
 	//std::vector<node*>& optical_switches = new std::vector<node*>[num_optical_switches];
 	for (int i = 0; i < num_groups; i++) {
 		groups[i] = new node(i);
-		if (i < num_groups - 1) 
-			optical_switches = new node(i);
+		groups[i]->set_num_child(num_optical_switches);
+		if (i < num_groups - 1) {
+			optical_switches[i] = new node(i);
+			optical_switches[i]->set_num_child(num_groups);
+		}
 	}
-}
+};
 
 void link_butterfly(std::vector<node*>& groups, std::vector<node*>& optical_switches) {
 	for (int i = 0; i < groups.size(); i++) {
@@ -36,20 +39,22 @@ void link_butterfly(std::vector<node*>& groups, std::vector<node*>& optical_swit
 			curr_optical_switch->set_child(i, curr_group_node);
 		}
 	}
-}
+};
 
 void form_butterfly(int num_groups, std::vector<node*>& groups, std::vector<node*>& optical_switches) {
 	generate_butterfly(num_groups, groups, optical_switches);
 	link_butterfly(groups,optical_switches);
-}
+};
 
 void delete_butterfly() {
 
-}
+};
 
 void canonical_dragonfly_config_greedy(int num_groups, std::vector<std::vector<int>>& optical_inout_connections) {
-	std::vector<node*> groups = std::vector(num_groups);
-	std::vector<node*> optical_switches = std::vector(num_groups - 1);
+	std::vector<node*> groups;
+	groups.reserve(num_groups);
+	std::vector<node*> optical_switches;
+	optical_switches.reserve(num_groups - 1);
 	form_butterfly(num_groups, groups, optical_switches);
 	// for all switches, find the optical switch that gets them to every other switch
 	for (int i = 0; i < num_groups; i++) {
@@ -59,7 +64,7 @@ void canonical_dragonfly_config_greedy(int num_groups, std::vector<std::vector<i
 			if (i == j) 
 				continue;
 			// NOTE: j is the target group's id
-			node* optical_switch = dfs(curr_node->get_child(j), 2, j);
+			node* optical_switch = dfs(curr_group->get_child(j), 2, j);
 			if (optical_switch == nullptr) {
 				std::cout << "FAILSSSSS" << std::endl;
 			}
@@ -72,18 +77,19 @@ void canonical_dragonfly_config_greedy(int num_groups, std::vector<std::vector<i
 			// CHECK THIS PART (END)
 		}
 	}
-}
+};
 
 /**
  * short for depth-first search
  */ 
 node* dfs(node* curr_node, int depth, int target_group_id) {
-	// last iteration
+	node* found_node = nullptr;
+
 	if (depth == 1) {
-		node* found_node = target_group_id == curr_node->get_id() ? curr_node : nullptr;
+		found_node = target_group_id == curr_node->get_id() ? curr_node : nullptr;
 		return found_node;
 	} else {
-		for (int i = 0; i < curr_node->num_child(); i++) {
+		for (int i = 0; i < curr_node->get_num_child(); i++) {
 			node* found_node = dfs(curr_node->get_child(i), depth - 1, target_group_id);
 			if (found_node != nullptr) {
 				// return curr node so that the group will know which 
@@ -92,6 +98,6 @@ node* dfs(node* curr_node, int depth, int target_group_id) {
 			}
 			return found_node;
 		}
-		dfs()
 	}
-}
+	return found_node;
+};

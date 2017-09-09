@@ -1,6 +1,6 @@
 #include <vector>
 
-typedef size_t uint16_t;
+//typedef size_t uint16_t;
 
 class node {
 public:
@@ -14,13 +14,13 @@ public:
 
 	~node() {};
 
-	int num_child() const {
+	int get_num_child() const {
 		return (int) num_child_;
 	};
 
 	void set_num_child(int num_child) {
 		if (num_child > 0) {
-			num_child_ = num_child_;
+			num_child_ = num_child;
 			children_.resize(num_child_);
 		}
 	};
@@ -31,7 +31,7 @@ public:
 		}
 	};
 
-	void get_child(int index) const {
+	node* get_child(int index) const {
 		node* child = nullptr;
 		if (index < num_child_ || index >= 0) {
 			child = children_[index];
@@ -39,7 +39,7 @@ public:
 		return child;
 	};
 
-	void get_id() const {
+	int get_id() const {
 		return id_;
 	};
 private:
