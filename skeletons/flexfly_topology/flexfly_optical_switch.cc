@@ -16,7 +16,7 @@ namespace hw {
     												uint64_t id,
     												event_manager* mgr) : optical_switch(params, id, mgr) {
 		my_addr_ = params->get_int_param("id");
-		//std::cout << "FLEXFLY_OPTICAL_SWITCH" << std::endl;
+		std::cout << "FLEXFLY_OPTICAL_SWITCH" << std::endl;
 		//std::printf("This address of this switch is: %d with pointer: %p\n", this->my_addr_, this);
 		num_ports_ = params->get_int_param("optical_switch_radix");
 		inport_handler_.reserve(num_ports_);
@@ -87,6 +87,7 @@ namespace hw {
 	};
 
 	void flexfly_optical_switch::recv_credit(event* ev) {
+		std::cout << "Optical Switch received a credit" << std::endl;
 		return;
 	};
 
@@ -101,9 +102,9 @@ namespace hw {
 		int src_group = top_->group_from_swid(src_swid);
 		int inport = src_group;
 		int outport = inout_connection_[inport];
-		std::cout << "inport is: " << std::to_string(inport) << " and outport is: " << std::to_string(outport) << std::endl; 
-		std::cout << "src_node is: " << std::to_string(src_id) << " and dst_node is: " << std::to_string(dst_id) << std::endl; 
-		std::cout << "src_swid is: " << std::to_string(src_swid) << std::endl;
+		//std::cout << "inport is: " << std::to_string(inport) << " and outport is: " << std::to_string(outport) << std::endl; 
+		//std::cout << "src_node is: " << std::to_string(src_id) << " and dst_node is: " << std::to_string(dst_id) << std::endl; 
+		//std::cout << "src_swid is: " << std::to_string(src_swid) << std::endl;
 		send_to_link(outport_handler_[outport],ev);
 	};
 

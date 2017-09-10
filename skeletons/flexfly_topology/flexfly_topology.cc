@@ -87,13 +87,28 @@ namespace hw {
 	configuration->nvtxs = (idx_t) num_groups_ * switches_per_group_;
  }
 
- void flexfly_topology::minimal_route_to_switch(switch_id current_sw_addr, 
- 												switch_id dest_sw_addr, 
+ void flexfly_topology::minimal_route_to_switch(switch_id src_switch_addr, 
+ 												switch_id dst_switch_addr, 
  												routable::path& path) const {
-  std::cout << "minimal_route_to_switch?" << std::endl;
- 	if (!valid_switch_id(current_sw_addr) || !valid_switch_id(dest_sw_addr)) {
+ 	if (!valid_switch_id(src_switch_addr) || !valid_switch_id(dst_switch_addr)) {
  		return;
  	}
+  int src_group = group_from_swid(src_switch_addr);
+  int dst_group = group_from_swid(dst_switch_addr);
+
+  if (src_group == dst_group) {
+    std::vector<topology::connection> conns;  
+    connected_outports(src_switch_addr, conns);
+    for (int i = 0; i < conns.size(); i++) {
+      if (conns[i].dst == dst_switch_addr) {
+        path.set_outport(i);
+        return;
+      }
+    }
+  } //else {
+    //path.set_outport();
+  //}
+
  };
 
  /**
@@ -175,7 +190,6 @@ void flexfly_topology::connected_outports(const switch_id src,
     const std::vector<switch_link*>& switch_link_vectors = got->second;
     for (switch_link* current_switch_link : switch_link_vectors) {
       conns.push_back(topology::connection());
-      //int cidx = conns.size() - 1;
       conns[cidx].src = src;
       conns[cidx].dst = current_switch_link->dest_sid;
       conns[cidx].src_outport = cidx; 
@@ -200,7 +214,6 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
  };
 
   switch_id flexfly_topology::node_to_ejection_switch(node_id addr, uint16_t& port) const {
-    std::cout << "node_to_ejection_switch?" << std::endl;
     switch_id swid = addr / nodes_per_switch_; // this gives us the switch id of the switch node addr is connected to
     std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_iter = switch_outport_connection_map_.find(swid);
     const std::vector<switch_link*>& conn_vector = tmp_iter->second;
@@ -209,7 +222,6 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
   };
   
   switch_id flexfly_topology::node_to_injection_switch(node_id addr, uint16_t& port) const {
-    std::cout << "node_to_injection_switch?" << std::endl;
     return node_to_ejection_switch(addr, port);
   };
 

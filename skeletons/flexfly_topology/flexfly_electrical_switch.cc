@@ -93,6 +93,9 @@ namespace hw {
   		std::cout << "This packet has dst : " << std::to_string(dst) << " and src: " << std::to_string(src) << std::endl;
   		// Case 1: route it to a connecting node
   		flexfly_topology* ftop = safe_cast(flexfly_topology, top_);
+
+  		router_->route(msg);
+
   		if (my_addr_ == ftop->node_to_switch(dst)) {
   			int port_num = dst - (my_addr_ * nodes_per_switch_) + switches_per_group_;
   			std::cout << "dst : " << std::to_string(dst) << " and my_addr is: " << std::to_string(my_addr_) << std::endl;
@@ -117,8 +120,12 @@ namespace hw {
 		}
 	};
 
-	void flexfly_electrical_switch::recv_nodal_credit(event* ev) {};
+	void flexfly_electrical_switch::recv_nodal_credit(event* ev) {
+		return;
+	};
 
-	void flexfly_electrical_switch::recv_credit(event* ev) {};
+	void flexfly_electrical_switch::recv_credit(event* ev) {
+		return;
+	};
 }
 }

@@ -46,8 +46,6 @@ bool greedy_job_launcher::handle_launch_request(app_launch_request* request,
 
 
 void greedy_job_launcher::stop_event_received(job_stop_event* ev) {
-	
-	//launch_event* le = dynamic_cast<launch_event*>(ev);
 	app_id app = 0;
 	if (!ev) {
 		app = ev->aid();
@@ -62,22 +60,13 @@ void greedy_job_launcher::stop_event_received(job_stop_event* ev) {
 		
 	}
 	if (!pending_jobs_.empty()) {
-			std::cout << "EVER GOT HERE AT ALL?" << std::endl;
 			app_launch_request* request = pending_jobs_.front();
 			pending_jobs_.pop_front();
 			active_jobs_.push_back(request);
 			active_jobs_num_++;
 			job_launcher::incoming_launch_request(request);
 		}
-	// try to schedule for another app to run
-
-	if (active_jobs_num_ != active_jobs_.size()) {
-		spkt_abort_printf("WE FUCKED UP");
-	}
-
-	// have to somehow traslate the job_stop_event to the actual job request
-	
-	
+	// try to schedule for another app to run	
 };
 }
 }
