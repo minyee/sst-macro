@@ -225,30 +225,26 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
     return node_to_ejection_switch(addr, port);
   };
 
+  /**
+   * NOTE: This method does not include the hop to an optical switch
+   **/
   int flexfly_topology::minimal_distance(switch_id src, switch_id dst) const {
     std::cout << "src switch id: " << std::to_string(src) << " dst switch id: " << std::to_string(dst) << std::endl;
+    int src_group = group_from_swid(src);
+    int dst_group = group_from_swid(dst);
     if (src == dst) { // same switch
       return 0;
-    } else if ((src / switches_per_group_) == (dst / switches_per_group_)) { // same group
+    } else if (src_group == dst_group) { // same group
       return 1;
     } else { // different group but can reach either by 1 global and 1 local or 1 local and then 1 global
       std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_iter = switch_outport_connection_map_.find(src);
       const std::vector<switch_link*>& conn_vector = tmp_iter->second;
-      //int dest_group = dst / (switches_per_group_ + num_optical_switches_per_group_);
       bool two_or_three = true; 
-      // 1) have to search through the vector of all port connections of it's own global link
-      // 2) also to search through the connection vectors of all of the switch's neighbors
-      // 3) at the same time, you'd need to be aware of what the optical switches' internal states are
-      //    and if they are connecting the groups together. 
+      
       for (switch_link* tmp_link : conn_vector ) {
         if (tmp_link->type == electrical)
           continue;
-        //if (tmp_link->dest_sid / (switches_per_group_ + num_optical_switches_per_group_) == dest_group)
-          //return 2;
       }
-
-      //if (conn_vector)
-      //dist = 2;
       return two_or_three ? 2 : 3;
     }
   };
@@ -302,7 +298,8 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
    * prints out the all the connections for each switch
    */
   void flexfly_topology::print_port_connection_for_switch(switch_id swid) const {
-    std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_iter = switch_outport_connection_map_.find(swid);
+    std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_iter = 
+                                        switch_outport_connection_map_.find(swid);
     if (tmp_iter == switch_outport_connection_map_.end()) {
       return;
     }
@@ -417,25 +414,6 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
       }
     }
   };
-
-  void dfly_configuration(int num_optical_switches) {
-    int num_groups = num_optical_switches + 1;
-    
-    //std::vector<uint16_t> links_remaining;
-    //links_remaining.reserve(num_group);
-    std::set<int> group_connection_set;
-    for (int o = 0; o < num_groups; o++) {
-      group_connection_set.insert(o);
-    }
-    std::vector<std::set<int>> optical_switches;
-    optical_switches.reserve(num_optical_switches);
-    for (int o = 0; o < num_optical_switches; o++) {
-      optical_switches[o] = group_connection_set;
-    }
-    for (int i = 0; i < num_groups; i++) {
-      //for ()
-    }
-  }
 }
 }
 
