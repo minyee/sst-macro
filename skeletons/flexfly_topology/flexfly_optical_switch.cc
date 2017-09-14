@@ -43,7 +43,8 @@ namespace hw {
 		}
 
 		if (my_addr_ == num_electrical_switches_ + num_ports_ - 2)
-			spkt_abort_printf("the hell");
+			printf("the hell");
+			//spkt_abort_printf("the hell");
 		//tmp[100000];
 	};
 

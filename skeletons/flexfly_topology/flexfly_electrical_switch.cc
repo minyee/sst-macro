@@ -88,12 +88,14 @@ namespace hw {
 		pisces_default_packet* msg = safe_cast(pisces_default_packet, ev);
 		node_id dst = msg->toaddr();
   		node_id src = msg->fromaddr();
-
+  		
   		std::cout << "Electrical switch: " << std::to_string(my_addr_) << " received a packet" << std::endl;
   		std::cout << "This packet has dst : " << std::to_string(dst) << " and src: " << std::to_string(src) << std::endl;
   		// Case 1: route it to a connecting node
   		flexfly_topology* ftop = safe_cast(flexfly_topology, top_);
-
+  		switch_id dst_swid = ftop->node_to_switch(dst);
+  		int dst_group = ftop->group_from_swid(dst_swid);
+  		int my_group = ftop->group_from_swid(my_addr_);
   		router_->route(msg);
 
   		if (my_addr_ == ftop->node_to_switch(dst)) {
@@ -101,8 +103,10 @@ namespace hw {
   			std::cout << "dst : " << std::to_string(dst) << " and my_addr is: " << std::to_string(my_addr_) << std::endl;
   			std::cout << "Port num is: " << std::to_string(port_num) << std::endl;
   			send_to_link(outport_handlers_[port_num], ev);
-  		} else {
-  			send_to_link(outport_handlers_[0], ev);	
+  		} else if (my_group == dst_group) { // thisi s not the destination switch bu the destination switch is in the same group
+  			
+
+  			//send_to_link(outport_handlers_[0], ev);	
   		}
 	}
 
