@@ -244,3 +244,32 @@ void configure_optical_switches_canonical(int num_groups, std::vector< std::vect
 	// finally delete all the groups and optical switch nodes;
 	delete_butterfly(num_groups, groups, optical_switches);
 }
+
+
+inline int wrapped_increment(int index, int max_num) {
+	return (index + 1) % max_num;
+}
+
+void configure_simpler_model(int num_groups, std::vector< std::vector<int> >& optical_inout_connections) {
+	int num_optical_switches = num_groups - 1;
+	if (optical_inout_connections.size() == 0) {
+		//optical_inout_connections.reserve(num_optical_switches);
+		optical_inout_connections.resize(num_optical_switches);
+		optical_inout_connections.reserve(num_optical_switches);
+	}
+	for (int i = 0; i < num_groups; i++) {
+		// i equals the current group
+		int tmp = i; // stores the current index
+		for (int j = 0; j < num_groups - 1; j++) {
+			std::vector<int>& current_switch_config = optical_inout_connections[j];
+			if (current_switch_config.size() == 0) {
+				//current_switch_config.reserve(num_groups);
+				current_switch_config.resize(num_groups);
+				current_switch_config.reserve(num_groups);
+			}
+			tmp = wrapped_increment(tmp, num_groups);
+			current_switch_config[i] = tmp;
+		}
+		
+	}
+}
