@@ -55,7 +55,7 @@ namespace hw {
 		*
 		**/
 		std::vector<std::vector<int>> connectivity_matrix;
-		canonical_dragonfly_config_greedy(num_groups_, connectivity_matrix);
+		configure_simpler_model(num_groups_, connectivity_matrix);
 		for (int i = 0 ; i < num_optical_switches_; i++) {
 			std::vector<int>& optical_inout_connectivity = connectivity_matrix[i];
 			optical_configuration_event* configuration = new optical_configuration_event();

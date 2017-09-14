@@ -139,6 +139,8 @@ private:
   void teardown_outport_connection(int outport);
   
   flexfly_topology* top_;
+
+  int num_electrical_switches_;
 };
 
 }

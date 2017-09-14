@@ -272,4 +272,7 @@ void configure_simpler_model(int num_groups, std::vector< std::vector<int> >& op
 		}
 		
 	}
+	std::cout << "GOT HERE AT ALL" << std::endl;
+	std::cout << "size of total switches: " << std::to_string(optical_inout_connections.size()) << std::endl;
+	std::cout << "size of total switches config: " << std::to_string(optical_inout_connections[0].size()) << std::endl;
 }

@@ -16,3 +16,5 @@ void canonical_dragonfly_config_greedy(int num_groups, std::vector<node*>& group
 void configure_optical_switches_canonical(int num_groups, std::vector< std::vector<int> >& optical_inout_connections);
 
 node* dfs(node* curr_node, int depth, int target_group_id);
+
+void configure_simpler_model(int num_groups, std::vector< std::vector<int> >& optical_inout_connections);

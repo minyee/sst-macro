@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <sstmac/hardware/topology/topology.h>
 #include "flexfly_topology.h"
-
+#include "connectivity_matrix.h"
 
 
 namespace sstmac {
@@ -34,6 +34,8 @@ namespace hw {
   }
  	setup_flexfly_topology();
   check_intergroup_connection();
+  configure_simpler_model(num_groups_, optical_inout_connectivity_); 
+  std::cout << "flexfly_topology -> optical_inout_connectivity_ has size: " << std::to_string(optical_inout_connectivity_.size()) << std::endl;
  }
 
  flexfly_topology::~flexfly_topology() {

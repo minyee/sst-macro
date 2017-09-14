@@ -273,6 +273,18 @@ public:
 
   int group_from_swid (switch_id swid) const;
 
+  void optical_switch_configuration(int optical_switch_id, std::vector<int>& config) const {
+    const std::vector<int>& switch_config = optical_inout_connectivity_[optical_switch_id];
+    if (config.size() == 0) {
+      config.resize(num_groups_);
+      config.reserve(num_groups_);
+    }
+    for (int i = 0; i < num_groups_; i++) {
+      config[i] = switch_config[i];
+    }
+    //return optical_inout_connectivity_[optical_switch_id];
+  };
+
 protected:
  
  void configure_optical_or_electrical_port_params(switch_id swid, std::string& str, sprockit::sim_parameters* sim_params) const;
@@ -295,6 +307,8 @@ private:
  std::unordered_map<switch_id, std::vector<switch_link*>> switch_outport_connection_map_;
 
  std::unordered_map<switch_id, std::vector<switch_link*>> switch_inport_connection_map_;
+
+ std::vector< std::vector<int> >optical_inout_connectivity_;
 
  uint32_t **group_connectivity_matrix_;
 

@@ -77,6 +77,7 @@ class Interconnect:
 			switch.addParams(macroToCoreParams(switchParams))
 			switch.addParam("switch_type" , "optical")
 			switch.addParam("optical_switch_radix", self.opticalSwitchRadix)
+			switch.addParam("num_electrical_switches", self.num_elec_switches)
 			self.switches[optical_switch_id] = switch
 		return
 

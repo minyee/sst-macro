@@ -19,16 +19,32 @@ namespace hw {
 		std::cout << "FLEXFLY_OPTICAL_SWITCH" << std::endl;
 		//std::printf("This address of this switch is: %d with pointer: %p\n", this->my_addr_, this);
 		num_ports_ = params->get_int_param("optical_switch_radix");
+		num_electrical_switches_ = params->get_int_param("num_electrical_switches");
 		inport_handler_.reserve(num_ports_);
 		outport_handler_.reserve(num_ports_);
 		inout_connection_ = new int[num_ports_];
 		for (int i = 0; i < num_ports_; i++) {
 			inout_connection_[i] = i;
 		}
-		inout_connection_[0] = 1;
-		inout_connection_[1] = 0;
+		//inout_connection_[0] = 1;
+		//inout_connection_[1] = 0;
 		top_ = safe_cast(flexfly_topology, topology::static_topology(params));
 		init_links(params); // this has to be called upon class initialization
+		std::vector<int> tmp;
+		top_->optical_switch_configuration(my_addr_ - num_electrical_switches_, tmp);
+		for (int i = 0; i < num_ports_; i++) {
+			inout_connection_[i] = tmp[i];
+		}
+
+		std::cout << "switch: " << std::to_string(my_addr_) << std::endl;
+
+		for (int i = 0; i < num_ports_; i++) {
+			std::cout << "inport: " << std::to_string(i) << " -> outport: " << std::to_string(inout_connection_[i]) << std::endl;
+		}
+
+		if (my_addr_ == num_electrical_switches_ + num_ports_ - 2)
+			spkt_abort_printf("the hell");
+		//tmp[100000];
 	};
 
 	flexfly_optical_switch::~flexfly_optical_switch() {
