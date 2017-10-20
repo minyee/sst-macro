@@ -97,6 +97,14 @@ class Interconnect:
 			self.switches[i] = switch 
 		return
 
+	def buildSimplifiedTopology(self):
+		self.simplifiedSwitch = sst.Component("Switch 0" , "macro.my_logp_switch")
+		self
+		for i in range(self.num_nodes):
+			switchId = i % self.nodes_per_switch
+
+		return
+
 	def latency(self, params):
 		if params.has_key("latency"):
 			return params["latency"]

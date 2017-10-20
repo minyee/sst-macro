@@ -75,7 +75,7 @@ pisces_nic::pisces_nic(sprockit::sim_parameters* params, node* parent) :
   packetizer_(nullptr)
 {
   sprockit::sim_parameters* inj_params = params->get_namespace("injection");
-  std::cout << "PISCES NIC IS BEING CONSTRUCEDDDDDDDDDDD" << std::endl;
+  //std::cout << "PISCES NIC IS BEING CONSTRUCEDDDDDDDDDDD" << std::endl;
 
   packetizer_ = packetizer::factory::get_optional_param("packetizer", "cut_through",
                                               inj_params, parent);

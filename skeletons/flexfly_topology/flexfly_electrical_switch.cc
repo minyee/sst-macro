@@ -89,8 +89,8 @@ namespace hw {
 		node_id dst = msg->toaddr();
   		node_id src = msg->fromaddr();
   		
-  		std::cout << "Electrical switch: " << std::to_string(my_addr_) << " received a packet" << std::endl;
-  		std::cout << "This packet has dst : " << std::to_string(dst) << " and src: " << std::to_string(src) << std::endl;
+  		//std::cout << "Electrical switch: " << std::to_string(my_addr_) << " received a packet" << std::endl;
+  		//std::cout << "This packet has dst : " << std::to_string(dst) << " and src: " << std::to_string(src) << std::endl;
   		// Case 1: route it to a connecting node
   		flexfly_topology* ftop = safe_cast(flexfly_topology, top_);
   		switch_id dst_swid = ftop->node_to_switch(dst);
@@ -100,8 +100,8 @@ namespace hw {
 
   		if (my_addr_ == ftop->node_to_switch(dst)) {
   			int port_num = dst - (my_addr_ * nodes_per_switch_) + switches_per_group_;
-  			std::cout << "dst : " << std::to_string(dst) << " and my_addr is: " << std::to_string(my_addr_) << std::endl;
-  			std::cout << "Port num is: " << std::to_string(port_num) << std::endl;
+  			//std::cout << "dst : " << std::to_string(dst) << " and my_addr is: " << std::to_string(my_addr_) << std::endl;
+  			//std::cout << "Port num is: " << std::to_string(port_num) << std::endl;
   			send_to_link(outport_handlers_[port_num], ev);
   		} else if (my_group == dst_group) { // thisi s not the destination switch bu the destination switch is in the same group
   			
@@ -115,7 +115,7 @@ namespace hw {
 	 * This can be said to be an injection packet
 	 **/
 	void flexfly_electrical_switch::recv_nodal_payload(event* ev) {
-		std::cout << "received nodal message at switch " << std::to_string(my_addr_) << std::endl;
+		//std::cout << "received nodal message at switch " << std::to_string(my_addr_) << std::endl;
 		pisces_default_packet* msg = safe_cast(pisces_default_packet, ev);
 		if (ftop_->node_to_switch(msg->toaddr()) == my_addr_) {
 			send_to_link(outport_handlers_[1], ev);

@@ -31,7 +31,6 @@ my_logp_switch::my_logp_switch(sprockit::sim_parameters *params, uint64_t id, ev
   sprockit::sim_parameters* link_params = params->get_namespace("link");
   sprockit::sim_parameters* ej_params = params->get_namespace("ejection");
   int my_id = params->get_int_param("id");
-  std::cout << "YEAY HAHAHAHAH MY_LOG_P switch constructor with id: " << std::to_string(my_id) << std::endl;
   double net_bw = link_params->get_bandwidth_param("bandwidth");
   inverse_bw_ = 1.0/net_bw;
   if (link_params->has_param("send_latency")){
