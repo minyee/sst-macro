@@ -89,7 +89,7 @@ namespace hw {
 		node_id dst = msg->toaddr();
   		node_id src = msg->fromaddr();
   		
-  		//std::cout << "Electrical switch: " << std::to_string(my_addr_) << " received a packet" << std::endl;
+  		std::cout << "Electrical switch: " << std::to_string(my_addr_) << " received a packet" << std::endl;
   		//std::cout << "This packet has dst : " << std::to_string(dst) << " and src: " << std::to_string(src) << std::endl;
   		// Case 1: route it to a connecting node
   		flexfly_topology* ftop = safe_cast(flexfly_topology, top_);

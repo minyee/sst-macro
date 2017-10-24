@@ -285,6 +285,8 @@ public:
     //return optical_inout_connectivity_[optical_switch_id];
   };
 
+  int num_links_between_groups(int group1, int group2) const; 
+
 protected:
  
  void configure_optical_or_electrical_port_params(switch_id swid, std::string& str, sprockit::sim_parameters* sim_params) const;
@@ -310,7 +312,8 @@ private:
 
  std::vector< std::vector<int> >optical_inout_connectivity_;
 
- uint32_t **group_connectivity_matrix_;
+ std::vector< std::vector<int> >  group_connectivity_matrix_;
+ //uint32_t **group_connectivity_matrix_;
 
  void setup_flexfly_topology();
 
@@ -324,8 +327,6 @@ private:
 
  bool is_electrical_switch(switch_id sid) const;
 
- // figures out if two groups are currently connected to one another
- // also accounts for the connectivity within the optical switches
  
  
  
@@ -342,6 +343,9 @@ public:
  	return switches_per_group_;
  }
 
+ int nodes_per_switch() {
+  return nodes_per_switch_;
+ }
 };
 
 

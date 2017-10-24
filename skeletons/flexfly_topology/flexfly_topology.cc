@@ -16,6 +16,7 @@
 namespace sstmac {
 namespace hw {
 
+ 
  flexfly_topology::flexfly_topology(sprockit::sim_parameters* params) : 
                               structured_topology(params,InitMaxPortsIntra::I_Remembered, 
                                                   InitGeomEjectID::I_Remembered) {
@@ -28,9 +29,16 @@ namespace hw {
   optical_switch_radix_ = num_groups_;
   max_switch_id_ = num_optical_switches_ + (num_groups_ * switches_per_group_) - 1;
   max_node_id_ = num_groups_ * switches_per_group_ * nodes_per_switch_ - 1;
-  group_connectivity_matrix_ = (uint32_t **) malloc(num_groups_ * sizeof(uint32_t*));
+  group_connectivity_matrix_.resize(num_groups_);
   for (int i = 0; i < num_groups_; i++) {
-    group_connectivity_matrix_[i] = (uint32_t *) calloc(num_groups_, sizeof(uint32_t));
+    group_connectivity_matrix_[i].resize(num_groups_);
+    for (int j = 0; j < num_groups_; j++) {
+      if (i == j) {
+        group_connectivity_matrix_[i][j] = 0;
+      } else {
+        group_connectivity_matrix_[i][j] = 1;
+      }
+    }
   }
  	setup_flexfly_topology();
   check_intergroup_connection();
@@ -45,10 +53,6 @@ namespace hw {
        free(switch_link_ptr);
      }
    }
-   for (int i = 0; i < num_groups_; i++) {
-    delete group_connectivity_matrix_[i];
-   }
-   delete group_connectivity_matrix_;
  }
 
  /**
@@ -81,7 +85,6 @@ namespace hw {
    }
  }
 
-
  void flexfly_topology::configure_metis(metis_config* configuration) const {
 	if (!configuration) {
 		return;
@@ -107,9 +110,7 @@ namespace hw {
         return;
       }
     }
-  } //else {
-    //path.set_outport();
-  //}
+  } 
 
  };
 
@@ -231,7 +232,7 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
    * NOTE: This method does not include the hop to an optical switch
    **/
   int flexfly_topology::minimal_distance(switch_id src, switch_id dst) const {
-    std::cout << "src switch id: " << std::to_string(src) << " dst switch id: " << std::to_string(dst) << std::endl;
+    //std::cout << "src switch id: " << std::to_string(src) << " dst switch id: " << std::to_string(dst) << std::endl;
     int src_group = group_from_swid(src);
     int dst_group = group_from_swid(dst);
     if (src == dst) { // same switch
@@ -388,6 +389,13 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
     return swid;
   };
 
+  /**
+   * given two group id's, group1 and group2, returns the number of intergroup links 
+   * 
+   */
+  int flexfly_topology::num_links_between_groups(int group1, int group2) const {
+    return group_connectivity_matrix_[group1][group2];
+  };
   /**
    * Checks that each in and out port of a given index of all optical switches
    * get connected to the exact same switches.

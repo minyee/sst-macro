@@ -2,7 +2,7 @@ import sst
 import sst.macro
 
 opticalLatency = "0ps"
-smallLatency = "1us"
+smallLatency = "1ms"
 
 def makeUniLink(linkType,srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat=None,inLat=None):
 	if not outLat : outLat = inLat
@@ -30,6 +30,7 @@ class Interconnect:
 			"flexfly_topology"
 		]
 		self.params = params
+		self.simplifiedSwitch = None
 		self.system = sst.macro.System(params)
 		self.num_nodes = self.system.numNodes()
 		self.num_switches = self.system.numSwitches()
@@ -97,12 +98,14 @@ class Interconnect:
 			self.switches[i] = switch 
 		return
 
-	def buildSimplifiedTopology(self):
+	def buildSimplifiedTopology(self, latency):
 		self.simplifiedSwitch = sst.Component("Switch 0" , "macro.my_logp_switch")
-		self
+		self.simplifiedSwitch.addParam("id" , 90) 
+		self.simplifiedSwitch.addParam("optical_bandwidth" , "1Gb/s") 
+		self.simplifiedSwitch.addParam("electrical_bandwidth" , "1Gb/s") 
+		#switch.addParam("")
 		for i in range(self.num_nodes):
-			switchId = i % self.nodes_per_switch
-
+			makeBiLink("network", self.simplifiedSwitch, 90, i, self.nodes[i], i, 0, latency, latency)
 		return
 
 	def latency(self, params):
@@ -214,16 +217,15 @@ class Interconnect:
 		num = eval(num) * 2
 		lat = "%8.4f%s" % (num,units.strip())
 		switches = []
-		#print "nproc: %d" % nproc
 		for i in range(nproc):
-			#switch = sst.Component("flexfly_electrical %d" % i, "macro.flexfly_electrical_switch")
 			switch = sst.Component("my_logp %d" % i, "macro.my_logp_switch")
+			#switch = sst.Component("logp %d" % i, "macro.logp_switch")
 			switch.addParams(macroToCoreParams(switchParams))
 			switch.addParam("id", i)
 			switches.append(switch)
 			#NEWLY ADDED BEGIN
-			switch.addParam("switch_type" , "electrical")
-			switch.addParam("total_radix", self.num_nodes)
+			switch.addParam("electrical_bandwidth" , "10Gb/s")
+			switch.addParam("optical_bandwidth", "1Gb/s")
 			#NEWLY ADDED END
 		for i in range(nproc):
 			sw_i = switches[i]
@@ -266,19 +268,26 @@ class Interconnect:
 		self.network_manager_node.addParam("id", i);
 		return
 
-	def build(self):
-		self.buildEndpoints()
-		topologyParams = self.params["topology"]
-		topologyName = topologyParams["name"]
-		self.buildElectricalSwitches()
-		if self.containsOptics:
-			self.opticalSwitchRadix = topologyParams["optical_switch_radix"]
-			self.buildOpticalSwitches()
-		#self.buildTopology()
-		self.buildTopology2()
-		self.buildNodeConnections()
-		#self. buildNodeConnections2()
-		self.buildLogPNetwork()
+	def build(self, islogP):
+		if not islogP:
+			self.buildEndpoints()
+			topologyParams = self.params["topology"]
+			topologyName = topologyParams["name"]
+			self.buildElectricalSwitches()
+			if self.containsOptics:
+				self.opticalSwitchRadix = topologyParams["optical_switch_radix"]
+				self.buildOpticalSwitches()
+			#self.buildTopology()
+			self.buildTopology2()
+			self.buildNodeConnections()
+			#self. buildNodeConnections2()
+			self.buildLogPNetwork()
+		else:
+			self.buildEndpoints()
+			self.buildSimplifiedTopology(smallLatency)
+			self.buildLogPNetwork()
+
+
 		
 
 ## Returns the command line argv in terms of a vector that is 0-indexed
@@ -366,4 +375,5 @@ def setupTopology():
 				if not nsParams.has_key(key):
 					nsParams[key] = val    
 	interconnect = Interconnect(params)
-	interconnect.build()
+	isLogP = True
+	interconnect.build(isLogP)

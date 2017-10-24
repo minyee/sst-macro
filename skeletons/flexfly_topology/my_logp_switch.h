@@ -5,6 +5,7 @@
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sprockit/unordered.h>
+#include "flexfly_topology.h"
 
 namespace sstmac {
 namespace hw {
@@ -23,10 +24,6 @@ class my_logp_switch :
          "A switch that implements a basic delay model with no congestion modeling")
 
  public:
-  typedef enum {
-    Node,
-    Switch
-  } Port;
 
   my_logp_switch(sprockit::sim_parameters* params, uint64_t id, event_manager* mgr);
 
@@ -69,16 +66,24 @@ class my_logp_switch :
 
   timestamp dbl_inj_lat_;
 
-  double inverse_bw_;
+  double electrical_bw_;
 
-  double inv_min_bw_;
+  double optical_bw_;
 
-  timestamp hop_latency_;
+  timestamp inv_electrical_bw_;
+
+  timestamp inv_optical_bw_;
 
   interconnect* interconn_;
 
+  int switches_per_group_;
+
+  int nodes_per_switch_;
+
   std::vector<event_handler*> neighbors_;
   std::vector<event_handler*> nics_;
+
+  flexfly_topology* ftop_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   link_handler* mtl_handler_;

@@ -42,8 +42,8 @@ namespace hw {
 			std::cout << "inport: " << std::to_string(i) << " -> outport: " << std::to_string(inout_connection_[i]) << std::endl;
 		}
 
-		if (my_addr_ == num_electrical_switches_ + num_ports_ - 2)
-			printf("the hell");
+		//if (my_addr_ == num_electrical_switches_ + num_ports_ - 2)
+			//printf("the hell");
 			//spkt_abort_printf("the hell");
 		//tmp[100000];
 	};
