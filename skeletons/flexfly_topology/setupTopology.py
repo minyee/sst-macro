@@ -101,8 +101,8 @@ class Interconnect:
 	def buildSimplifiedTopology(self, latency):
 		self.simplifiedSwitch = sst.Component("Switch 0" , "macro.my_logp_switch")
 		self.simplifiedSwitch.addParam("id" , 90) 
-		self.simplifiedSwitch.addParam("optical_bandwidth" , "1Gb/s") 
-		self.simplifiedSwitch.addParam("electrical_bandwidth" , "1Gb/s") 
+		self.simplifiedSwitch.addParam("optical_bandwidth" , "10Gb/s") 
+		self.simplifiedSwitch.addParam("electrical_bandwidth" , "1Mb/s") 
 		#switch.addParam("")
 		for i in range(self.num_nodes):
 			makeBiLink("network", self.simplifiedSwitch, 90, i, self.nodes[i], i, 0, latency, latency)

@@ -92,15 +92,18 @@ namespace hw {
 	configuration->nvtxs = (idx_t) num_groups_ * switches_per_group_;
  }
 
+ /**
+  * IMPORTANT: This function will route the minimal path
+  **/
  void flexfly_topology::minimal_route_to_switch(switch_id src_switch_addr, 
  												switch_id dst_switch_addr, 
  												routable::path& path) const {
- 	if (!valid_switch_id(src_switch_addr) || !valid_switch_id(dst_switch_addr)) {
- 		return;
- 	}
-  int src_group = group_from_swid(src_switch_addr);
-  int dst_group = group_from_swid(dst_switch_addr);
-
+  int src_group = src_switch_addr/switches_per_group_;
+  int dst_group = src_switch_addr/switches_per_group_;
+  // both the source and dest switch cannot be the same, because the caller 
+  // should not call this function if this were the case
+  assert(src_switch_addr != dst_switch_addr);
+  // if both nodes are connected to the same switch
   if (src_group == dst_group) {
     std::vector<topology::connection> conns;  
     connected_outports(src_switch_addr, conns);
@@ -110,7 +113,9 @@ namespace hw {
         return;
       }
     }
-  } 
+  } else {
+    // find the 
+  }
 
  };
 

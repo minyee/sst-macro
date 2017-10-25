@@ -100,13 +100,9 @@ namespace hw {
 
   		if (my_addr_ == ftop->node_to_switch(dst)) {
   			int port_num = dst - (my_addr_ * nodes_per_switch_) + switches_per_group_;
-  			//std::cout << "dst : " << std::to_string(dst) << " and my_addr is: " << std::to_string(my_addr_) << std::endl;
-  			//std::cout << "Port num is: " << std::to_string(port_num) << std::endl;
   			send_to_link(outport_handlers_[port_num], ev);
-  		} else if (my_group == dst_group) { // thisi s not the destination switch bu the destination switch is in the same group
+  		} else if (my_group == dst_group) { 
   			
-
-  			//send_to_link(outport_handlers_[0], ev);	
   		}
 	}
 

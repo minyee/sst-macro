@@ -106,7 +106,6 @@ my_logp_switch::incoming_message(message* msg, node_id src, node_id dst)
   bool local_src = nics_[src];
   long num_bytes = msg->byte_length();
   timestamp delay = 2 * inj_bw_inverse_ * num_bytes; //bw term
-  
   switch_id src_switch = src / nodes_per_switch_;
   switch_id dst_switch = dst / nodes_per_switch_;
   int src_group = src_switch / switches_per_group_;
@@ -119,11 +118,6 @@ my_logp_switch::incoming_message(message* msg, node_id src, node_id dst)
       int num_links = ftop_->num_links_between_groups(src_group, dst_group);  
       double net_intergroup_bw = num_links * optical_bw_;
       delay += (num_links * inv_optical_bw_ + 2 * inv_electrical_bw_) * num_bytes;
-    }
-    if (local_src){ //need to accumulate all the delay here
-      //local staying local
-      //num_hops = top_->num_hops_to_node(src, dst);
-      //delay += num_hops * hop_latency_ + dbl_inj_lat_; //factor of 2 for in-out
     }
     send_delayed_to_link(delay, nics_[dst], msg);
   } else {
@@ -175,6 +169,7 @@ my_logp_switch::bcast_local_message(message* msg, node_id src)
   sw::task_mapping::ptr mapping = lev->mapping();
   int num_ranks = mapping->num_ranks();
   //std::cout << "Broadcasting message" << std::endl;
+  long num_bytes = msg->byte_length();
   for (int i=0; i < num_ranks; ++i){
     node_id dst_node = mapping->rank_to_node(i);
     auto dst_nic = nics_[dst_node];
@@ -189,17 +184,16 @@ my_logp_switch::bcast_local_message(message* msg, node_id src)
       int src_group = src_switch / switches_per_group_;
       int dst_group = dst_switch / switches_per_group_;
 
-      timestamp delay= 2 * inj_bw_inverse_ / 1000; //factor of 2 for in-out
+      timestamp delay= 2 * inj_bw_inverse_ * num_bytes; //factor of 2 for in-out
       
-      std::cout << "hello" << std::endl;
       if (src_switch == dst_switch) {
         //delay = 2 * inj_bw_inverse_;
       } else if (src_group == dst_group) {
-        delay += inv_electrical_bw_; 
+        delay += inv_electrical_bw_ * num_bytes; 
       } else {
         int num_links = ftop_->num_links_between_groups(src_group, dst_group);  
         double net_intergroup_bw = num_links * optical_bw_;
-        delay += (num_links * inv_optical_bw_ + 2 * inv_electrical_bw_) ;
+        delay += (num_links * inv_optical_bw_ + 2 * inv_electrical_bw_) * num_bytes;
       }
       //send_to_link(dst_nic, new_lev);
       send_delayed_to_link(delay, dst_nic, new_lev);
