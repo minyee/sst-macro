@@ -31,12 +31,11 @@ my_logp_switch::my_logp_switch(sprockit::sim_parameters *params, uint64_t id, ev
   //sprockit::sim_parameters* link_params = params->get_namespace("link");
   //sprockit::sim_parameters* ej_params = params->get_namespace("ejection");
   int my_id = params->get_int_param("id");
-  std::cout << "Am I in here?" << std::endl;
   electrical_bw_ = params->get_bandwidth_param("electrical_bandwidth");
   optical_bw_ = params->get_bandwidth_param("optical_bandwidth");
 
   inv_optical_bw_ = 1.0/optical_bw_;
-  electrical_bw_ = 1.0/electrical_bw_;
+  inv_electrical_bw_ = 1.0/electrical_bw_;
 
   //double inj_bw = ej_params->get_optional_bandwidth_param("bandwidth", net_bw);
   double inj_bw = electrical_bw_;
@@ -103,31 +102,38 @@ my_logp_switch::connect_input(sprockit::sim_parameters *params,
 void
 my_logp_switch::incoming_message(message* msg, node_id src, node_id dst)
 {
+  bool skip = false;
   bool local_src = nics_[src];
-  timestamp delay; //bw term
+  long num_bytes = msg->byte_length();
+  timestamp delay = 2 * inj_bw_inverse_ * num_bytes; //bw term
+  
   switch_id src_switch = src / nodes_per_switch_;
   switch_id dst_switch = dst / nodes_per_switch_;
   int src_group = src_switch / switches_per_group_;
   int dst_group = dst_switch / switches_per_group_;
-  if (src_switch == dst_switch) {
-    delay = 2 * inj_bw_inverse_;
-  } else if (src_group == dst_group) {
-    delay = 2 * inj_bw_inverse_ + inv_electrical_bw_; 
+  if (!skip) {
+    if (src_switch == dst_switch) {
+    } else if (src_group == dst_group) {
+      delay += (inv_electrical_bw_) * num_bytes; 
+    } else {
+      int num_links = ftop_->num_links_between_groups(src_group, dst_group);  
+      double net_intergroup_bw = num_links * optical_bw_;
+      delay += (num_links * inv_optical_bw_ + 2 * inv_electrical_bw_) * num_bytes;
+    }
+    if (local_src){ //need to accumulate all the delay here
+      //local staying local
+      //num_hops = top_->num_hops_to_node(src, dst);
+      //delay += num_hops * hop_latency_ + dbl_inj_lat_; //factor of 2 for in-out
+    }
+    send_delayed_to_link(delay, nics_[dst], msg);
   } else {
-    int num_links = ftop_->num_links_between_groups(src_group, dst_group);  
-    double net_intergroup_bw = num_links * optical_bw_;
-    delay = 2 * inj_bw_inverse_ + num_links * inv_optical_bw_ + 2 * inv_electrical_bw_;
-  }
-  if (local_src){ //need to accumulate all the delay here
-    //local staying local
-    //num_hops = top_->num_hops_to_node(src, dst);
-    //delay += num_hops * hop_latency_ + dbl_inj_lat_; //factor of 2 for in-out
-  }
-  /*
-  switch_debug("incoming message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
+    /*
+        switch_debug("incoming message over %d hops with extra delay %12.8e and inj lat %12.8e: %s",
                num_hops, delay.sec(), dbl_inj_lat_.sec(), msg->to_string().c_str());
                */
-  send_delayed_to_link(delay, nics_[dst], msg);
+    send_to_link(nics_[dst], msg);
+  }
+  //
 }
 
 // TODO: Need to modify this, the delayed to link function has to include bandwidth from group to group
@@ -183,7 +189,7 @@ my_logp_switch::bcast_local_message(message* msg, node_id src)
       int src_group = src_switch / switches_per_group_;
       int dst_group = dst_switch / switches_per_group_;
 
-      timestamp delay= 2 * inj_bw_inverse_ / 10000; //factor of 2 for in-out
+      timestamp delay= 2 * inj_bw_inverse_ / 1000; //factor of 2 for in-out
       
       std::cout << "hello" << std::endl;
       if (src_switch == dst_switch) {
@@ -195,7 +201,7 @@ my_logp_switch::bcast_local_message(message* msg, node_id src)
         double net_intergroup_bw = num_links * optical_bw_;
         delay += (num_links * inv_optical_bw_ + 2 * inv_electrical_bw_) ;
       }
-     
+      //send_to_link(dst_nic, new_lev);
       send_delayed_to_link(delay, dst_nic, new_lev);
     }
   }
