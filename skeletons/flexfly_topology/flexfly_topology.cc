@@ -11,7 +11,7 @@
 #include <sstmac/hardware/topology/topology.h>
 #include "flexfly_topology.h"
 #include "connectivity_matrix.h"
-
+#include "flexfly_routing_algo.h"
 
 namespace sstmac {
 namespace hw {
