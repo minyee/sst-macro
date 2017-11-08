@@ -81,6 +81,11 @@ void recv_nodal_payload(event* ev);
 
 void recv_nodal_credit(event* ev);
 
+private:
+int node_to_port(int node) const;
+
+void send_packet_to_node(event* ev, int node_id);
+
 protected:
 router* router_;
 std::vector<event_handler*> inport_handlers_;
@@ -95,10 +100,9 @@ int port_cnt_;
 int switches_per_group_;
 int nodes_per_switch_;
 flexfly_topology* ftop_;
+int num_groups_;
  //void (std::vector<>)
- //std::unordered_map<port_>
-	//need a data structure that links a port id to a switch_id or 
- //std::unordered_map<port_id,std::vector<connection>>;
+ 
 };
  
 }

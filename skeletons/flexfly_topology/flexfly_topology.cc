@@ -376,7 +376,7 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
      through this switch
      @param nodeaddr The node to eject from
      @param switch_port [inout] The port on the switch the node ejects on
-     @return The switch that ejects into the node
+     @return The switch that ejects` into the node
   */
   switch_id flexfly_topology::netlink_to_ejection_switch(
         netlink_id nodeaddr, uint16_t& switch_port) const {
@@ -401,6 +401,7 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
   int flexfly_topology::num_links_between_groups(int group1, int group2) const {
     return group_connectivity_matrix_[group1][group2];
   };
+
   /**
    * Checks that each in and out port of a given index of all optical switches
    * get connected to the exact same switches.
@@ -408,16 +409,10 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
   void flexfly_topology::check_intergroup_connection() const {
     for (int i = 0; i < num_optical_switches_; i++) {
       int index = i + num_groups_ * switches_per_group_;
-      if (!is_optical_switch(index)) {
-        spkt_abort_printf("Not an optical switch");
-      }
       std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_in_iter = switch_inport_connection_map_.find(index);
       std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_out_iter = switch_outport_connection_map_.find(index);
       const std::vector<switch_link*>& conn_in_vector = tmp_in_iter->second;
       const std::vector<switch_link*>& conn_out_vector = tmp_out_iter->second;
-      if (conn_in_vector.size() == 0 || conn_out_vector.size() != conn_in_vector.size()) {
-        spkt_abort_printf("Size equals zero or non-equal inport count and outport count");
-      }
       for (int i = 0; i < conn_in_vector.size(); i++) {
         if (conn_in_vector[i]->src_sid != conn_out_vector[i]->dest_sid) {
           spkt_abort_printf("Optical Switch id: %d has different in-out connectivity\n",index);
@@ -428,6 +423,10 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
         }
       }
     }
+  };
+
+  void flexfly_topology::route_minimal(int src_switch, int dst_switch, flexfly_packet* f_packet) {
+    depth_first_search(group_connectivity_matrix_, src_switch, dst_switch);
   };
 }
 }

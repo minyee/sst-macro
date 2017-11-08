@@ -1,9 +1,8 @@
 #include "flexfly_electrical_switch.h"
-//#include "flexfly_events.h"
+//#include "flexfly_packet.h"
 #include <sstmac/hardware/common/connection.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <sprockit/sim_parameters.h>
-//#include <sstmac/hardware/nic/nic.h>
 #include <sprockit/util.h>
 #include <sstmac/hardware/router/router_fwd.h>
 #include <sstmac/hardware/switch/network_switch.h>
@@ -12,6 +11,7 @@
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/software/launch/launch_event.h>
 #include <sstmac/hardware/network/network_message.h>
+
 namespace sstmac {
 namespace hw {
 
@@ -27,6 +27,7 @@ namespace hw {
 		my_addr_ = params->get_int_param("id");
 		radix_ = params->get_int_param("total_radix");
 		switches_per_group_ = params->get_int_param("switches_per_group");
+		num_groups_ = params->get_int_param("num_groups");
 		nodes_per_switch_ = radix_ - switches_per_group_;
 		inport_handlers_.reserve(radix_);
 		outport_handlers_.reserve(radix_);
@@ -99,8 +100,7 @@ namespace hw {
   		router_->route(msg);
 
   		if (my_addr_ == ftop->node_to_switch(dst)) {
-  			int port_num = dst - (my_addr_ * nodes_per_switch_) + switches_per_group_;
-  			send_to_link(outport_handlers_[port_num], ev);
+  			send_packet_to_node(ev, ftop->node_to_switch(dst));
   		} else if (my_group == dst_group) { 
   			
   		}
@@ -108,11 +108,15 @@ namespace hw {
 
 	/**
 	 * Receiving a packet or message from a node, not from a switch.
-	 * This can be said to be an injection packet
+	 * This can be said to be an injection packet. Must be routed through
+	 * the network 
 	 **/
 	void flexfly_electrical_switch::recv_nodal_payload(event* ev) {
-		//std::cout << "received nodal message at switch " << std::to_string(my_addr_) << std::endl;
+		// need to generate a new flexfly_packet here
 		pisces_default_packet* msg = safe_cast(pisces_default_packet, ev);
+		std::cout << "received_nodal_payload?" << std::endl;
+		flexfly_packet* fpacket = new flexfly_packet();
+		//fpacket = 
 		if (ftop_->node_to_switch(msg->toaddr()) == my_addr_) {
 			send_to_link(outport_handlers_[1], ev);
 		} else {
@@ -127,5 +131,22 @@ namespace hw {
 	void flexfly_electrical_switch::recv_credit(event* ev) {
 		return;
 	};
+
+	int flexfly_electrical_switch::node_to_port(int node) const {
+		int port = -1;
+		if (node < my_addr_ * switches_per_group_ * num_groups_) {
+
+		}
+		return -1;
+	}
+
+	/**
+	 * Has to be called when received a packet and the target node is
+	 * connected to current switch
+	 **/
+	void flexfly_electrical_switch::send_packet_to_node(event* ev, int node_id) {
+		int port_id = node_to_port(node_id);
+		send_to_link(outport_handlers_[port_id], ev);
+	}
 }
 }

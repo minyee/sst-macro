@@ -95,6 +95,7 @@ class Interconnect:
 			switch.addParam("switch_type" , "electrical")
 			switch.addParam("total_radix", self.switches_per_group + self.nodes_per_switch)
 			switch.addParam("switches_per_group", self.switches_per_group)
+			switch.addParam("num_groups", self.num_groups);
 			self.switches[i] = switch 
 		return
 
@@ -375,5 +376,5 @@ def setupTopology():
 				if not nsParams.has_key(key):
 					nsParams[key] = val    
 	interconnect = Interconnect(params)
-	isLogP = True
+	isLogP = False
 	interconnect.build(isLogP)

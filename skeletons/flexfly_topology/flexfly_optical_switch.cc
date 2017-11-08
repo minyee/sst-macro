@@ -16,8 +16,6 @@ namespace hw {
     												uint64_t id,
     												event_manager* mgr) : optical_switch(params, id, mgr) {
 		my_addr_ = params->get_int_param("id");
-		std::cout << "FLEXFLY_OPTICAL_SWITCH" << std::endl;
-		//std::printf("This address of this switch is: %d with pointer: %p\n", this->my_addr_, this);
 		num_ports_ = params->get_int_param("optical_switch_radix");
 		num_electrical_switches_ = params->get_int_param("num_electrical_switches");
 		inport_handler_.reserve(num_ports_);
@@ -26,8 +24,6 @@ namespace hw {
 		for (int i = 0; i < num_ports_; i++) {
 			inout_connection_[i] = i;
 		}
-		//inout_connection_[0] = 1;
-		//inout_connection_[1] = 0;
 		top_ = safe_cast(flexfly_topology, topology::static_topology(params));
 		init_links(params); // this has to be called upon class initialization
 		std::vector<int> tmp;
@@ -41,11 +37,6 @@ namespace hw {
 		for (int i = 0; i < num_ports_; i++) {
 			std::cout << "inport: " << std::to_string(i) << " -> outport: " << std::to_string(inout_connection_[i]) << std::endl;
 		}
-
-		//if (my_addr_ == num_electrical_switches_ + num_ports_ - 2)
-			//printf("the hell");
-			//spkt_abort_printf("the hell");
-		//tmp[100000];
 	};
 
 	flexfly_optical_switch::~flexfly_optical_switch() {

@@ -10,6 +10,7 @@
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <unordered_map>
+#include "flexfly_packet.h"
 
 namespace sstmac{
 namespace hw {
@@ -346,6 +347,12 @@ public:
  int nodes_per_switch() {
   return nodes_per_switch_;
  }
+
+ /**
+  * Route minimal ABSOLUTE KEY FOR THE ENTIRE FLEXFLY PROJECT
+  **/
+ void route_minimal(int src_switch, int dst_switch, flexfly_packet* fpacket);
+
 };
 
 

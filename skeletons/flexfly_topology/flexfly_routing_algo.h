@@ -72,3 +72,5 @@ int breadth_first_search(std::vector< std::vector<int> >& connectivity_matrix,
 	assert(dist_iter_dst_switch != distance_switches.end());
 	return dist_iter_dst_switch->second;
 };
+
+
