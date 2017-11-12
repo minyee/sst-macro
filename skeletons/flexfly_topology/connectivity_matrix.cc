@@ -250,13 +250,13 @@ inline int wrapped_increment(int index, int max_num) {
 	return (index + 1) % max_num;
 }
 
-void configure_simpler_model(int num_groups, std::vector< std::vector<int> >& optical_inout_connections) {
+void configure_default_simpler_model(int num_groups, std::unordered_map<int, std::vector<int>>& optical_inout_connections) {
 	int num_optical_switches = num_groups - 1;
-	if (optical_inout_connections.size() == 0) {
+	//if (optical_inout_connections.size() == 0) {
 		//optical_inout_connections.reserve(num_optical_switches);
-		optical_inout_connections.resize(num_optical_switches);
-		optical_inout_connections.reserve(num_optical_switches);
-	}
+		//optical_inout_connections.resize(num_optical_switches);
+		//optical_inout_connections.reserve(num_optical_switches);
+	//}
 	for (int i = 0; i < num_groups; i++) {
 		// i equals the current group
 		int tmp = i; // stores the current index

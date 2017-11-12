@@ -4,15 +4,20 @@
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
 //#include <sprockit/serializable.h>
+#include "data_structures.h"
+
+
 namespace sstmac{
 namespace hw {
 
+#ifndef FLEXFLY_PACKET
+#define FLEXFLY_PACKET
 /** Contains information on the switch target
   *
  **/
 struct switch_port_pair {
 	int switch_id;
-	int port;
+	int outport;
 };
 
 class flexfly_packet : public pisces_default_packet {
@@ -76,8 +81,16 @@ private:
 	std::queue<switch_port_pair*>* path_;
 	uint32_t packet_data_size_;
 	pisces_default_packet* pisces_packet_;
+	route* r_;
+};
+
+struct flexfly_path {
+	std::vector<switch_port_pair*> path;
+	int path_length;
+	int curr_index; 
 };
 
 
+#endif
 }
 }

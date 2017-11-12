@@ -11,10 +11,13 @@
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <unordered_map>
 #include "flexfly_packet.h"
+//#include "data_structures.h"
 
 namespace sstmac{
 namespace hw {
 
+#ifndef FLEXFLY_TOPOLOGY
+#define FLEXFLY_TOPOLOGY
 class flexfly_topology : public structured_topology {
 public:
 FactoryRegister("flexfly", topology, flexfly_topology, "This is flexfly topology for Flexfly project");
@@ -27,6 +30,7 @@ RegisterComponent("flexfly", topology, flexfly_topology,
 virtual int diameter() const override {return 3;};
 
 protected:
+
   struct switch_link {
     switch_id src_sid;
     switch_id dest_sid; // switch_id of the destination switch
@@ -132,7 +136,7 @@ public:
    */
   virtual node_id max_node_id() const override{ // DONE
     //std::cout << "max_node_id?" << std::endl;
-    return max_node_id_;
+    return 1;
   };
 
   /**
@@ -275,13 +279,16 @@ public:
   int group_from_swid (switch_id swid) const;
 
   void optical_switch_configuration(int optical_switch_id, std::vector<int>& config) const {
-    const std::vector<int>& switch_config = optical_inout_connectivity_[optical_switch_id];
-    if (config.size() == 0) {
-      config.resize(num_groups_);
-      config.reserve(num_groups_);
-    }
-    for (int i = 0; i < num_groups_; i++) {
-      config[i] = switch_config[i];
+   const auto &pair = optical_inout_connectivity_.find(optical_switch_id);
+    if (optical_inout_connectivity_.end() != pair) {
+      const std::vector<int>& connectivity = pair->second;
+      if (config.size() == 0) {
+        config.resize(num_groups_);
+        config.reserve(num_groups_);
+      }
+      for (int i = 0; i < num_groups_; i++) {
+        config[i] = connectivity[i];
+      }
     }
     //return optical_inout_connectivity_[optical_switch_id];
   };
@@ -291,6 +298,7 @@ public:
 protected:
  
  void configure_optical_or_electrical_port_params(switch_id swid, std::string& str, sprockit::sim_parameters* sim_params) const;
+
 
 private:
  uint32_t num_groups_; // equivalent to parameter g in Kim's paper
@@ -305,16 +313,24 @@ private:
  
  switch_id max_switch_id_;
 
- node_id max_node_id_;
+ std::unordered_map<switch_id, std::vector<switch_link*>> switch_outport_connection_map_; // physical outport wire connection
 
- std::unordered_map<switch_id, std::vector<switch_link*>> switch_outport_connection_map_;
+ std::unordered_map<switch_id, std::vector<switch_link*>> switch_inport_connection_map_; // physical inport wire connection
 
- std::unordered_map<switch_id, std::vector<switch_link*>> switch_inport_connection_map_;
-
- std::vector< std::vector<int> >optical_inout_connectivity_;
+ std::unordered_map<int, std::vector<int> >optical_inout_connectivity_;
 
  std::vector< std::vector<int> >  group_connectivity_matrix_;
- //uint32_t **group_connectivity_matrix_;
+
+ /**
+  * I feel like we would need a table of routing information
+  **/
+ std::vector<std::vector<route>> routing_table_;
+ bool updated_routing_table_;
+ /**
+  *
+  **/
+
+private:
 
  void setup_flexfly_topology();
 
@@ -327,14 +343,12 @@ private:
  bool is_optical_switch(switch_id sid) const;
 
  bool is_electrical_switch(switch_id sid) const;
-
- 
- 
  
  void print_port_connection_for_switch(switch_id swid) const;
 
  void check_intergroup_connection() const;
 
+ void setup_routing_table();
 public:
  int num_groups() {
  	return num_groups_;
@@ -351,11 +365,12 @@ public:
  /**
   * Route minimal ABSOLUTE KEY FOR THE ENTIRE FLEXFLY PROJECT
   **/
- void route_minimal(int src_switch, int dst_switch, flexfly_packet* fpacket);
+ route& route_minimal(int src_switch, int dst_switch, flexfly_packet& fpacket);
 
+ void optical_switch_update_inout(int optical_swid, std::vector<int>& inout_vector);
 };
 
-
+#endif
 
 }
 }

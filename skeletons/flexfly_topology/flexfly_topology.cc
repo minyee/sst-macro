@@ -28,7 +28,6 @@ namespace hw {
  	num_optical_switches_ = switches_per_group_;
   optical_switch_radix_ = num_groups_;
   max_switch_id_ = num_optical_switches_ + (num_groups_ * switches_per_group_) - 1;
-  max_node_id_ = num_groups_ * switches_per_group_ * nodes_per_switch_ - 1;
   group_connectivity_matrix_.resize(num_groups_);
   for (int i = 0; i < num_groups_; i++) {
     group_connectivity_matrix_[i].resize(num_groups_);
@@ -42,15 +41,16 @@ namespace hw {
   }
  	setup_flexfly_topology();
   check_intergroup_connection();
-  configure_simpler_model(num_groups_, optical_inout_connectivity_); 
-  std::cout << "flexfly_topology -> optical_inout_connectivity_ has size: " << std::to_string(optical_inout_connectivity_.size()) << std::endl;
+  configure_default_simpler_model(num_groups_, optical_inout_connectivity_); 
+  updated_routing_table_ = false; // turn this to false first.
  }
 
  flexfly_topology::~flexfly_topology() {
    for (const std::pair<switch_id, std::vector<switch_link*>> elem : switch_outport_connection_map_) {
      const std::vector<switch_link*>& conn_vector = elem.second;  
      for (auto const&  switch_link_ptr : conn_vector) {
-       free(switch_link_ptr);
+        if (switch_link_ptr)
+          free(switch_link_ptr);
      }
    }
  }
@@ -83,6 +83,20 @@ namespace hw {
        connect_switches(optical_swid, swid, Link_Type::optical);
      }
    }
+ }
+
+ /**
+  * Called only once at the start of the constructor. Finds all the paths 
+  * from 1 switch to the other given the initial optical switch inout port
+  * connectivity configurations. Uses minimal shortest path routing for this.
+  **/
+ void flexfly_topology::setup_routing_table() {
+  int total_switches = num_optical_switches_ + num_groups_ * switches_per_group_;
+  if (routing_table_.size() == 0) 
+    routing_table_.resize(total_switches);
+  for (int i = 0; i < total_switches; i++) {
+    routing_table_.resize(total_switches);
+  }
  }
 
  void flexfly_topology::configure_metis(metis_config* configuration) const {
@@ -380,7 +394,6 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
   */
   switch_id flexfly_topology::netlink_to_ejection_switch(
         netlink_id nodeaddr, uint16_t& switch_port) const {
-    std::cout << "netlink_to_ejection_switch?" << std::endl;
     return max_switch_id_;
   };
 
@@ -425,9 +438,38 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
     }
   };
 
-  void flexfly_topology::route_minimal(int src_switch, int dst_switch, flexfly_packet* f_packet) {
+  /**
+   * This is the key function that will be called by the electrical switches
+   **/
+  route& flexfly_topology::route_minimal(int src_switch, int dst_switch, flexfly_packet& f_packet) {
+    if (!updated_routing_table_) {
+      // if haven't updated yet, just use the routing table
+      route& r = routing_table_[src_switch][dst_switch];
+      // need to first tag the flexfly_packet reference with the new route
+      // f_packet->tag(); 
+      return r;
+    }
     depth_first_search(group_connectivity_matrix_, src_switch, dst_switch);
+    return routing_table_[src_switch][dst_switch]; // the caller will have to duplicate this entry to prevent any changes
   };
+
+  /**
+   * Given an optical switch id, and the input-output connection vector, 
+   * this function determines reupdates the inout connectivity vector for
+   * this switch, with each index being the input port number.
+   * NOTE: this function is only called by optical switches which will
+   *       update the topology's inout connection table
+   **/
+  void flexfly_topology::optical_switch_update_inout(int optical_swid, std::vector<int>& inout_configuration) {
+    assert(is_optical_switch(optical_swid));
+    int port_count = inout_configuration.size();
+    std::vector<int> &inout_vector = optical_inout_connectivity_[optical_swid];
+    for (int i = 0; i < port_count; i++) {
+      inout_vector[i] = inout_configuration[i];
+    }
+    updated_routing_table_ = true; // now update this to true
+    return;
+  }
 }
 }
 
