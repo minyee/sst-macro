@@ -248,18 +248,50 @@ void add_path(std::vector<flexfly_path *> &path_collection,
 				bool useRand) {
 	int rand_num = std::srand() % 2;
 
-	if (!path_collection[src_switch][dst_switch]) {
+	assert(outports.size() == switch_ids.size());
+
+	if (!path_collection[dst_switch]) {
 		flexfly_path* new_path = new flexfly_path;
+		new_path->path_length = outports.size();
 		if (basis) {
-			new_path->path_length = basis->path_length;
+			new_path->path_length += basis->path_length;
 			new_path->path.resize(new_path->path_length);
 			for (int i = 0; i < new_path->path_length; i++) {
-				new_path->path[i] = basis->path[i];
+				if (i < basis->path.size()) {
+					new_path->path[i] = basis->path[i];
+				} else {
+					switch_port_pair *spp = new switch_port_pair();
+					spp->switch_id = switch_ids[i - basis->path_length];
+					spp->outport = outports[i - basis->path_length];
+				}
+			}
+		} else {
+			for (int i = 0; i < new_path->path_length; i++) {
+				switch_port_pair *spp = new switch_port_pair();
+				spp->switch_id = switch_ids[i - basis->path_length];
+				spp->outport = outports[i - basis->path_length];
 			}
 		}
 	} else {
-
+		assert(basis);
+		if (!useRand && rand_num == 0) {
+			// don't do anything in this case
+			return;
+		} 
+		flexfly_path* new_path = new flexfly_path;
+		new_path->path_length = basis->path_length + outports.size();
+		new_path->path.resize(new_path->path_length);
+		for (int i = 0; i < new_path->path_length; i++) {
+			if (i < basis->path.size()) {
+				new_path->path[i] = basis->path[i];
+			} else {
+				switch_port_pair *spp = new switch_port_pair();
+				spp->switch_id = switch_ids[i - basis->path_length];
+				spp->outport = outports[i - basis->path_length];
+			}
+		}
 	}
+	return;
 };
 
 /**
@@ -269,6 +301,12 @@ void add_path(std::vector<flexfly_path *> &path_collection,
 void clear_path_collections(std::vector<flexfly_path *> &path_collection, 
 								int dst_switch) {
 	if (path_collection[dst_switch]) {
+		//assert
+		int path_len = path_collection[dst_switch]->path_length;
+		for (int i = 0; i < path_len; i++) {
+			if (path_collection[dst_switch]->path[i])
+				delete path_collection[dst_switch]->path[i];
+		}
 		delete path_collection[dst_switch];
 	}
 };
