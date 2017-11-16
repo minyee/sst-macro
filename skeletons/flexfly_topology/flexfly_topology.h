@@ -18,6 +18,15 @@ namespace hw {
 
 #ifndef FLEXFLY_TOPOLOGY
 #define FLEXFLY_TOPOLOGY
+
+struct switch_link {
+  switch_id src_sid;
+  switch_id dest_sid; // switch_id of the destination switch
+  int src_outport;
+  int dest_inport; // port of the destination switch
+  structured_topology::Link_Type type; 
+};
+
 class flexfly_topology : public structured_topology {
 public:
 FactoryRegister("flexfly", topology, flexfly_topology, "This is flexfly topology for Flexfly project");
@@ -29,15 +38,9 @@ RegisterComponent("flexfly", topology, flexfly_topology,
 // this is for the structured_topology inheritance since structured_topology requires diameter
 virtual int diameter() const override {return 3;};
 
-protected:
+public:
 
-  struct switch_link {
-    switch_id src_sid;
-    switch_id dest_sid; // switch_id of the destination switch
-    int src_outport;
-    int dest_inport; // port of the destination switch
-    Link_Type type; 
-  };
+
 
 public:
  virtual std::string to_string() const override {
@@ -313,18 +316,21 @@ private:
  
  switch_id max_switch_id_;
 
+ //std::unordered_map<switch_id, std::vector<switch_link*>> switch_outport_connection_map_; // physical outport wire connection
+
  std::unordered_map<switch_id, std::vector<switch_link*>> switch_outport_connection_map_; // physical outport wire connection
 
  std::unordered_map<switch_id, std::vector<switch_link*>> switch_inport_connection_map_; // physical inport wire connection
 
- std::unordered_map<int, std::vector<int> >optical_inout_connectivity_;
+ std::unordered_map<int, std::vector<int> > optical_inout_connectivity_;
 
  std::vector< std::vector<int> >  group_connectivity_matrix_;
 
+ std::vector< std::vector<int> > distance_matrix_;
  /**
   * I feel like we would need a table of routing information
   **/
- std::vector<std::vector<route>> routing_table_;
+ std::vector<std::vector<flexfly_path *>> routing_table_;
  bool updated_routing_table_;
  /**
   *
@@ -342,6 +348,7 @@ private:
 
  bool is_optical_switch(switch_id sid) const;
 
+private:
  bool is_electrical_switch(switch_id sid) const;
  
  void print_port_connection_for_switch(switch_id swid) const;
@@ -349,6 +356,9 @@ private:
  void check_intergroup_connection() const;
 
  void setup_routing_table();
+
+ void check_routing_table() const;
+
 public:
  int num_groups() {
  	return num_groups_;
@@ -365,11 +375,17 @@ public:
  /**
   * Route minimal ABSOLUTE KEY FOR THE ENTIRE FLEXFLY PROJECT
   **/
- route& route_minimal(int src_switch, int dst_switch, flexfly_packet& fpacket);
+ flexfly_path *route_minimal(int src_switch, int dst_switch, flexfly_packet& fpacket);
 
  void optical_switch_update_inout(int optical_swid, std::vector<int>& inout_vector);
-};
+ };
 
+ /**
+  * Given a group connectivity matrix of dimension num_groups_ by num_groups_, configure the optical switches
+  * inport to outport connection vector for bandwidth_steering.
+  **/
+ //void configure_optical_config(std::vector<std::vector<int>>& group_connectivity_matrix,
+ //                               std::vector<std::vector<int>>& optical_switch_inout_configuration) {};
 #endif
 
 }

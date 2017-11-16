@@ -20,6 +20,12 @@ struct switch_port_pair {
 	int outport;
 };
 
+struct flexfly_path {
+	std::vector<switch_port_pair*> path;
+	int path_length;
+	int curr_index; 
+};
+
 class flexfly_packet : public pisces_default_packet {
 
 //ImplementSerializable(flexfly_packet)
@@ -56,7 +62,7 @@ public:
 	void set_new_path(int dst_switch, int port_num) {
 		switch_port_pair* spp = new switch_port_pair;
 		spp->switch_id = dst_switch;
-		spp->port = port_num;
+		spp->outport = port_num;
 		path_->push(spp);
 		return;
 	};
@@ -81,14 +87,11 @@ private:
 	std::queue<switch_port_pair*>* path_;
 	uint32_t packet_data_size_;
 	pisces_default_packet* pisces_packet_;
-	route* r_;
+	flexfly_path fpath;
+	//route* r_;
 };
 
-struct flexfly_path {
-	std::vector<switch_port_pair*> path;
-	int path_length;
-	int curr_index; 
-};
+
 
 
 #endif

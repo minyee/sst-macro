@@ -1,1 +1,0 @@
-sst my_default.py --model-options="-f parameters.ini"

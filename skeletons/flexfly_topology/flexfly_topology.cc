@@ -39,9 +39,30 @@ namespace hw {
       }
     }
   }
+
+  distance_matrix_.resize(num_groups_ * switches_per_group_);
+  for (int i = 0; i < num_groups_ * switches_per_group_; i++) {
+    distance_matrix_[i].resize(num_groups_ * switches_per_group_);
+  }
  	setup_flexfly_topology();
   check_intergroup_connection();
   configure_default_simpler_model(num_groups_, optical_inout_connectivity_); 
+  
+  routing_table_.resize(num_groups_ * switches_per_group_);
+  for (int i = 0; i < num_groups_ * switches_per_group_; i++) {
+    routing_table_[i].resize(num_groups_ * switches_per_group_);
+  }
+  for (int i = 0; i < num_groups_ * switches_per_group_; i++) {
+    dijkstra_minimal_route(i, 
+                            switch_outport_connection_map_, 
+                            switch_inport_connection_map_, 
+                            distance_matrix_[i],
+                            routing_table_[i],
+                            optical_inout_connectivity_,
+                            num_groups_,
+                            switches_per_group_);
+  }
+  check_routing_table();
   updated_routing_table_ = false; // turn this to false first.
  }
 
@@ -441,15 +462,15 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
   /**
    * This is the key function that will be called by the electrical switches
    **/
-  route& flexfly_topology::route_minimal(int src_switch, int dst_switch, flexfly_packet& f_packet) {
+  flexfly_path *flexfly_topology::route_minimal(int src_switch, int dst_switch, flexfly_packet& f_packet) {
     if (!updated_routing_table_) {
       // if haven't updated yet, just use the routing table
-      route& r = routing_table_[src_switch][dst_switch];
+      flexfly_path *flexpath = routing_table_[src_switch][dst_switch];
       // need to first tag the flexfly_packet reference with the new route
       // f_packet->tag(); 
-      return r;
+      return flexpath;
     }
-    depth_first_search(group_connectivity_matrix_, src_switch, dst_switch);
+    //depth_first_search(group_connectivity_matrix_, src_switch, dst_switch);
     return routing_table_[src_switch][dst_switch]; // the caller will have to duplicate this entry to prevent any changes
   };
 
@@ -469,7 +490,36 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
     }
     updated_routing_table_ = true; // now update this to true
     return;
-  }
+  };
+
+  void flexfly_topology::check_routing_table() const {
+    std::cout << "Routing table has " + std::to_string(routing_table_.size()) + " entries." << std::endl;
+    assert((num_groups_  * switches_per_group_) == routing_table_.size());
+    int i = 0;
+    for (auto routing_entry_iter : routing_table_) {
+      std::cout << " got in here for: " + std::to_string(i) << std::endl;
+      //const std::vector<flexfly_path *>& switch_path = routing_entry_iter.second; 
+      std::string str = "Source Switch id: " + std::to_string(i) + " ";
+      int j = 0;
+      for (auto flexfly_path_elem : routing_entry_iter) {
+        
+        if (i == j) continue;
+
+        const flexfly_path* f_path = flexfly_path_elem;
+        str = "Dest Switch id: " + std::to_string(j) + " \n";
+        for (int i = 0; i < f_path->path.size(); i++) {
+          switch_port_pair* spp = f_path->path[i];
+          str += ("Switch id: " + std::to_string(spp->switch_id) + " outport: " + std::to_string(spp->outport) + "\n"); 
+        }
+        str += "\n";
+        j++;
+        std::cout << str << std::endl;
+      }
+      i++;
+    }
+    std::cout << "Getting out of check_routing_table" << std::endl;
+  };
+
 }
 }
 
