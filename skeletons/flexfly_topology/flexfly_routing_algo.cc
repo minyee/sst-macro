@@ -1,6 +1,6 @@
 #include "flexfly_routing_algo.h"
 #include <sstmac/hardware/topology/structured_topology.h>
-
+#include <queue>
 namespace sstmac {
 namespace hw{
 // Use stack and returns the distance from src_switch to dst_switch
@@ -151,15 +151,11 @@ void add_to_path(std::vector<flexfly_path *> &path_collection,
 	uint32_t seed = 100;
 	std::srand(seed);
 	int rand_num = rand() % 2;
-	std::cout << "Is add_to_path ever called?" << std::endl;
 	assert(outports.size() == switch_ids.size());
-	std::cout << "Is add_to_path ever called?1" << std::endl;
 	if (!path_collection[dst_switch]) {
-		std::cout << "Is add_to_path ever called?2" << std::endl;
 		flexfly_path* new_path = new flexfly_path;
 		new_path->path_length = outports.size();
 		if (basis) {
-			std::cout << "Is add_to_path ever called?3" << std::endl;
 			new_path->path_length += basis->path_length;
 			new_path->path.resize(new_path->path_length);
 			for (int i = 0; i < new_path->path_length; i++) {
@@ -172,14 +168,12 @@ void add_to_path(std::vector<flexfly_path *> &path_collection,
 				}
 			}
 		} else {
-			std::cout << "Is add_to_path ever called?4" << std::endl;
 			for (int i = 0; i < new_path->path_length; i++) {
 				switch_port_pair *spp = new switch_port_pair();
 				spp->switch_id = switch_ids[i];
 				spp->outport = outports[i];
 			}
 		}
-		std::cout << "Is add_to_path ever called?5" << std::endl;
 		path_collection[dst_switch] = new_path;
 	} else {
 		assert(basis);
@@ -212,14 +206,19 @@ void add_to_path(std::vector<flexfly_path *> &path_collection,
 void clear_path_collections(std::vector<flexfly_path *> &path_collection, 
 								int dst_switch) {
 	std::cout << "clear_path_colletions in flexfly_routing_algo" << std::endl;
-	if (path_collection[dst_switch]) {
+	
+	if (path_collection[dst_switch] != nullptr) {
 		//assert
-		std::cout << "Surprise muthafucka9" << std::endl;
+		std::cout << "clear_path_colletions in flexfly_routing_algo1" << std::endl;
+		//assert(path_collection[dst_switch]->path_length == path_collection[dst_switch]->path.size());
 		int path_len = path_collection[dst_switch]->path_length;
-		for (int i = 0; i < path_len; i++) {
-			if (path_collection[dst_switch]->path[i])
+		for (int i = 0; i < path_collection[dst_switch]->path.size(); i++) {
+			std::cout << "clear_path_colletions in flexfly_routing_algo2" << std::endl;
+			if (path_collection[dst_switch]->path[i] != nullptr)
 				delete path_collection[dst_switch]->path[i];
 		}
+		
+
 		delete path_collection[dst_switch];
 	}
 
@@ -255,10 +254,10 @@ void dijkstra_minimal_route(int src,
 				std::unordered_map<int, std::vector<int> > &optical_inout_configuration, 
 				int num_groups,
 				int switches_per_group) {
-	int total_switches = topology_physical_connection_inport.size();
+	int total_switches = num_groups * switches_per_group;//topology_physical_connection_inport.size();
 	std::cout << "\n\n\n" << std::endl;
 	std::unordered_map<int,bool> visited_nodes;
-	std::cout << "The size of inport vector is: " + std::to_string(topology_physical_connection_inport.size()) << std::endl;
+	//std::cout << "The size of inport vector is: " + std::to_string(topology_physical_connection_inport.size()) << std::endl;
 	for (int i = 0; i < total_switches; i++) {
 		visited_nodes[i] = false;
 	}
@@ -268,17 +267,18 @@ void dijkstra_minimal_route(int src,
 	}
 	distance_vector[src] = 0; 
 	visited_nodes[src] = true;
-	std::stack<int> switch_stack;
-	switch_stack.push(src);
+	std::queue<int> switch_queue;
+	switch_queue.push(src);
 	int curr_switch;
 	std::cout << "In Dijkstra's minimal routing for switch: " + std::to_string(src) << std::endl;
-	while (!switch_stack.empty()) {
+	while (!switch_queue.empty()) {
+		std::cout << "seen" << std::endl;
 		/*
 		 * First pop the stack
 		 */
-		std::cout << "In Dijkstra's at all? " << std::endl;
-		curr_switch = switch_stack.top();
-		switch_stack.pop();
+		curr_switch = switch_queue.front();
+		switch_queue.pop();
+		visited_nodes[curr_switch] = true;
 		/*
 		 * First pop the stack
 		 */
@@ -293,11 +293,11 @@ void dijkstra_minimal_route(int src,
 		if (outport_connections != topology_physical_connection_outport.end()) {
 			const std::vector<switch_link *>& curr_switch_outport_connection = outport_connections->second;
 			int outport_count = curr_switch_outport_connection.size();
-			std::cout << "The outport is " + std::to_string(outport_count) << std::endl; 
+			//std::cout << "The outport is " + std::to_string(outport_count) << std::endl; 
 			for (int i = 0; i < outport_count; i++) {
 				outports[0] = i;
 				// CASE 1: neighbor happens to be an Optical Switch
-				print_switch_link(curr_switch_outport_connection[i]);
+				//print_switch_link(curr_switch_outport_connection[i]);
 				if (is_optical_switch(curr_switch_outport_connection[i]->dest_sid, 
 										num_groups, 
 										switches_per_group)) {
@@ -306,18 +306,18 @@ void dijkstra_minimal_route(int src,
 					auto optical_incoming_links_iter = topology_physical_connection_inport.find(optical_switch);
 					const std::vector<switch_link *>& incoming_links = optical_incoming_links_iter->second;
 					int optical_switch_radix = incoming_links.size();
-					std::cout << "Optical switch has " + std::to_string(optical_switch_radix) + " outports" << std::endl;
+					//std::cout << "Optical switch has " + std::to_string(optical_switch_radix) + " outports" << std::endl;
 					int optical_switch_inport = 0;
 					for (optical_switch_inport = 0; optical_switch_inport < optical_switch_radix; optical_switch_inport++) {
-						std::cout << "Surprise muthafucka1" << std::endl;
+						
 
 						switch_link *curr_incoming_link = incoming_links[optical_switch_inport];
 
-						std::cout << "Surprise muthafucka2" << std::endl;
+						
 
 						int src_switch = curr_incoming_link->src_sid;
 
-						std::cout << "Surprise muthafucka3" << std::endl;
+						
 
 						if (src_switch == curr_switch) {
 							optical_switch_inport = optical_switch_inport;
@@ -325,10 +325,9 @@ void dijkstra_minimal_route(int src,
 						}
 					}
 					optical_switch = optical_switch - num_groups*switches_per_group;
-					std::cout << "Optical switch has value of : " << std::to_string(optical_switch) << std::endl;
+					//std::cout << "Optical switch has value of : " << std::to_string(optical_switch) << std::endl;
 					int optical_switch_outport = optical_inout_configuration[optical_switch][optical_switch_inport];
 					optical_switch = optical_switch + num_groups*switches_per_group;
-					std::cout << "Surprise muthafucka4" << std::endl;
 					auto optical_switch_outport_iter = topology_physical_connection_outport.find(optical_switch);
 					const switch_link* outgoing_link = optical_switch_outport_iter->second[optical_switch_outport];
 					//assert(outgoing_link->src_sid == optical_switch); // the src switch of this outgoing link has to be the same 
@@ -338,21 +337,23 @@ void dijkstra_minimal_route(int src,
 						// one distance is due to optical switch
 					//outports
 					std::cout << std::to_string(dst_elec_switch) << std::endl;
-					std::cout << "Surprise muthafucka5" << std::endl;
 					if (distance_vector[curr_switch] + 2 < distance_vector[dst_elec_switch]) {
-						std::cout << "Surprise muthafucka6" << std::endl;
 						outports.insert(outports.end(), optical_switch_outport);
 						switch_ids.insert(switch_ids.end(), optical_switch);
 						distance_vector[dst_elec_switch] = distance_vector[curr_switch] + 2;
-						std::cout << "Surprise muthafucka7" << std::endl;
 						clear_path_collections(path_collection, dst_elec_switch);
 						add_to_path(path_collection, dst_elec_switch, path_collection[curr_switch], outports, switch_ids, false);
+						if (!visited_nodes[dst_elec_switch])
+							switch_queue.push(dst_elec_switch);
 					} else if (distance_vector[curr_switch] + 2 == distance_vector[dst_elec_switch]) {
 						add_to_path(path_collection, dst_elec_switch, path_collection[curr_switch], outports, switch_ids, true);
+						if (!visited_nodes[dst_elec_switch])
+							switch_queue.push(dst_elec_switch);
 					} 
 					
 					//NOTE: Don't push the optical switch into the not visited stack because they work differently.
-
+					//if (!visited_nodes[dst_elec_switch])
+						//switch_queue.push(dst_elec_switch);
 				} else {
 					//auto elec_switch_outport_iter = topology_physical_connection_outport.find()
 					const int dst_elec_switch = curr_switch_outport_connection[i]->dest_sid;
@@ -362,19 +363,27 @@ void dijkstra_minimal_route(int src,
 						distance_vector[dst_elec_switch] = distance_vector[curr_switch] + 1;
 						clear_path_collections(path_collection, dst_elec_switch);
 						add_to_path(path_collection, dst_elec_switch, path_collection[curr_switch], outports, switch_ids, false);
+						if (!visited_nodes[dst_elec_switch])
+							switch_queue.push(dst_elec_switch);
 					} else if (distance_vector[dst_elec_switch] == distance_vector[curr_switch] + 1) {
 						add_to_path(path_collection, dst_elec_switch, path_collection[curr_switch], outports, switch_ids, true);
+						if (!visited_nodes[dst_elec_switch])
+							switch_queue.push(dst_elec_switch);
 					}
 
 					// if the neighbor is not optical switch and have yet been visited, then push it into stack
-					if (!visited_nodes[dst_elec_switch])
-						switch_stack.push(dst_elec_switch);
+					
 				}
 			}
 		} 
 		visited_nodes[curr_switch] = true;
 	}
-	std::cout << "\n\n\n" << std::endl;	
+	std::cout << "The distance vector: " << std::endl;
+	for (int i = 0; i < total_switches; i++) {
+		std::cout << " | " + std::to_string(distance_vector[i]);
+	}
+	std::cout << std::endl;
+	//std::cout << "\n\n\n" << std::endl;	
 };
 
 
