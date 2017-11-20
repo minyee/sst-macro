@@ -23,7 +23,11 @@ namespace hw {
 																				id,
 																				mgr, 
 																				device_id::logp_overlay) {
-		my_id_ = id;
+		static int my_int = 0;
+		std::cout << "my_int : " + std::to_string(my_int) << std::endl;
+		
+		my_id_ = my_int;
+		std::cout << "Electrical switch constructor for id: " << std::to_string(id) << std::endl;
 		my_addr_ = params->get_int_param("id");
 		radix_ = params->get_int_param("total_radix");
 		switches_per_group_ = params->get_int_param("switches_per_group");
@@ -37,6 +41,7 @@ namespace hw {
 		router_ = router::factory::get_param("name", rtr_params, top_, this);
 		ftop_ = safe_cast(flexfly_topology, top_);
 		init_links(params);
+		my_int++;
 	}
 
 	flexfly_electrical_switch::~flexfly_electrical_switch() {
@@ -86,24 +91,33 @@ namespace hw {
 	 **/
 	void flexfly_electrical_switch::recv_payload(event* ev) {
 		//std::cout << "RECEIVED A RECV_PAYLOAD at switch id: " << std::to_string(my_addr_) << " and argument id: " << std::to_string(my_id_) << std::endl;
-		pisces_default_packet* msg = safe_cast(pisces_default_packet, ev);
-		node_id dst = msg->toaddr();
-  		node_id src = msg->fromaddr();
+		flexfly_packet* fpacket = safe_cast(flexfly_packet, ev);
+		node_id dst = fpacket->toaddr();
+  		node_id src = fpacket->fromaddr();
   		
+
   		std::cout << "Electrical switch: " << std::to_string(my_addr_) << " received a packet" << std::endl;
+  		std::cout << "From node: " << std::to_string(src) << " to node: " + std::to_string(dst) << std::endl;
   		//std::cout << "This packet has dst : " << std::to_string(dst) << " and src: " << std::to_string(src) << std::endl;
   		// Case 1: route it to a connecting node
-  		flexfly_topology* ftop = safe_cast(flexfly_topology, top_);
-  		switch_id dst_swid = ftop->node_to_switch(dst);
-  		int dst_group = ftop->group_from_swid(dst_swid);
-  		int my_group = ftop->group_from_swid(my_addr_);
-  		router_->route(msg);
-
+  		switch_id dst_swid = ftop_->node_to_switch(dst);
+  		if (dst_swid == my_id_) {
+  			int outport = dst - (my_id_ * nodes_per_switch_) + switches_per_group_;
+  			//send_to_link();
+  			send_to_link(outport_handlers_[outport], fpacket->get_pisces_packet());
+  			return;
+  		}
+  		int dst_group = ftop_->group_from_swid(dst_swid);
+  		int my_group = ftop_->group_from_swid(my_addr_);
+  		//ftop_->route_minimal(msg);
+  		send_to_link(outport_handlers_[fpacket->next_outport()], ev);
+  		/*
   		if (my_addr_ == ftop->node_to_switch(dst)) {
   			send_packet_to_node(ev, ftop->node_to_switch(dst));
   		} else if (my_group == dst_group) { 
   			
   		}
+  		*/
 	}
 
 	/**
@@ -115,13 +129,32 @@ namespace hw {
 		// need to generate a new flexfly_packet here
 		pisces_default_packet* msg = safe_cast(pisces_default_packet, ev);
 		std::cout << "received_nodal_payload?" << std::endl;
-		flexfly_packet* fpacket = new flexfly_packet();
-		//fpacket = 
+		std::cout << "From node: " << std::to_string(msg->fromaddr()) << " to node: " + std::to_string(msg->toaddr()) << std::endl;
+		int dst = msg->toaddr();
+		int src = msg->fromaddr();
+		int dst_switch = ftop_->node_to_switch(dst);
+		int src_switch = ftop_->node_to_switch(src);
+		if (src_switch == dst_switch) {
+			int outport = dst - (my_id_ * nodes_per_switch_) + switches_per_group_;
+			std::cout << "my_id_ is: " << std::to_string(my_id_) << std::endl;
+			std::cout << "outport is: " << std::to_string(outport) << std::endl;
+			send_to_link(outport_handlers_[outport], ev);
+			return; 
+		}
+
+		flexfly_packet* fpacket = new flexfly_packet(msg);
+		ftop_->route_minimal(my_id_, ftop_->node_to_switch(msg->toaddr()), fpacket);
+		int next_port = fpacket->next_outport();
+		std::cout << "Next port is: " + std::to_string(next_port) << std::endl;
+		//assert(outport_handlers_[]);
+		send_to_link(outport_handlers_[next_port], fpacket);
+		/*
 		if (ftop_->node_to_switch(msg->toaddr()) == my_addr_) {
 			send_to_link(outport_handlers_[1], ev);
 		} else {
 			send_to_link(outport_handlers_[0], ev);
 		}
+		*/
 	};
 
 	void flexfly_electrical_switch::recv_nodal_credit(event* ev) {

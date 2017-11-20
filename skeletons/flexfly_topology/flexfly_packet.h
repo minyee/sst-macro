@@ -31,39 +31,56 @@ class flexfly_packet : public pisces_default_packet {
 //ImplementSerializable(flexfly_packet)
 
 public:
-	flexfly_packet() {
+	flexfly_packet(pisces_default_packet* pisces_packet_arg) {
 		uint32_t default_packet_size = 1024;// in bytes
 		set_packet_data_size(default_packet_size);
-		path_ = new std::queue<switch_port_pair*>(); 
+		pisces_packet_ = pisces_packet_arg;
+		fpath_ = nullptr;
+		counter_along_path_ = 0;
 	};
 	
 	~flexfly_packet() {
-		if (path_)
-			delete path_;
+		if (fpath_)
+			delete fpath_;
 	}; 
 
-	std::queue<switch_port_pair*>* route_path() {
-		return path_;
-	};
+	/**
+	* Returns the next outport in the switch. Usually called by switches to figure out which outport to use
+	*
+	**/
 
+	int next_outport() {
+		assert(fpath_);
+		switch_port_pair* spp = fpath_->path[counter_along_path_];
+		std::cout << "in next_outport - counter_along_path is: " << std::to_string(counter_along_path_) <<std::endl;
+		std::cout << "size of path is: " << std::to_string(fpath_->path.size()) <<std::endl;
+		assert(spp);
+		std::cout << "      switch id: " + std::to_string(spp->switch_id) + " outport: "  + std::to_string(spp->outport)<< std::endl;
+		counter_along_path_++;
+		if (counter_along_path_ >= fpath_->path_length) 
+			counter_along_path_ = fpath_->path_length - 1;
+		return spp->outport;
+	}
+
+	void reset_path_counter() {
+		counter_along_path_ = 0;
+	}
 	/**
 	 * pops the pointer to the next switch port pair. returns a nullptr if there are
 	 * no more switches in the path. Note that this will decrement the count of the 
 	 * switch__port_pair queue by 1.
 	 **/
 	switch_port_pair* next_switch() {
-		if (!path_)
+		if (!fpath_)
 			return nullptr;
-		switch_port_pair* to_ret = path_->front();
-		path_->pop();
+		switch_port_pair* to_ret = fpath_->path.front();
+		//fpath_->path.pop();
+		counter_along_path_++;
 		return to_ret;
 	};
 
-	void set_new_path(int dst_switch, int port_num) {
-		switch_port_pair* spp = new switch_port_pair;
-		spp->switch_id = dst_switch;
-		spp->outport = port_num;
-		path_->push(spp);
+	void set_path(flexfly_path* fpath) {
+		fpath_ = fpath;
 		return;
 	};
 
@@ -76,18 +93,19 @@ public:
 		return;
 	};
 
-	void set_pisces_packet() {
-
+	pisces_default_packet *get_pisces_packet() const {
+		return pisces_packet_;
 	}
 
 	virtual int next_vc() const override {
 		return 0;
-	}
+	};
+
 private: 
-	std::queue<switch_port_pair*>* path_;
 	uint32_t packet_data_size_;
-	pisces_default_packet* pisces_packet_;
-	flexfly_path fpath;
+	flexfly_path* fpath_;
+	uint8_t counter_along_path_;
+	pisces_default_packet *pisces_packet_; 
 	//route* r_;
 };
 

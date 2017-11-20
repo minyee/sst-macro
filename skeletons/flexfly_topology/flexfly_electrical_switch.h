@@ -94,7 +94,7 @@ std::vector<event_handler*> outport_handlers_;
 private:
 uint64_t my_id_;
 int radix_;
-int* queue_length_;
+int *queue_length_;
 switch_id my_addr_;
 int port_cnt_;
 int switches_per_group_;

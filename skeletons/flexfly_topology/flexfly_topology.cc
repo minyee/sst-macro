@@ -150,7 +150,6 @@ namespace hw {
       }
     }
   } else {
-    // find the 
   }
 
  };
@@ -296,7 +295,7 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
   int flexfly_topology::num_hops_to_node(node_id src, node_id dst) const {
     int src_swid = src / (nodes_per_switch_);
     int dst_swid = dst / (nodes_per_switch_);
-    int min_dist = minimal_distance(src_swid, dst_swid);
+    int min_dist = distance_matrix_[src_swid][dst_swid];
     return min_dist + 2; // added by 2 because each node is 1 hop away from it's switch
   };
 
@@ -463,16 +462,22 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
   /**
    * This is the key function that will be called by the electrical switches
    **/
-  flexfly_path *flexfly_topology::route_minimal(int src_switch, int dst_switch, flexfly_packet& f_packet) {
+  void flexfly_topology::route_minimal(int src_switch, int dst_switch, flexfly_packet* f_packet) {
+    std::cout << "src_switch is :" + std::to_string(src_switch) + " dst_switch is: " + std::to_string(dst_switch) << std::endl;
+    assert(src_switch != dst_switch);
     if (!updated_routing_table_) {
+      std::cout << "HELLLLOOOO route_minimal" << std::endl;
       // if haven't updated yet, just use the routing table
       flexfly_path *flexpath = routing_table_[src_switch][dst_switch];
+      f_packet->set_path(flexpath);
       // need to first tag the flexfly_packet reference with the new route
       // f_packet->tag(); 
-      return flexpath;
+      return;
+    } else {
+      // reroute the network here
     }
     //depth_first_search(group_connectivity_matrix_, src_switch, dst_switch);
-    return routing_table_[src_switch][dst_switch]; // the caller will have to duplicate this entry to prevent any changes
+    //return routing_table_[src_switch][dst_switch]; // the caller will have to duplicate this entry to prevent any changes
   };
 
   /**
@@ -502,6 +507,23 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
           std::cout << " 1 ";
         else 
           std::cout << " 0 ";
+      }
+      std::cout << std::endl;
+    }
+
+    for (int i = 0; i < routing_table_.size(); i++) {
+      for (int j = 0; j < routing_table_[i].size(); j++) {
+        if (i == j) {
+          continue;
+        }
+
+        assert(routing_table_[i][j]);
+        std::cout << "Path from switch: " + std::to_string(i) + " to " << std::to_string(j) << std::endl;
+        std::cout << "Path size: " + std::to_string(routing_table_[i][j]->path.size()) + " and path length: " + std::to_string(routing_table_[i][j]->path_length) << std::endl;
+        for (int k = 0; k < routing_table_[i][j]->path_length; k++) {
+          std::cout << "      switch id: " + std::to_string(routing_table_[i][j]->path[k]->switch_id) + " outport: "  + std::to_string(routing_table_[i][j]->path[k]->outport)<< std::endl;
+        }
+        assert(routing_table_[i][j]->path.size() == routing_table_[i][j]->path_length);
       }
       std::cout << std::endl;
     }

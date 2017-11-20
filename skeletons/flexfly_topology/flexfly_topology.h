@@ -330,6 +330,7 @@ private:
  /**
   * I feel like we would need a table of routing information
   **/
+public:
  std::vector<std::vector<flexfly_path *>> routing_table_;
  bool updated_routing_table_;
  /**
@@ -375,7 +376,7 @@ public:
  /**
   * Route minimal ABSOLUTE KEY FOR THE ENTIRE FLEXFLY PROJECT
   **/
- flexfly_path *route_minimal(int src_switch, int dst_switch, flexfly_packet& fpacket);
+ void route_minimal(int src_switch, int dst_switch, flexfly_packet *fpacket);
 
  void optical_switch_update_inout(int optical_swid, std::vector<int>& inout_vector);
  };

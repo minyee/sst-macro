@@ -12,6 +12,7 @@ struct switch_port_pair {
 /**
  * Used by Flexfly Topology as an entry in the routing table
  */
+/*
 class route {
 public:
 	route() : path_length_(0){};
@@ -40,7 +41,7 @@ private:
 	uint8_t current_pointer_;
 	std::vector<switch_port_pair*> switch_port_pair_vector_;
 };
-
+*/
 class node {
 public:
 	node(int id) : id_(id), num_child_(0) {

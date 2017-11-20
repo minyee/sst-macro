@@ -152,8 +152,9 @@ void add_to_path(std::vector<flexfly_path *> &path_collection,
 	std::srand(seed);
 	int rand_num = rand() % 2;
 	assert(outports.size() == switch_ids.size());
+	flexfly_path* new_path = new flexfly_path;
 	if (!path_collection[dst_switch]) {
-		flexfly_path* new_path = new flexfly_path;
+		
 		new_path->path_length = outports.size();
 		if (basis) {
 			new_path->path_length += basis->path_length;
@@ -165,23 +166,26 @@ void add_to_path(std::vector<flexfly_path *> &path_collection,
 					switch_port_pair *spp = new switch_port_pair();
 					spp->switch_id = switch_ids[i - basis->path_length];
 					spp->outport = outports[i - basis->path_length];
+					new_path->path[i] = spp;
 				}
 			}
+			std::cout << "Yahooooo" << std::endl;
 		} else {
+			new_path->path.resize(new_path->path_length);
 			for (int i = 0; i < new_path->path_length; i++) {
 				switch_port_pair *spp = new switch_port_pair();
 				spp->switch_id = switch_ids[i];
 				spp->outport = outports[i];
+				new_path->path[i] = spp;
 			}
 		}
-		path_collection[dst_switch] = new_path;
+		std::cout << "chibai 1" << std::endl;
 	} else {
 		assert(basis);
 		if (!useRand && rand_num == 0) {
 			// don't do anything in this case
 			return;
 		} 
-		flexfly_path* new_path = new flexfly_path;
 		new_path->path_length = basis->path_length + outports.size();
 		new_path->path.resize(new_path->path_length);
 		for (int i = 0; i < new_path->path_length; i++) {
@@ -191,11 +195,13 @@ void add_to_path(std::vector<flexfly_path *> &path_collection,
 				switch_port_pair *spp = new switch_port_pair();
 				spp->switch_id = switch_ids[i - basis->path_length];
 				spp->outport = outports[i - basis->path_length];
+				new_path->path[i] = spp;
 			}
 		}
-		path_collection[dst_switch] = new_path;
+		std::cout << "chibai 2" << std::endl;
 	}
-
+	assert(new_path->path.size() == new_path->path_length);
+	path_collection[dst_switch] = new_path;
 	return;
 };
 
@@ -212,14 +218,18 @@ void clear_path_collections(std::vector<flexfly_path *> &path_collection,
 		std::cout << "clear_path_colletions in flexfly_routing_algo1" << std::endl;
 		//assert(path_collection[dst_switch]->path_length == path_collection[dst_switch]->path.size());
 		int path_len = path_collection[dst_switch]->path_length;
+		assert(path_len == path_collection[dst_switch]->path.size());
 		for (int i = 0; i < path_collection[dst_switch]->path.size(); i++) {
 			std::cout << "clear_path_colletions in flexfly_routing_algo2" << std::endl;
 			if (path_collection[dst_switch]->path[i] != nullptr)
 				delete path_collection[dst_switch]->path[i];
 		}
 		
+		path_collection[dst_switch]->path.resize(0);
+		path_collection[dst_switch]->path_length = 0;
 
 		delete path_collection[dst_switch];
+		path_collection[dst_switch] = nullptr;
 	}
 
 };
@@ -255,7 +265,6 @@ void dijkstra_minimal_route(int src,
 				int num_groups,
 				int switches_per_group) {
 	int total_switches = num_groups * switches_per_group;//topology_physical_connection_inport.size();
-	std::cout << "\n\n\n" << std::endl;
 	std::unordered_map<int,bool> visited_nodes;
 	//std::cout << "The size of inport vector is: " + std::to_string(topology_physical_connection_inport.size()) << std::endl;
 	for (int i = 0; i < total_switches; i++) {
@@ -264,6 +273,7 @@ void dijkstra_minimal_route(int src,
 	distance_vector.resize(total_switches);
 	for (int i = 0; i < total_switches; i++) {
 		distance_vector[i] = 10000;
+		path_collection[i] = nullptr;
 	}
 	distance_vector[src] = 0; 
 	visited_nodes[src] = true;
@@ -272,22 +282,12 @@ void dijkstra_minimal_route(int src,
 	int curr_switch;
 	std::cout << "In Dijkstra's minimal routing for switch: " + std::to_string(src) << std::endl;
 	while (!switch_queue.empty()) {
-		std::cout << "seen" << std::endl;
-		/*
-		 * First pop the stack
-		 */
 		curr_switch = switch_queue.front();
 		switch_queue.pop();
 		visited_nodes[curr_switch] = true;
-		/*
-		 * First pop the stack
-		 */
 
-		std::vector<int> outports;
-		std::vector<int> switch_ids;
-		
-		switch_ids.insert(switch_ids.end(), curr_switch);
-		outports.insert(outports.end(), 0);
+
+
 		auto outport_connections = topology_physical_connection_outport.find(curr_switch);
 		
 		if (outport_connections != topology_physical_connection_outport.end()) {
@@ -295,7 +295,13 @@ void dijkstra_minimal_route(int src,
 			int outport_count = curr_switch_outport_connection.size();
 			//std::cout << "The outport is " + std::to_string(outport_count) << std::endl; 
 			for (int i = 0; i < outport_count; i++) {
-				outports[0] = i;
+				std::vector<int> outports;
+				std::vector<int> switch_ids;
+		
+				switch_ids.insert(switch_ids.end(), curr_switch);
+				outports.insert(outports.end(), i);
+				
+				//outports[0] = i;
 				// CASE 1: neighbor happens to be an Optical Switch
 				//print_switch_link(curr_switch_outport_connection[i]);
 				if (is_optical_switch(curr_switch_outport_connection[i]->dest_sid, 
@@ -346,6 +352,8 @@ void dijkstra_minimal_route(int src,
 						if (!visited_nodes[dst_elec_switch])
 							switch_queue.push(dst_elec_switch);
 					} else if (distance_vector[curr_switch] + 2 == distance_vector[dst_elec_switch]) {
+						outports.insert(outports.end(), optical_switch_outport);
+						switch_ids.insert(switch_ids.end(), optical_switch);
 						add_to_path(path_collection, dst_elec_switch, path_collection[curr_switch], outports, switch_ids, true);
 						if (!visited_nodes[dst_elec_switch])
 							switch_queue.push(dst_elec_switch);
@@ -376,7 +384,7 @@ void dijkstra_minimal_route(int src,
 				}
 			}
 		} 
-		visited_nodes[curr_switch] = true;
+		//visited_nodes[curr_switch] = true;
 	}
 	std::cout << "The distance vector: " << std::endl;
 	for (int i = 0; i < total_switches; i++) {
