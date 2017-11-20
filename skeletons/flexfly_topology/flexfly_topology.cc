@@ -463,21 +463,15 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
    * This is the key function that will be called by the electrical switches
    **/
   void flexfly_topology::route_minimal(int src_switch, int dst_switch, flexfly_packet* f_packet) {
-    std::cout << "src_switch is :" + std::to_string(src_switch) + " dst_switch is: " + std::to_string(dst_switch) << std::endl;
     assert(src_switch != dst_switch);
     if (!updated_routing_table_) {
-      std::cout << "HELLLLOOOO route_minimal" << std::endl;
       // if haven't updated yet, just use the routing table
       flexfly_path *flexpath = routing_table_[src_switch][dst_switch];
       f_packet->set_path(flexpath);
-      // need to first tag the flexfly_packet reference with the new route
-      // f_packet->tag(); 
       return;
     } else {
       // reroute the network here
     }
-    //depth_first_search(group_connectivity_matrix_, src_switch, dst_switch);
-    //return routing_table_[src_switch][dst_switch]; // the caller will have to duplicate this entry to prevent any changes
   };
 
   /**

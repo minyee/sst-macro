@@ -102,6 +102,13 @@ namespace hw {
 	void flexfly_optical_switch::recv_payload(event* ev) {
 		//message* msg = safe_cast(message, ev);
 		std::cout << "Optical Switch received a payload" << std::endl;
+
+		flexfly_packet *fpacket = safe_cast(flexfly_packet, ev);
+		assert(fpacket);
+		pisces_payload* msg = fpacket->get_pisces_packet();
+		int curr_outport = fpacket->next_outport();
+		send_to_link(outport_handler_[curr_outport], fpacket);
+		/*
 		pisces_payload* msg = safe_cast(pisces_payload, ev);
 		node_id dst_id = msg->toaddr();
 		node_id src_id = msg->fromaddr();
@@ -114,6 +121,7 @@ namespace hw {
 		//std::cout << "src_node is: " << std::to_string(src_id) << " and dst_node is: " << std::to_string(dst_id) << std::endl; 
 		//std::cout << "src_swid is: " << std::to_string(src_swid) << std::endl;
 		send_to_link(outport_handler_[outport],ev);
+		*/
 	};
 
 	bool flexfly_optical_switch::outport_connected(int outport) const {

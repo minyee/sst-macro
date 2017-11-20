@@ -52,10 +52,10 @@ public:
 	int next_outport() {
 		assert(fpath_);
 		switch_port_pair* spp = fpath_->path[counter_along_path_];
-		std::cout << "in next_outport - counter_along_path is: " << std::to_string(counter_along_path_) <<std::endl;
-		std::cout << "size of path is: " << std::to_string(fpath_->path.size()) <<std::endl;
+		//std::cout << "in next_outport - counter_along_path is: " << std::to_string(counter_along_path_) <<std::endl;
+		//std::cout << "size of path is: " << std::to_string(fpath_->path.size()) <<std::endl;
 		assert(spp);
-		std::cout << "      switch id: " + std::to_string(spp->switch_id) + " outport: "  + std::to_string(spp->outport)<< std::endl;
+		//std::cout << "      switch id: " + std::to_string(spp->switch_id) + " outport: "  + std::to_string(spp->outport)<< std::endl;
 		counter_along_path_++;
 		if (counter_along_path_ >= fpath_->path_length) 
 			counter_along_path_ = fpath_->path_length - 1;
