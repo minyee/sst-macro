@@ -82,8 +82,6 @@ void recv_nodal_payload(event* ev);
 void recv_nodal_credit(event* ev);
 
 private:
-int node_to_port(int node) const;
-
 void send_packet_to_node(event* ev, int node_id);
 
 protected:

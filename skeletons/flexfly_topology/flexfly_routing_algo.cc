@@ -140,7 +140,6 @@ void bf_routing_minimal(int src, int dst,
 /**
  * This is a subroutine called by the dijkstra's routing algorithm and not called
  * by anything else.
- * TODO: Finish up add path tonight
  **/
 void add_to_path(std::vector<flexfly_path *> &path_collection, 
 				int dst_switch, 
@@ -160,16 +159,16 @@ void add_to_path(std::vector<flexfly_path *> &path_collection,
 			new_path->path_length += basis->path_length;
 			new_path->path.resize(new_path->path_length);
 			for (int i = 0; i < new_path->path_length; i++) {
+				switch_port_pair *spp = new switch_port_pair();
 				if (i < basis->path.size()) {
-					new_path->path[i] = basis->path[i];
+					spp->switch_id = basis->path[i]->switch_id;
+					spp->outport = basis->path[i]->outport;
 				} else {
-					switch_port_pair *spp = new switch_port_pair();
 					spp->switch_id = switch_ids[i - basis->path_length];
 					spp->outport = outports[i - basis->path_length];
-					new_path->path[i] = spp;
 				}
+				new_path->path[i] = spp;
 			}
-			std::cout << "Yahooooo" << std::endl;
 		} else {
 			new_path->path.resize(new_path->path_length);
 			for (int i = 0; i < new_path->path_length; i++) {
@@ -179,7 +178,6 @@ void add_to_path(std::vector<flexfly_path *> &path_collection,
 				new_path->path[i] = spp;
 			}
 		}
-		std::cout << "chibai 1" << std::endl;
 	} else {
 		assert(basis);
 		if (!useRand && rand_num == 0) {
@@ -189,16 +187,19 @@ void add_to_path(std::vector<flexfly_path *> &path_collection,
 		new_path->path_length = basis->path_length + outports.size();
 		new_path->path.resize(new_path->path_length);
 		for (int i = 0; i < new_path->path_length; i++) {
+			switch_port_pair *spp = new switch_port_pair();
 			if (i < basis->path.size()) {
-				new_path->path[i] = basis->path[i];
+				spp->switch_id = basis->path[i]->switch_id;
+				spp->outport = basis->path[i]->outport;
+				//switch_port_pair *spp = new switch_port_pair();
 			} else {
-				switch_port_pair *spp = new switch_port_pair();
+				//switch_port_pair *spp = new switch_port_pair();
 				spp->switch_id = switch_ids[i - basis->path_length];
 				spp->outport = outports[i - basis->path_length];
-				new_path->path[i] = spp;
+				
 			}
+			new_path->path[i] = spp;
 		}
-		std::cout << "chibai 2" << std::endl;
 	}
 	assert(new_path->path.size() == new_path->path_length);
 	path_collection[dst_switch] = new_path;
