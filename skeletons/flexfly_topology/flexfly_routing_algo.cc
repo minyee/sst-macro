@@ -1,8 +1,10 @@
 #include "flexfly_routing_algo.h"
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <queue>
+
 namespace sstmac {
 namespace hw{
+
 // Use stack and returns the distance from src_switch to dst_switch
 int depth_first_search(std::vector< std::vector<int> >& connectivity_matrix, 
 														int src_switch, 

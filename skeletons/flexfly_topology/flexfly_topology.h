@@ -379,7 +379,10 @@ public:
  void route_minimal(int src_switch, int dst_switch, flexfly_packet *fpacket);
 
  void optical_switch_update_inout(int optical_swid, std::vector<int>& inout_vector);
- };
+ 
+ void configure_optical_switches_general(std::vector<std::vector<int>>& connectivity_matrix,
+                                        std::unordered_map<int, std::vector<int>>& optical_switch_inout_config);
+};
 
  /**
   * Given a group connectivity matrix of dimension num_groups_ by num_groups_, configure the optical switches

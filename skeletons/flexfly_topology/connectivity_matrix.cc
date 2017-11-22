@@ -250,13 +250,14 @@ inline int wrapped_increment(int index, int max_num) {
 	return (index + 1) % max_num;
 }
 
+/**
+ * Forms the default group-level all-to-all connectivity to emulate the Dragonfly topology
+ * Also the model assumes that the number of optical switches equals to the number of switches per group
+ * and that the radix of each optical switch equals the number of groups in the Flexfly topology
+ *
+ **/
 void configure_default_simpler_model(int num_groups, std::unordered_map<int, std::vector<int>>& optical_inout_connections) {
 	int num_optical_switches = num_groups - 1;
-	//if (optical_inout_connections.size() == 0) {
-		//optical_inout_connections.reserve(num_optical_switches);
-		//optical_inout_connections.resize(num_optical_switches);
-		//optical_inout_connections.reserve(num_optical_switches);
-	//}
 	for (int i = 0; i < num_groups; i++) {
 		// i equals the current group
 		int tmp = i; // stores the current index
@@ -272,7 +273,5 @@ void configure_default_simpler_model(int num_groups, std::unordered_map<int, std
 		}
 		
 	}
-	std::cout << "GOT HERE AT ALL" << std::endl;
-	std::cout << "size of total switches: " << std::to_string(optical_inout_connections.size()) << std::endl;
-	std::cout << "size of total switches config: " << std::to_string(optical_inout_connections[0].size()) << std::endl;
 }
+

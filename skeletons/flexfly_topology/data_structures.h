@@ -4,44 +4,7 @@
 
 #ifndef DATA_STRUCTURES_MINE
 #define DATA_STRUCTURES_MINE
-struct switch_port_pair {
-	int switch_id;
-	int outport;
-};
 
-/**
- * Used by Flexfly Topology as an entry in the routing table
- */
-/*
-class route {
-public:
-	route() : path_length_(0){};
-
-	~route() {};
-
-	void insert_switch_port_pair(switch_port_pair *sp_pair) {
-		path_length_++;
-		switch_port_pair_vector_.push_back(sp_pair);	
-	}
-
-	switch_port_pair* next_switch() {
-		if (current_pointer_ == path_length_) {
-			current_pointer_ = 0;
-			return nullptr;
-		}
-		return switch_port_pair_vector_[current_pointer_];
-	}
-private:
-	void increment_pointer() {
-		current_pointer_ = (current_pointer_ + 1) % path_length_;
-	}
-
-private:
-	uint8_t path_length_;
-	uint8_t current_pointer_;
-	std::vector<switch_port_pair*> switch_port_pair_vector_;
-};
-*/
 class node {
 public:
 	node(int id) : id_(id), num_child_(0) {

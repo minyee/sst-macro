@@ -3,9 +3,6 @@
 #include <queue>
 #include <sprockit/factories/factory.h>
 #include <sprockit/debug.h>
-//#include <sprockit/serializable.h>
-#include "data_structures.h"
-
 
 namespace sstmac{
 namespace hw {
