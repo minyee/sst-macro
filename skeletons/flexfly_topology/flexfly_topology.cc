@@ -39,6 +39,8 @@ namespace hw {
       }
     }
   }
+  
+
 
   distance_matrix_.resize(num_groups_ * switches_per_group_);
   for (int i = 0; i < num_groups_ * switches_per_group_; i++) {
@@ -65,6 +67,24 @@ namespace hw {
   std::cout << "Routing succesful" <<std::endl;
   check_routing_table();
   updated_routing_table_ = false; // turn this to false first.
+
+  /****************************************************
+   ************ Testing for configure_optical ********* 
+   ****************************************************/
+  
+  for (int optical_index = num_groups_ * switches_per_group_; 
+        optical_index < num_optical_switches_ + num_groups_ * switches_per_group_; 
+        optical_index++) {
+    std::pair<int, std::vector<int>> curr_pair (optical_index, std::vector<int> (optical_switch_radix_));
+    optical_inout_connectivity_.insert(curr_pair);
+  }
+  
+  configure_optical_switches_general(group_connectivity_matrix_, optical_inout_connectivity_);
+  
+  /****************************************************
+   ************ Testing for configure_optical ********* 
+   ****************************************************/
+
  }
 
  flexfly_topology::~flexfly_topology() {
@@ -566,6 +586,7 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
     **********************************************************************************************************/
     // vector or lists for a group, each element in list is an 
     // optical switch's id that this group is connected to
+    std::cout << "In configure_optical_switches_general function" << std::endl;
     int total_switches = num_optical_switches_ + num_groups_ * switches_per_group_;
     
     // potential number of ways to connect 1 group from another
@@ -582,8 +603,9 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
     }
 
     std::vector<std::vector<int>> group_nodes(num_groups_);
-    std::vector<std::vector<int>> optical_switch_nodes(num_optical_switches_);
-    
+    std::unordered_map<int, std::vector<int>> optical_switch_nodes;
+  
+
     /*
      * Use vectors/list to emulate a graph node approach to solving this problem
      * First initiate the flexfly topology as a 3 layer graph. For each group node,
@@ -594,16 +616,16 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
       for (int switch_index = 0; switch_index < switches_per_group_; switch_index++) {
         int curr_switch = group_offset + switch_index;
         auto switch_link_vector_iter = switch_outport_connection_map_.find(curr_switch);
+        assert(switch_link_vector_iter != switch_outport_connection_map_.end());
         const std::vector<switch_link *>& switch_link_vector = switch_link_vector_iter->second;
         for (auto sl : switch_link_vector) {
           if (sl->type == Link_Type::electrical) continue;
           // dest_sid has to belong to an optical switch if topology wiring is done correctly
           assert(is_optical_switch(sl->dest_sid)); 
-          group_nodes[group].insert(group_nodes[group].end(), sl->dest_sid);
+          group_nodes[group].insert(group_nodes[group].end(),  sl->dest_sid);
         }
       }
     }
-
     /*
      * Now do the same for the second layer of optical switches
      */
@@ -612,10 +634,13 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
       int curr_switch = optical_switch_offset + opt_switch; // CURRENT OPTICAL SWITCH
       auto switch_link_vector_iter = switch_outport_connection_map_.find(curr_switch);
       const std::vector<switch_link *>& switch_link_vector = switch_link_vector_iter->second;
+      optical_switch_nodes.insert(std::pair<int, std::vector<int>> (curr_switch, std::vector<int>()));
       for (auto sl : switch_link_vector) {
         optical_switch_nodes[curr_switch].insert(optical_switch_nodes[curr_switch].end(), group_from_swid(sl->dest_sid));
       }
     }
+
+    
 
     for (int k = 0; k < total_switches; k++) {
       if (is_optical_switch(k)) continue;
@@ -623,10 +648,44 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
       const std::vector<switch_link*>& switch_outport_vector = connection_vector_iter->second;
       int curr_switch_group = group_from_swid(k);
       for (auto sl : switch_outport_vector) {
-        int dest_switch_group = group_from_swid(sl->dest_sid);
-        group_physical_connectivity[curr_switch_group][dest_switch_group]++;
+        if (!is_optical_switch(sl->dest_sid)) continue;
+        auto optical_connection_vector_iter = switch_outport_connection_map_.find(sl->dest_sid);
+        const std::vector<switch_link*>& optical_connection_vector = optical_connection_vector_iter->second;
+        for (auto op_sl : optical_connection_vector) {
+          int dest_switch_group = group_from_swid(op_sl->dest_sid);
+          group_physical_connectivity[curr_switch_group][dest_switch_group]++;
+        }
       }
     }
+    /**
+     * FOR DEBUGGING PURPOSE
+     **/
+    std::cout << "Connectivity_requirement" << std::endl;
+    for (auto x : connectivity_requirement) {
+      for (auto y : x) {
+        std::cout << std::to_string(y) + " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << std::endl;
+    /**
+     * FOR DEBUGGING PURPOSE
+     **/
+    /**
+     * FOR DEBUGGING PURPOSE
+     **/
+    for (auto x : group_physical_connectivity) {
+      for (auto y : x) {
+        std::cout << std::to_string(y) + " ";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << "here5" << std::endl;
+    /**
+     * FOR DEBUGGING PURPOSE
+     **/
+
+
 
     /*
      * Main body of the algorithm
@@ -637,7 +696,8 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
           bool found_switch = false;
           int group_node_port = 0;
           int used_optical_switch_id = -1;
-          for (auto optical_switch : group_nodes[i]) {
+          for (int optical_switch : group_nodes[i]) {
+            std::cout << "here once " + std::to_string(optical_switch) + " for pair " + std::to_string(i) + " to "+ std::to_string(j) << std::endl;
             used_optical_switch_id = optical_switch;
             if (optical_switch < 0) {
               group_node_port++;
@@ -679,19 +739,20 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
                 auto switch_inout_connection_iter = optical_switch_inout_config.find(used_optical_switch_id);
                 std::vector<int>& switch_inout_config = switch_inout_connection_iter->second;
                 switch_inout_config[optical_switch_inport] = optical_node_port;
+                break;
               }
             }
+            group_node_port++;
             if (found_switch) {
               break;
             }
-            group_node_port++;
+            
           }
 
           if (!found_switch) {
+            std::cout << "Failed at " << std::to_string(i) <<  "," << std::to_string(j) << std::endl;
             spkt_abort_printf("Cannot possibly find the proper configuration for optical switches")
           } 
-
-          
           connectivity_requirement[i][j]--;
         }
       }
