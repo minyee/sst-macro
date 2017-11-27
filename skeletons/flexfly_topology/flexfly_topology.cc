@@ -685,8 +685,16 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
      * FOR DEBUGGING PURPOSE
      **/
 
-
-
+    int hack = 6;
+    for (int i = 0; i < num_optical_switches_; i++) {
+      std::cout << "Optical Switch: " + std::to_string(i) << std::endl;
+      //std::cout << std::to_string(optical_switch_nodes[].size())
+      for (auto dummy_target_group : optical_switch_nodes[hack]) {
+        std::cout << " " + std::to_string(dummy_target_group) + " ";
+      }
+      hack++;
+      std::cout << std::endl;
+    }
     /*
      * Main body of the algorithm
      */
@@ -697,31 +705,49 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
           int group_node_port = 0;
           int used_optical_switch_id = -1;
           for (int optical_switch : group_nodes[i]) {
-            std::cout << "here once " + std::to_string(optical_switch) + " for pair " + std::to_string(i) + " to "+ std::to_string(j) << std::endl;
+            
             used_optical_switch_id = optical_switch;
             if (optical_switch < 0) {
               group_node_port++;
               continue;
             }
+            std::cout << "here once " + std::to_string(optical_switch) + " for pair " + std::to_string(i) + " to "+ std::to_string(j) << std::endl;
             int optical_node_port = 0;
             for (auto target_group : optical_switch_nodes[optical_switch]) {
               if (target_group < 0 || target_group != j) {
                 optical_node_port++;
                 continue;
               }
+
               auto switch_inport_vector_iter = switch_inport_connection_map_.find(optical_switch);
               const std::vector<switch_link *>& switch_inport_vector = switch_inport_vector_iter->second;
               bool pass_check = true;
               for (auto sl : switch_inport_vector) {
+                std::cout << "invoker pro1" << std::endl;
                 int src_group = group_from_swid(sl->src_sid);
+                if (src_group == i) continue;
                 if (group_physical_connectivity[src_group][j] - 1 < connectivity_requirement[src_group][j]) {
                   pass_check = false;
                   break;
                 } 
               } 
+              // assume only each group's connection will go to the same switch ONCE
+              if (pass_check) {
+                std::cout << "invoker pro2" << std::endl;
+                for (auto outgoing_group : optical_switch_nodes[optical_switch]) {
+                  if (outgoing_group < 0 || outgoing_group == j) continue;
+
+                  if (group_physical_connectivity[i][outgoing_group] - 1 < connectivity_requirement[i][outgoing_group]) {
+                    std::cout << std::to_string(outgoing_group) << std::endl;
+                    pass_check = false;
+                    break;
+                  }
+                }
+              }
 
               if (pass_check) {
                 // break apart the connection
+                std::cout << "chibai" << std::endl;
                 optical_switch_nodes[optical_switch][optical_node_port] = -1; 
                 group_nodes[i][group_node_port] = -1;
                 found_switch = true;
@@ -739,9 +765,20 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
                 auto switch_inout_connection_iter = optical_switch_inout_config.find(used_optical_switch_id);
                 std::vector<int>& switch_inout_config = switch_inout_connection_iter->second;
                 switch_inout_config[optical_switch_inport] = optical_node_port;
+                std::cout << "Printing " << std::endl;
+                for (auto curr_group : group_nodes[i]) {
+                  std::cout << "" << std::to_string(curr_group)  + " " ;
+                }
+                connectivity_requirement[i][j]--;
+                std::cout << std::endl;
                 break;
               }
+              for (auto curr_group : group_nodes[i]) {
+                  std::cout << "" << std::to_string(curr_group)  + " " ;
+                }
+                std::cout << std::endl;
             }
+
             group_node_port++;
             if (found_switch) {
               break;
@@ -753,7 +790,7 @@ bool flexfly_topology::switch_id_slot_filled(switch_id sid) const {
             std::cout << "Failed at " << std::to_string(i) <<  "," << std::to_string(j) << std::endl;
             spkt_abort_printf("Cannot possibly find the proper configuration for optical switches")
           } 
-          connectivity_requirement[i][j]--;
+          //connectivity_requirement[i][j]--;
         }
       }
     }
