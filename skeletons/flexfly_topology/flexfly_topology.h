@@ -360,6 +360,20 @@ private:
 
  void check_routing_table() const;
 
+ bool disconnect_group_to_opt(int optical_switch_id, std::vector<int>& group_adjacency_list);
+
+ bool disconnect_opt_to_group(int group_id, std::vector<int>& optical_switch_adjacency_list);
+
+ bool delete_item(std::vector<int>& set, int optical_switch);
+
+ void add_item(std::vector<int>& set, int optical_switch);
+
+ int remaining_row_requirement(std::vector<int>& comm_requirement);
+
+ int union_set_size(std::vector<std::vector<int>>& group_connectivity_vector, int start, int end);
+
+ bool check_remaining(std::vector<std::vector<int>>& group_connectivity_vector, std::vector<int>& requirement);
+
 public:
  int num_groups() {
  	return num_groups_;
@@ -381,6 +395,12 @@ public:
  void optical_switch_update_inout(int optical_swid, std::vector<int>& inout_vector);
  
  void configure_optical_switches_general(std::vector<std::vector<int>>& connectivity_matrix,
+                                        std::unordered_map<int, std::vector<int>>& optical_switch_inout_config);
+
+ void configure_optical_switches_general2(std::vector<std::vector<int>>& connectivity_matrix,
+                                        std::unordered_map<int, std::vector<int>>& optical_switch_inout_config);
+
+ void configure_optical_switches_general3(std::vector<std::vector<int>>& connectivity_matrix,
                                         std::unordered_map<int, std::vector<int>>& optical_switch_inout_config);
 };
 
