@@ -35,7 +35,12 @@ namespace hw {
 		sprockit::sim_parameters* rtr_params = params->get_optional_namespace("router");
 		rtr_params->add_param_override_recursive("id", int(my_addr_));
 		router_ = router::factory::get_param("name", rtr_params, top_, this);
-		ftop_ = safe_cast(flexfly_topology, top_);
+		ftop_ = dynamic_cast<flexfly_topology *>(topology::static_topology(params));
+		if (ftop_ == nullptr) {
+			ftop_simplified_ = safe_cast(flexfly_topology_simplified, topology::static_topology(params));
+		} else {
+			ftop_simplified_ = nullptr;
+		}
 		init_links(params);
 	}
 
@@ -51,8 +56,8 @@ namespace hw {
                               						int src_outport, 
                               						int dst_inport,
                               						event_handler* credit_handler) {
-		if (dst_inport < 0 || dst_inport >= radix_)
-			spkt_abort_printf("Invalid inport %d in flexfly_electrical_switch::connect_input", dst_inport);
+		//if (dst_inport < 0 || dst_inport >= radix_)
+		//	spkt_abort_printf("Invalid inport %d in flexfly_electrical_switch::connect_input", dst_inport);
 		inport_handlers_[dst_inport] = credit_handler;
 	}
 
@@ -60,8 +65,9 @@ namespace hw {
                               						int src_outport, 
                               						int dst_inport,
                               						event_handler* payload_handler) {
-		if (src_outport < 0 || src_outport >= radix_)
-			spkt_abort_printf("Invalid inport %d in flexfly_electrical_switch::connect_output", src_outport);
+		//if (src_outport < 0 || src_outport >= radix_)
+		//	spkt_abort_printf("Invalid inport %d in flexfly_electrical_switch::connect_output", src_outport);
+		std::cout << "connect output is called on switch: " << std::to_string(my_addr_) << " with src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
 		outport_handlers_[src_outport] = payload_handler;
 	}
 
@@ -85,21 +91,40 @@ namespace hw {
 	 * Receiving a packet or message from another switch, not from a node.
 	 **/
 	void flexfly_electrical_switch::recv_payload(event* ev) {
-		flexfly_packet* fpacket = safe_cast(flexfly_packet, ev);
-		node_id dst = fpacket->get_pisces_packet()->toaddr();
-  		node_id src = fpacket->get_pisces_packet()->fromaddr();
-  		
-  		//std::cout << "received_payload?" << std::endl;
-  		//std::cout << "Electrical switch: " << std::to_string(my_addr_) << " received a packet" << std::endl;
-  		//std::cout << "From node: " << std::to_string(src) << " to node: " + std::to_string(dst) << std::endl;
-  		// Case 1: route it to a connecting node
-  		switch_id dst_swid = ftop_->node_to_switch(dst);
-  		if (dst_swid == my_addr_) {
-  			int outport = dst - (my_addr_ * nodes_per_switch_) + switches_per_group_;
-  			send_to_link(outport_handlers_[outport], fpacket->get_pisces_packet());
-  			return;
+		if (ftop_ != nullptr) {
+			flexfly_packet* fpacket = safe_cast(flexfly_packet, ev);
+			node_id dst = fpacket->get_pisces_packet()->toaddr();
+  			node_id src = fpacket->get_pisces_packet()->fromaddr();
+  			// Case 1: route it to a connecting node
+  			std::cout << "electrical switch received a payload" << std::endl;
+  			switch_id dst_swid = ftop_->node_to_switch(dst);
+  			if (dst_swid == my_addr_) {
+  				int outport = dst - (my_addr_ * nodes_per_switch_) + switches_per_group_;
+  				send_to_link(outport_handlers_[outport], fpacket->get_pisces_packet());
+  				return;
+  			}
+  			send_to_link(outport_handlers_[fpacket->next_outport()], fpacket);
+  		} else {
+  			pisces_default_packet* msg = safe_cast(pisces_default_packet, ev);
+  			int dst = msg->toaddr();
+			int src = msg->fromaddr();
+			int dst_switch = ftop_simplified_->node_to_switch(dst);
+			int src_switch = ftop_simplified_->node_to_switch(src);
+			int dst_group = ftop_simplified_->group_from_swid(dst_switch);
+			int src_group = ftop_simplified_->group_from_swid(src_switch);
+			if (dst_switch == my_addr_) {
+				int offset = dst % nodes_per_switch_;
+				send_to_link(outport_handlers_[offset + switches_per_group_], msg);
+			} else if (dst_group == ftop_simplified_->group_from_swid(my_addr_)) {
+				//port_to_switch();
+				int outport = ftop_simplified_->get_output_port(my_addr_, dst_switch);
+				assert(outport >= 0);
+				send_to_link(outport_handlers_[outport], ev);
+			} else {
+				assert(dst_group != ftop_simplified_->group_from_swid(my_addr_));
+				send_to_link(outport_handlers_[switches_per_group_ - 1], msg);
+			}
   		}
-  		send_to_link(outport_handlers_[fpacket->next_outport()], fpacket);
 	}
 
 	/**
@@ -114,10 +139,20 @@ namespace hw {
 		//std::cout << "From node: " << std::to_string(msg->fromaddr()) << " to node: " + std::to_string(msg->toaddr()) << std::endl;
 		int dst = msg->toaddr();
 		int src = msg->fromaddr();
-		int dst_switch = ftop_->node_to_switch(dst);
-		int src_switch = ftop_->node_to_switch(src);
+		int dst_switch = 0;
+		int src_switch = 0;
+
+		if (ftop_ != nullptr) {
+			dst_switch = ftop_->node_to_switch(dst);
+			src_switch = ftop_->node_to_switch(src);
+		} else {
+			dst_switch = ftop_simplified_->node_to_switch(dst);
+			src_switch = ftop_simplified_->node_to_switch(src);
+		}
+		std::cout << "electrical switch received a payload from a node" << std::endl;
 		if (src_switch == dst_switch) {
-			int outport = dst - (my_addr_ * nodes_per_switch_) + switches_per_group_;
+			int offset = dst % nodes_per_switch_;
+			int outport = offset + switches_per_group_;
 			//std::cout << "my_id_ is: " << std::to_string(my_addr_) << std::endl;
 			//std::cout << "outport is: " << std::to_string(outport) << std::endl;
 			send_to_link(outport_handlers_[outport], ev);
@@ -125,10 +160,25 @@ namespace hw {
 		}
 
 		flexfly_packet* fpacket = new flexfly_packet(msg);
-		ftop_->route_minimal(my_addr_, ftop_->node_to_switch(msg->toaddr()), fpacket);
-		int next_port = fpacket->next_outport();
-		//std::cout << "Next port is: " + std::to_string(next_port) << std::endl;
-		send_to_link(outport_handlers_[next_port], fpacket);
+		if (ftop_ != nullptr) {
+			ftop_->route_minimal(my_addr_, ftop_->node_to_switch(msg->toaddr()), fpacket);
+			int next_port = fpacket->next_outport();
+			//std::cout << "Next port is: " + std::to_string(next_port) << std::endl;
+			send_to_link(outport_handlers_[next_port], fpacket);
+		} else { 
+			// In this case, we are in the simplified
+			int src_group = ftop_simplified_->group_from_swid(src_switch);
+			int dst_group = ftop_simplified_->group_from_swid(dst_switch);
+			if (src_group == dst_group) {
+				int outgoing_port = ftop_simplified_->get_output_port(src_switch, dst_switch);
+				assert(outgoing_port >= 0);
+				send_to_link(outport_handlers_[outgoing_port], ev);
+			} else {
+				// If not in the same group, then just send it over to the optical_network
+				send_to_link(outport_handlers_[switches_per_group_ - 1], ev);
+			}
+		}
+		
 		
 	};
 

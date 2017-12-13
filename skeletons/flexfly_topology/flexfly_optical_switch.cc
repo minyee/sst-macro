@@ -101,7 +101,7 @@ namespace hw {
 
 	void flexfly_optical_switch::recv_payload(event* ev) {
 		//message* msg = safe_cast(message, ev);
-		std::cout << "Optical Switch received a payload" << std::endl;
+		//std::cout << "Optical Switch received a payload" << std::endl;
 
 		flexfly_packet *fpacket = safe_cast(flexfly_packet, ev);
 		assert(fpacket);

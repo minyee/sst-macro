@@ -5,6 +5,7 @@
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/router/minimal_routing.h>
 #include "flexfly_topology.h"
+#include "flexfly_topology_simplified.h"
 
 //RegisterNamespaces("switch");
 namespace sstmac {
@@ -98,6 +99,7 @@ int port_cnt_;
 int switches_per_group_;
 int nodes_per_switch_;
 flexfly_topology* ftop_;
+flexfly_topology_simplified* ftop_simplified_;
 int num_groups_;
  //void (std::vector<>)
  

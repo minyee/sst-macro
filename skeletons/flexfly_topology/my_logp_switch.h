@@ -6,6 +6,7 @@
 #include <sstmac/hardware/interconnect/interconnect_fwd.h>
 #include <sprockit/unordered.h>
 #include "flexfly_topology.h"
+#include "flexfly_topology_simplified.h"
 
 namespace sstmac {
 namespace hw {
@@ -84,6 +85,7 @@ class my_logp_switch :
   std::vector<event_handler*> nics_;
 
   flexfly_topology* ftop_;
+  flexfly_topology_simplified* ftop_simplified_;
 
 #if !SSTMAC_INTEGRATED_SST_CORE
   link_handler* mtl_handler_;

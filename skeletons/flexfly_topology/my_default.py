@@ -4,6 +4,7 @@ import os
 import sst
 #from . import setupTopology 
 from setupTopology import *
+from setupTopologySimplified import *
 
 isSoFile = True
 idx = 1
@@ -25,7 +26,9 @@ while isSoFile:
 		exec(cmd)
 		del sys.argv[idx]
 	else: isSoFile = False
-  	idx += 1
+	idx += 1
 
-setupTopology()
-
+if False:
+	setupTopology()
+else:
+	setupTopologySimplified()

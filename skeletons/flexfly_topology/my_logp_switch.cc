@@ -29,7 +29,7 @@ my_logp_switch::my_logp_switch(sprockit::sim_parameters *params, uint64_t id, ev
   network_switch(params, id, mgr, device_id::logp_overlay)
 {
   //sprockit::sim_parameters* link_params = params->get_namespace("link");
-  //sprockit::sim_parameters* ej_params = params->get_namespace("ejection");
+  //sprockit::sim_parameters* ej_params = params->get_namespace("ejection"); 
   int my_id = params->get_int_param("id");
   electrical_bw_ = params->get_bandwidth_param("electrical_bandwidth");
   optical_bw_ = params->get_bandwidth_param("optical_bandwidth");
@@ -53,10 +53,20 @@ my_logp_switch::my_logp_switch(sprockit::sim_parameters *params, uint64_t id, ev
 
   nics_.resize(top_->num_nodes());
   neighbors_.reserve(1000); //nproc - just reserve a large block for now
-  ftop_ = safe_cast(flexfly_topology, top_);
-  switches_per_group_ = ftop_->switches_per_group();
-  nodes_per_switch_ = ftop_->nodes_per_switch();
+  ftop_ = dynamic_cast<flexfly_topology *>(topology::static_topology(params));
+  if (ftop_ == nullptr) {
+    ftop_simplified_ = safe_cast(flexfly_topology_simplified, topology::static_topology(params));
+  } else {
+    ftop_simplified_ = nullptr;
+  }
 
+  if (ftop_) {
+    switches_per_group_ = ftop_->switches_per_group();
+    nodes_per_switch_ = ftop_->nodes_per_switch();
+  } else {
+    switches_per_group_ = ftop_simplified_->switches_per_group();
+    nodes_per_switch_ = ftop_simplified_->nodes_per_switch();
+  }
   init_links(params);
   std::cout << "Exited my_logp_switch constructor" << std::endl;
 }
@@ -115,7 +125,12 @@ my_logp_switch::incoming_message(message* msg, node_id src, node_id dst)
     } else if (src_group == dst_group) {
       delay += (inv_electrical_bw_) * num_bytes; 
     } else {
-      int num_links = ftop_->num_links_between_groups(src_group, dst_group);  
+      int num_links = 0;
+      if (ftop_ == nullptr) {
+        num_links = ftop_simplified_->num_links_between_groups(src_group, dst_group);
+      } else {
+        num_links = ftop_->num_links_between_groups(src_group, dst_group);
+      } 
       double net_intergroup_bw = num_links * optical_bw_;
       delay += (num_links * inv_optical_bw_ + 2 * inv_electrical_bw_) * num_bytes;
     }
@@ -146,7 +161,12 @@ my_logp_switch::outgoing_message(message* msg, node_id src, node_id dst)
   } else if (src_group == dst_group) {
     delay = 2 * inj_bw_inverse_ + inv_electrical_bw_; 
   } else {
-    int num_links = ftop_->num_links_between_groups(src_group, dst_group);  
+    int num_links = 0;
+    if (ftop_ == nullptr) {
+      num_links = ftop_simplified_->num_links_between_groups(src_group, dst_group);
+    } else {
+      num_links = ftop_->num_links_between_groups(src_group, dst_group);
+    } 
     double net_intergroup_bw = num_links * optical_bw_;
     delay = 2 * inj_bw_inverse_ + num_links * inv_optical_bw_ + 2 * inv_electrical_bw_;
   }
@@ -191,7 +211,12 @@ my_logp_switch::bcast_local_message(message* msg, node_id src)
       } else if (src_group == dst_group) {
         delay += inv_electrical_bw_ * num_bytes; 
       } else {
-        int num_links = ftop_->num_links_between_groups(src_group, dst_group);  
+        int num_links = 0;
+        if (ftop_ == nullptr) {
+          num_links = ftop_simplified_->num_links_between_groups(src_group, dst_group);
+        } else {
+          num_links = ftop_->num_links_between_groups(src_group, dst_group);
+        } 
         double net_intergroup_bw = num_links * optical_bw_;
         delay += (num_links * inv_optical_bw_ + 2 * inv_electrical_bw_) * num_bytes;
       }
