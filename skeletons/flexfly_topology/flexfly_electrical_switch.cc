@@ -96,7 +96,7 @@ namespace hw {
 			node_id dst = fpacket->get_pisces_packet()->toaddr();
   			node_id src = fpacket->get_pisces_packet()->fromaddr();
   			// Case 1: route it to a connecting node
-  			std::cout << "electrical switch received a payload" << std::endl;
+  			//std::cout << "electrical switch received a payload" << std::endl;
   			switch_id dst_swid = ftop_->node_to_switch(dst);
   			if (dst_swid == my_addr_) {
   				int outport = dst - (my_addr_ * nodes_per_switch_) + switches_per_group_;
@@ -149,7 +149,7 @@ namespace hw {
 			dst_switch = ftop_simplified_->node_to_switch(dst);
 			src_switch = ftop_simplified_->node_to_switch(src);
 		}
-		std::cout << "electrical switch received a payload from a node" << std::endl;
+		//std::cout << "electrical switch received a payload from a node" << std::endl;
 		if (src_switch == dst_switch) {
 			int offset = dst % nodes_per_switch_;
 			int outport = offset + switches_per_group_;

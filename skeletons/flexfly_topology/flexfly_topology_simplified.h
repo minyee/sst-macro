@@ -335,7 +335,6 @@ private:
   **/
 public:
  std::vector<std::vector<flexfly_path *>> routing_table_;
- bool updated_routing_table_;
  /**
   *
   **/
@@ -374,6 +373,7 @@ private:
  bool check_remaining(std::vector<std::vector<int>>& group_connectivity_vector, std::vector<int>& requirement);
 
  bool is_simplified_model_;
+
 public:
  int get_output_port(int src_switch, int dst_switch) const;
 
@@ -392,21 +392,9 @@ public:
  bool is_simplified_model() const {
   return is_simplified_model_;
  }
- /**
-  * Route minimal ABSOLUTE KEY FOR THE ENTIRE FLEXFLY PROJECT
-  **/
- void route_minimal(int src_switch, int dst_switch, flexfly_packet *fpacket);
-
- void optical_switch_update_inout(int optical_swid, std::vector<int>& inout_vector);
  
- void configure_optical_switches_general(std::vector<std::vector<int>>& connectivity_matrix,
-                                        std::unordered_map<int, std::vector<int>>& optical_switch_inout_config);
+ void configure_optical_network(std::vector<std::vector<std::vector<int>>>& outport_options) const; 
 
- void configure_optical_switches_general3(std::vector<std::vector<int>>& connectivity_matrix,
-                                        std::unordered_map<int, std::vector<int>>& optical_switch_inout_config);
-
- void configure_optical_switches_general4(std::vector<std::vector<int>>& connectivity_matrix,
-                                        std::unordered_map<int, std::vector<int>>& optical_switch_inout_config);
 };
 
  /**

@@ -15,6 +15,7 @@
 #endif
 
 #include <unordered_map>
+#include <vector>
 
 //DeclareDebugSlot(network_switch)
 #define switch_debug(...) \
@@ -108,9 +109,12 @@ RegisterComponent("flexfly_optical_network", optical_switch, flexfly_optical_net
 
 public:
   void recv_payload(event* ev);
+
+  void recv_payload_smart(event* ev);
   
   void recv_credit(event* ev);
   
+  std::vector< std::vector< std::vector< int > > > outport_options_; // NEWLY ADDED WRITTEN 12/16/2017
 
 private: 
   switch_id my_addr_;
@@ -130,6 +134,8 @@ private:
   flexfly_topology_simplified* ftop_simplified_;
 
   int num_electrical_switches_;
+
+  
 };
 
 }

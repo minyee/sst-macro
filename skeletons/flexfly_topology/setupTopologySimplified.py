@@ -2,7 +2,7 @@ import sst
 import sst.macro
 
 opticalLatency = "0ps"
-smallLatency = "1ms"
+smallLatency = "1us"
 
 def makeUniLink(linkType,srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat=None,inLat=None):
 	if not outLat : outLat = inLat
@@ -10,7 +10,6 @@ def makeUniLink(linkType,srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat=None
 	if not outLat: sys.exit("must specify at least one latency for link")
 
 	linkName = "%s%d:%d->%d:%d" % (linkType,srcId,srcPort,dstId,dstPort)
-	print linkName
 	link = sst.Link(linkName)
 	portName = "output %d %d" % (srcPort, dstPort)
 	srcComp.addLink(link,portName,outLat)
@@ -92,8 +91,6 @@ class FlexflyInterconnectSimplified:
 			else:
 				srcSwitch = self.elecSwitches[i]
 			lat = self.latency(linkParams)
-			print "hello"
-			print connections
 			for srcId, dstId, srcOutport, dstInport in connections:
 				dstSwitch = None
 				assert(srcId <= self.numGroups * self.switchesPerGroup and dstId <= self.numGroups * self.switchesPerGroup)
@@ -144,7 +141,6 @@ class FlexflyInterconnectSimplified:
 				switchPortIndex = self.switchesPerGroup + nodeIndex
 				linkName = "logP %d -> %d" % (index, i)
 				link = sst.Link(linkName)
-				print "NICLogInjectionPort: %d and SwitchLogPInjectionPort: %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
 				portName = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
 				node.addLink(link, portName, smallLatency)
 				portName = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)

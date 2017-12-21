@@ -3,7 +3,7 @@
 SHELL = /bin/sh
 .SUFFIXES: .cc .o
 
-LULESH_EXEC = runlulesh2.0.3
+LULESH_EXEC = runlulesh2_0_3
 
 SKEL=1
 
@@ -50,7 +50,7 @@ sstmac_headers:
 	SSTMAC_SKELETONIZE=$(SKEL) SSTMAC_HEADERS=`pwd`/sstmac_headers \
     $(CXX) -c $(CXXFLAGS) -o $@  $<
 
-runlulesh2.0.3: $(OBJECTS2.0)
+runlulesh2_0_3: $(OBJECTS2.0)
 	@echo "Linking"
 	$(CXX) $(OBJECTS2.0) $(LDFLAGS) -lm -o $@
 

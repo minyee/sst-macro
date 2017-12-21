@@ -27,12 +27,16 @@ namespace hw {
 		ftop_ = dynamic_cast<flexfly_topology *>(topology::static_topology(params));
 		if (ftop_ == nullptr) {
 			ftop_simplified_ = safe_cast(flexfly_topology_simplified, topology::static_topology(params));
+			outport_options_.resize(num_groups_);
+			for (int i = 0; i < num_groups_; i++) {
+				outport_options_[i].resize(num_groups_);
+			}
+			ftop_simplified_->configure_optical_network(outport_options_);
 		} else {
 			ftop_simplified_ = nullptr;
 		}
 
 		init_links(params); // this has to be called upon class initialization
-
 	};
 
 	flexfly_optical_network::~flexfly_optical_network() { 
@@ -71,7 +75,7 @@ namespace hw {
 	};
 
 	link_handler* flexfly_optical_network::payload_handler(int port) const {
-		return new_link_handler(this, &flexfly_optical_network::recv_payload);
+		return new_link_handler(this, &flexfly_optical_network::recv_payload_smart);
 	};
 
 	link_handler* flexfly_optical_network::credit_handler(int port) const {
@@ -93,7 +97,7 @@ namespace hw {
 
 	void flexfly_optical_network::recv_payload(event* ev) {
 		//message* msg = safe_cast(message, ev);
-		std::cout << "Optical Network received a payload" << std::endl;
+		//std::cout << "Optical Network received a payload" << std::endl;
 
 		pisces_default_packet *packet = safe_cast(pisces_default_packet, ev);
 		assert(packet);
@@ -112,6 +116,30 @@ namespace hw {
 
 	};
 
+	void flexfly_optical_network::recv_payload_smart(event* ev) {
+		pisces_default_packet *packet = safe_cast(pisces_default_packet, ev);
+		assert(packet);
+		//pisces_payload* msg = fpacket->get_pisces_packet();
+		int dst_node = packet->toaddr();
+		int src_node = packet->fromaddr();
+		//ftop_->group_from_swid(dst_switch);
+		
+		if (ftop_ == nullptr) {
+			int dst_switch = ftop_simplified_->node_to_switch(dst_node);
+			int src_switch = ftop_simplified_->node_to_switch(src_node);
+			int dst_group = ftop_simplified_->group_from_swid(dst_switch);
+			int src_group = ftop_simplified_->group_from_swid(src_switch);
+			int outport = ftop_simplified_->get_output_port(my_addr_, dst_switch);	
+			if (std::find(outport_options_[src_group][dst_group].begin(), outport_options_[src_group][dst_group].end(), outport) == outport_options_[src_group][dst_group].end()) {
+				int size = outport_options_[src_group][dst_group].size();
+				uint32_t seed = 12;
+   				std::srand(seed);
+   				int choice = rand() % size;
+   				outport = outport_options_[src_group][dst_group][choice];
+			}
+			send_to_link(outport_handler_[outport], ev);
+		}
+	};
 	/*
 	void flexfly_optical_network::recv_config_msg(event* ev) {
 		optical_configuration* config = safe_cast(optical_configuration, ev);
