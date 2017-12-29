@@ -4,6 +4,25 @@ import sst.macro
 opticalLatency = "0ps"
 smallLatency = "1ms"
 
+def readSquareMatrix(filename, directory):
+	file = open(filename, 'r')
+	if file == None:
+		return None
+	line = file.readln()
+	size = int(line)
+	i = 0
+	matrix = [0] * size
+	while line != None:
+		line = file.readln()
+		entries = line.split(" ")
+		row = []
+		for element in entries:
+			row.append(int(element))
+		matrix[i] = row
+		i += 1
+	#assert(i == size)
+	return matrix
+
 def makeUniLink(linkType,srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat=None,inLat=None):
 	if not outLat : outLat = inLat
 	if not inLat: inLat = outLat
@@ -22,6 +41,59 @@ def makeUniNetworkLink(srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat=None,i
 def makeBiLink(linkType,comp1,id1,port1,comp2,id2,port2,outLat=None,inLat=None):
 	makeUniLink(linkType,comp1,id1,port1,comp2,id2,port2,outLat,inLat)
 	makeUniLink(linkType,comp2,id2,port2,comp1,id1,port1,outLat,inLat)
+
+class DragonflyTopology:
+	def __init__(self, a, g, h):
+		self.a = a
+		self.g = g
+		self.h = h
+		self.matrix = None
+		self.totalSwitches = self.a * self.g
+		self.switches = [0] * self.totalSwitches
+		switchName = "dragonflySwitch"
+		for i in range(self.totalSwitches):
+			currSwitch = sst.Component("Switch %d" % optical_switch_id, "macro.%s" % switchName)
+			currSwitch.addParam("id", i)
+			self.switches[i] = currSwitch
+		return
+	
+	# Have to assume that the topology is symmetrical, that means that all links
+	# are bidirectional between switch pairs, and that also means that the adjacency matrix will
+	# have to be symmetrical about the diagonal
+	def formTopology(self):
+		inports = [0] * self.totalSwitches
+		outports = [0] * self.totalSwitches
+		for i in range(self.totalSwitches):
+			currID = i
+			currSwitch = self.switches[currID]
+			numports = 0
+			for j in range(i + 1, self.totalSwitches, 1):
+				if self.matrix[i][j] == 0:
+					continue	
+				assert(self.matrix[j][i] == self.matrix[i][j])
+				targetID = j
+				targetSwitch = self.switches[targetID]
+				makeUniNetworkLink(currSwitch, currID, outports[currID], targetSwitch, targetID, inports[targetID], smallLatency)
+				makeUniNetworkLink(targetSwitch, targetID, outports[targetID], currSwitch, currID, inports[currID], smallLatency)
+				numports += 1
+				currSwitch.addParam("outport:%d" % outports[currID], targetID)
+				targetSwitch.addParam("inport:%d" % inports[targetID], currID)
+				currSwitch.addParam("inport:%d" % inports[currID], targetID)
+				targetSwitch.addParam("outport:%d" % outports[targetID], currID)
+				inports[currID] += 1
+				inports[targetID] += 1
+				outports[currID] += 1
+				outports[targetID] += 1
+			currSwitch.addParam("numports", numports)
+		return
+
+	def setup(self):
+		filename = "adjacency_a-%d_g-%d_h-%d" % (self.a, self.g, self.h)
+		readMatrix = readSquareMatrix(filename)
+		self.matrix = readMatrix
+		self.formTopology()
+		return
+
 
 class Interconnect:
 	def __init__(self, params):
@@ -294,8 +366,6 @@ class Interconnect:
 			self.buildEndpoints()
 			self.buildSimplifiedTopology(smallLatency)
 			self.buildLogPNetwork()
-
-
 		
 
 ## Returns the command line argv in terms of a vector that is 0-indexed
