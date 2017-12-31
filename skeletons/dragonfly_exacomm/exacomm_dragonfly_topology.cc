@@ -20,8 +20,7 @@ namespace hw {
  	switches_per_group_ = params->get_int_param("switches_per_group"); // controls a
   optical_links_per_switch_ = params->get_int_param("optical_links_per_switch");
  	nodes_per_switch_ = params->get_optional_int_param("nodes_per_switch", 4);
- 	num_optical_switches_ = switches_per_group_;
-  max_switch_id_ = num_optical_switches_ + (num_groups_ * switches_per_group_) - 1;
+  max_switch_id_ = (num_groups_ * switches_per_group_) - 1;
   outgoing_adjacency_matrix_.resize(num_groups_ * switches_per_group_);
   incoming_adjacency_matrix_.resize(num_groups_ * switches_per_group_);
  };
@@ -54,59 +53,46 @@ namespace hw {
 
  };
 
- // DONE
- void exacomm_dragonfly_topology::configure_individual_port_params(switch_id src,
-          												 sprockit::sim_parameters* switch_params) const {
- 	if (valid_switch_id(src)) {
- 		std::string str;
- 		if (is_optical_switch(src)) {
- 			str = "optical";
- 		} else {
- 			str = "electrical";
- 		}
- 		configure_optical_or_electrical_port_params(src, str, switch_params);
- 	} 	
- };
-
 
 void exacomm_dragonfly_topology::connected_outports(const switch_id src, 
                                             std::vector<topology::connection>& conns) const {
-  std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator got = switch_outport_connection_map_.find(src);
   int cidx = 0;
-  if (got != switch_outport_connection_map_.end()) {
-    const std::vector<switch_link*>& switch_link_vectors = got->second;
-    for (switch_link* current_switch_link : switch_link_vectors) {
-      conns.push_back(topology::connection());
-      conns[cidx].src = src;
-      conns[cidx].dst = current_switch_link->dest_sid;
-      conns[cidx].src_outport = cidx; 
-      conns[cidx].dst_inport = current_switch_link->dest_inport;
-      conns[cidx].link_type = current_switch_link->type;
-      cidx++;
+  for (auto switch_swid : outgoing_adjacency_matrix_[src]) {
+    conns.push_back(topology::connection());
+    conns[cidx].src = src;
+    conns[cidx].dst = switch_swid;
+    conns[cidx].src_outport = cidx; 
+    int target_port = 0;
+    for (auto src_swid : incoming_adjacency_matrix_[switch_swid]) {
+      if (src_swid == src) 
+        break;
+      target_port++;
     }
+    conns[cidx].dst_inport = target_port;
+    cidx++;
   }
 }
 
 
 bool exacomm_dragonfly_topology::switch_id_slot_filled(switch_id sid) const {
-  return (sid < max_switch_id_);
+  return (sid <= max_switch_id_);
 }
 
- void exacomm_dragonfly_topology::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const {
+void exacomm_dragonfly_topology::configure_vc_routing(std::map<routing::algorithm_t, int>& m) const {
   m.insert({routing::minimal, 3});
   m.insert({routing::minimal_adaptive, 3});
   m.insert({routing::valiant, 3});
   m.insert({routing::ugal, 3});
   return;
- };
+};
 
-  switch_id exacomm_dragonfly_topology::node_to_ejection_switch(node_id addr, uint16_t& port) const {
-    switch_id swid = addr / nodes_per_switch_; // this gives us the switch id of the switch node addr is connected to
-    std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_iter = switch_outport_connection_map_.find(swid);
-    const std::vector<switch_link*>& conn_vector = tmp_iter->second;
-    port = std::max((int) (conn_vector.size() - 1), 0) + ((int) swid) * nodes_per_switch_; // CHECK THIS AGAIN
-    return swid;
-  };
+switch_id exacomm_dragonfly_topology::node_to_ejection_switch(node_id addr, uint16_t& port) const {
+  switch_id swid = addr / nodes_per_switch_; // this gives us the switch id of the switch node addr is connected to
+  int ind = addr % nodes_per_switch_;
+  int offset = outgoing_adjacency_matrix_[swid].size();
+  port = offset + ind;
+  return swid;
+};
   
   switch_id exacomm_dragonfly_topology::node_to_injection_switch(node_id addr, uint16_t& port) const {
     return node_to_ejection_switch(addr, port);
@@ -124,22 +110,24 @@ bool exacomm_dragonfly_topology::switch_id_slot_filled(switch_id sid) const {
     } else if (src_group == dst_group) { // same group
       return 1;
     } else { // different group but can reach either by 1 global and 1 local or 1 local and then 1 global
-      std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_iter = switch_outport_connection_map_.find(src);
-      const std::vector<switch_link*>& conn_vector = tmp_iter->second;
-      bool two_or_three = true; 
-      
-      for (switch_link* tmp_link : conn_vector ) {
-        if (tmp_link->type == electrical)
-          continue;
+      //bool directly_connected = false;
+      for (auto target_id : outgoing_adjacency_matrix_[src]) {
+        if (target_id == dst) {
+          return 1;
+          break;
+        }
       }
-      return two_or_three ? 2 : 3;
+      return 3;
     }
   };
 
+  // need to figure out how to implement this function now that we cannot figure out the distance matrix
+  // right after initialization
   int exacomm_dragonfly_topology::num_hops_to_node(node_id src, node_id dst) const {
     int src_swid = src / (nodes_per_switch_);
     int dst_swid = dst / (nodes_per_switch_);
-    int min_dist = distance_matrix_[src_swid][dst_swid];
+    //int min_dist = distance_matrix_[src_swid][dst_swid];
+    int min_dist = 2;
     return min_dist + 2; // added by 2 because each node is 1 hop away from it's switch
   };
 
@@ -160,7 +148,7 @@ bool exacomm_dragonfly_topology::switch_id_slot_filled(switch_id sid) const {
 
   void exacomm_dragonfly_topology::nodes_connected_to_ejection_switch(switch_id swid, 
                                                               std::vector<injection_port>& nodes) const { 
-    exacomm_dragonfly_topology::nodes_connected_to_injection_switch(swid, nodes);
+    nodes_connected_to_injection_switch(swid, nodes);
   };
 
   // returns the group id of a given switch
@@ -172,33 +160,7 @@ bool exacomm_dragonfly_topology::switch_id_slot_filled(switch_id sid) const {
    * prints out the all the connections for each switch
    */
   void exacomm_dragonfly_topology::print_port_connection_for_switch(switch_id swid) const {
-    std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator tmp_iter = 
-                                        switch_outport_connection_map_.find(swid);
-    if (tmp_iter == switch_outport_connection_map_.end()) {
-      return;
-    }
-
-    const std::vector<switch_link*>& connection_vector = tmp_iter->second;
-
-    std::stringstream message;
-    int i = 0;
-    for (switch_link* sl_ptr : connection_vector) {
-      // check if null, if null have to throw an error 
-      if (sl_ptr) {
-        message << "Dest switch_id: " << std::to_string(sl_ptr->dest_sid);
-        message << " Dest inport: " << std::to_string(sl_ptr->dest_inport);
-        message << " Link type: ";
-        if (sl_ptr->type == Link_Type::electrical) {
-          message << "ELECTRICAL" << std::endl;
-        } else {
-          message << "OPTICAL" << std::endl;
-        }
-      } else {
-        spkt_abort_printf("A switch link with swid: %d is null\n", swid);
-      }
-      i++;
-    }
-    std::cout << message.str(); 
+    // empty for now
   };
 
 

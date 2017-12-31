@@ -8,7 +8,6 @@
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include <unordered_map>
-#include "flexfly_packet.h"
 
 namespace sstmac{
 namespace hw {
@@ -37,6 +36,8 @@ public:
  virtual std::string to_string() const override {
   return "exacomm_dragonfly_topology";
  };
+ 
+ exacomm_dragonfly_topology(sprockit::sim_parameters* params);
 
  ~exacomm_dragonfly_topology();
    /**** BEGIN PURE VIRTUAL INTERFACE *****/
@@ -80,15 +81,6 @@ public:
    */
   virtual void connected_outports(switch_id src,
                      std::vector<topology::connection>& conns) const override; //DONE
-
-  /**
-   * @brief configure_individual_port_params.  The port-specific parameters
-   *        will be stored in new namespaces "portX" where X is the port number
-   * @param src
-   * @param [inout] switch_params
-   */
-  virtual void configure_individual_port_params(switch_id src,
-          sprockit::sim_parameters* switch_params) const override; //DONE (RECHECK)
 
   /**
      For indirect networks, this includes all switches -
@@ -273,6 +265,8 @@ private:
  uint32_t nodes_per_switch_; // equivalent to parameter p in Kim's paper
 
  uint32_t optical_links_per_switch_; // this is equivalent to h in Kim's paper
+
+ uint32_t max_switch_id_;
 
  std::vector<std::vector<switch_id>> outgoing_adjacency_matrix_;
 
