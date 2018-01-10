@@ -218,33 +218,25 @@ switch_id exacomm_dragonfly_topology::node_to_ejection_switch(node_id addr, uint
     return swid;
   };
 
-  /**
-   * This is the key function that will be called by the electrical switches
-   **/
-  void exacomm_dragonfly_topology::route_minimal(int src_switch, int dst_switch, flexfly_packet* f_packet) {
-    assert(src_switch != dst_switch);
-    if (!updated_routing_table_) {
-      // if haven't updated yet, just use the routing table
-      flexfly_path *flexpath = routing_table_[src_switch][dst_switch];
-      f_packet->set_path(flexpath);
-      return;
-    } else {
-      // reroute the network here
-    }
-  };
 
-  void exacomm_dragonfly_topology::set_connection(int src_switch, int port_num, int dst_swtich, bool inport_or_outport) {
+
+  void exacomm_dragonfly_topology::set_connection(int src_switch, int port_num, int dst_switch, bool inport_or_outport) {
     if (inport_or_outport) {
-      if (incoming_adjacency_matrix_[src_switch] == 0) 
+      if (incoming_adjacency_matrix_[src_switch].size() == 0) 
         incoming_adjacency_matrix_[src_switch].resize(num_groups_ * switches_per_group_);
       incoming_adjacency_matrix_[src_switch][port_num] = dst_switch;
     } else {
-      if (outgoing_adjacency_matrix_[src_switch] == 0) 
+      if (outgoing_adjacency_matrix_[src_switch].size() == 0) 
         outgoing_adjacency_matrix_[src_switch].resize(num_groups_ * switches_per_group_);
       outgoing_adjacency_matrix_[src_switch][port_num] = dst_switch;
     }
     return;
-  }
+  };
+
+  void exacomm_dragonfly_topology::configure_individual_port_params(switch_id src,
+          sprockit::sim_parameters* switch_params) const {
+
+  };
 }
 }
 

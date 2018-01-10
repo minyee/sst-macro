@@ -17,7 +17,7 @@ namespace hw {
 
 class exacomm_dragonfly_topology : public structured_topology {
 public:
-FactoryRegister("exacomm_dragonfly", topology, exacomm_dragonfly_topology, "This is dragonfly topology for exacomm dragonfly design space exploration project");
+FactoryRegister("exacomm_dragonfly_topology", topology, exacomm_dragonfly_topology, "This is dragonfly topology for exacomm dragonfly design space exploration project");
 /*
 RegisterComponent("flexfly", topology, exacomm_dragonfly_topology,
            "topol", COMPONENT_CATEGORY_NETWORK,
@@ -183,6 +183,9 @@ public:
    */
   virtual void configure_vc_routing(std::map<routing::algorithm_t, int>& m) const override; // DONE (RECHECK)
 
+  virtual void configure_individual_port_params(switch_id src,
+          sprockit::sim_parameters* switch_params) const override;
+  
   /**
    * @brief node_to_ejection_switch Given a destination node,
    *        figure out which switch has an ejection connection to it

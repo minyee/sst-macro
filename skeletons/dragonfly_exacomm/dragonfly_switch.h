@@ -97,6 +97,7 @@ int nodes_per_switch_;
 int num_groups_;
 int num_optical_links_;
 exacomm_dragonfly_topology* dtop_;
+dfly_mindist_router router_;
 
 };
  
