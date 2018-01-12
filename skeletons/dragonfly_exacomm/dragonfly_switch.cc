@@ -26,6 +26,7 @@ namespace hw {
 		num_optical_links_ = params->get_int_param("num_optical_links");
 		nodes_per_switch_ = params->get_int_param("nodes_per_switch");
 		
+		
 		// Initiate the outport handlers and their corresponding outport switches
 		inport_handlers_.resize(radix_);
 		outport_handlers_.resize(radix_);
@@ -96,25 +97,37 @@ namespace hw {
 		int src_switch = dtop_->node_to_switch(src);
 		int dst_group = dtop_->group_from_swid(dst_switch);
 		int src_group = dtop_->group_from_swid(src_switch);
-		if (dst_switch == my_addr_) {
-			int offset = dst % nodes_per_switch_;
-			send_to_link(outport_handlers_[offset + switches_per_group_], msg);
-		} else if (dst_group == dtop_->group_from_swid(my_addr_)) {
-			//port_to_switch();
-			int outport = 0;
-			for (outport = 0; outport < radix_; outport++) {
-				if (outport_switch_[outport] == dst_switch) {
-					send_to_link(outport_handlers_[outport], ev);
-					return;
+		
+		if (need_router_) {
+			// if using the complicatd model that requires actual routing in the topology
+			if (dst_switch == my_addr_) {
+				int offset = dst % nodes_per_switch_;
+				send_to_link(outport_handlers_[offset + switches_per_group_], msg);
+			} else if (dst_group == dtop_->group_from_swid(my_addr_)) {
+				//port_to_switch();
+				int outport = 0;
+				for (outport = 0; outport < radix_; outport++) {
+					if (outport_switch_[outport] == dst_switch) {
+						send_to_link(outport_handlers_[outport], ev);
+						return;
+					}
 				}
-			}
-			//outport = dtop_->get_output_port(my_addr_, dst_switch);
+				//outport = dtop_->get_output_port(my_addr_, dst_switch);
 			
-		} else {
-			assert(dst_group != dtop_->group_from_swid(my_addr_));
-			send_to_link(outport_handlers_[switches_per_group_ - 1], msg);
-		}
-  		
+			} else {
+				assert(dst_group != dtop_->group_from_swid(my_addr_));
+				send_to_link(outport_handlers_[switches_per_group_ - 1], msg);
+			}
+  		} else {
+  			// if using the complicatd model that requires actual routing in the topology
+  			if (dst_switch == my_addr_) {
+				int offset = dst % nodes_per_switch_;
+				send_to_link(outport_handlers_[offset + switches_per_group_], msg);
+  			} else {
+  				int port = find_outport(dst_switch); 
+  				timestamp delay = dtop_->min_distance
+  			}
+  		}
 	}
 
 	/**
@@ -153,5 +166,21 @@ namespace hw {
 	void dragonfly_switch::recv_credit(event* ev) {
 		return;
 	};
+
+
+	/**
+	 ** Given a target_switch, find the corresponding output port
+	 **/
+	int dragonfly_switch::find_outport(switch_id target_switch) const {
+		int port = -1;
+		int current_port = 0;
+		for (auto id : outport_switch_) {
+			if (id == target_switch) {
+				return current_port;
+			}
+			current_port++;
+		}
+		return port;
+	}
 }
 }

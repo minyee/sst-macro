@@ -132,6 +132,7 @@ public:
   virtual int num_nodes() const override { // DONE
     int node_num = num_groups_ * switches_per_group_ * nodes_per_switch_;
     //std::cout << "num_nodes: " << std::to_string(node_num) << std::endl;
+    std::cout << "The number of nodes is " << std::to_string(node_num) << std::endl;
     return node_num;
   };
 

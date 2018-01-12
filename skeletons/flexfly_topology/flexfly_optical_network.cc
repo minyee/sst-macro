@@ -91,7 +91,7 @@ namespace hw {
 	};
 
 	void flexfly_optical_network::recv_credit(event* ev) {
-		std::cout << "Optical Switch received a credit" << std::endl;
+		std::cout << "Optical optical network received a credit" << std::endl;
 		return;
 	};
 
@@ -122,8 +122,7 @@ namespace hw {
 		//pisces_payload* msg = fpacket->get_pisces_packet();
 		int dst_node = packet->toaddr();
 		int src_node = packet->fromaddr();
-		//ftop_->group_from_swid(dst_switch);
-		
+		std::cout << "This packet goes from source node id of: " << std::to_string(src_node) << " to node id: " << std::to_string(dst_node) << std::endl;
 		if (ftop_ == nullptr) {
 			int dst_switch = ftop_simplified_->node_to_switch(dst_node);
 			int src_switch = ftop_simplified_->node_to_switch(src_node);

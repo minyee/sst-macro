@@ -275,6 +275,8 @@ private:
 
  std::vector<std::vector<switch_id>> incoming_adjacency_matrix_;
 
+ std::vector<std::vector<int>> distance_matrix_;
+
 private:
  bool valid_switch_id(switch_id id) const {
     return id < (switches_per_group_ * num_groups_);

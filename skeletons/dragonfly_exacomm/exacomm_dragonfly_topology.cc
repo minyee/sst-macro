@@ -23,6 +23,8 @@ namespace hw {
   max_switch_id_ = (num_groups_ * switches_per_group_) - 1;
   outgoing_adjacency_matrix_.resize(num_groups_ * switches_per_group_);
   incoming_adjacency_matrix_.resize(num_groups_ * switches_per_group_);
+  // now figure out what the adjacency matrix of the entire topology looks like
+  // more importantly how do I transfer that information from 
  };
 
  exacomm_dragonfly_topology::~exacomm_dragonfly_topology() {};

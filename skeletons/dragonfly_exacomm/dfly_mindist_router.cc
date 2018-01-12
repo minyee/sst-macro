@@ -9,7 +9,7 @@ dfly_mindist_router::dfly_mindist_router(sprockit::sim_parameters* params, topol
 };
 
 dfly_mindist_router::~dfly_mindist_router() {
-
+	
 }
 
 void dfly_mindist_router::route_to_switch(switch_id sw_addr, routable::path& path) const {

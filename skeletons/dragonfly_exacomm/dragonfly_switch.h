@@ -5,6 +5,7 @@
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/router/minimal_routing.h>
 #include "exacomm_dragonfly_topology.h"
+#include "dfly_mindist_router.h"
 
 
 namespace sstmac {
@@ -71,6 +72,10 @@ virtual link_handler* payload_handler(int port) const override;
 
 virtual int queue_length(int port) const override;
 
+private:
+
+int find_outport(switch_id target_switch) const;
+
 protected:
 
 void recv_payload(event* ev);
@@ -82,7 +87,7 @@ void recv_nodal_payload(event* ev);
 void recv_nodal_credit(event* ev);
 
 protected:
-router* router_;
+//router* router_;
 
 
 private:
@@ -97,8 +102,9 @@ int nodes_per_switch_;
 int num_groups_;
 int num_optical_links_;
 exacomm_dragonfly_topology* dtop_;
-dfly_mindist_router router_;
+dfly_mindist_router* router_;
 
+bool need_router_; // this boolean determines if a router class is needed to route the packets, or a simple delay model is used
 };
  
 }

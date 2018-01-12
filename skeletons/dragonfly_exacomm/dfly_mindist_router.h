@@ -9,6 +9,9 @@
  * Router encapsulating the special routing computations that must occur on
  * a exacomm dragonfly topolog that may or may not be the canonical dragonfly topology.
  */
+namespace sstmac {
+namespace hw {
+
 class dfly_mindist_router :
   public router
 {
@@ -40,6 +43,9 @@ class dfly_mindist_router :
    *    on a minimal path to its destination switch.
    */
   int number_minimal_paths(packet* pkt) const;
-}
+};
 
+
+}
+}
 #endif

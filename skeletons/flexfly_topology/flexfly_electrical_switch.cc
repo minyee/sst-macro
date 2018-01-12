@@ -67,7 +67,7 @@ namespace hw {
                               						event_handler* payload_handler) {
 		//if (src_outport < 0 || src_outport >= radix_)
 		//	spkt_abort_printf("Invalid inport %d in flexfly_electrical_switch::connect_output", src_outport);
-		std::cout << "connect output is called on switch: " << std::to_string(my_addr_) << " with src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
+		//std::cout << "connect output is called on switch: " << std::to_string(my_addr_) << " with src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
 		outport_handlers_[src_outport] = payload_handler;
 	}
 
@@ -115,6 +115,7 @@ namespace hw {
 			if (dst_switch == my_addr_) {
 				int offset = dst % nodes_per_switch_;
 				send_to_link(outport_handlers_[offset + switches_per_group_], msg);
+				std::cout << "Some message actually got delivered to its destination" << std::endl;
 			} else if (dst_group == ftop_simplified_->group_from_swid(my_addr_)) {
 				//port_to_switch();
 				int outport = ftop_simplified_->get_output_port(my_addr_, dst_switch);
@@ -141,7 +142,7 @@ namespace hw {
 		int src = msg->fromaddr();
 		int dst_switch = 0;
 		int src_switch = 0;
-
+		//std::cout << "received an message at electrical_switch" << std::endl;
 		if (ftop_ != nullptr) {
 			dst_switch = ftop_->node_to_switch(dst);
 			src_switch = ftop_->node_to_switch(src);
@@ -187,6 +188,7 @@ namespace hw {
 	};
 
 	void flexfly_electrical_switch::recv_credit(event* ev) {
+		std::cout << "RECEIVE CREDIT" << std::endl;
 		return;
 	};
 

@@ -43,11 +43,12 @@ def makeBiLink(linkType,comp1,id1,port1,comp2,id2,port2,outLat=None,inLat=None):
 	makeUniLink(linkType,comp2,id2,port2,comp1,id1,port1,outLat,inLat)
 
 class DragonflyTopology:
-	def __init__(self, a, g, h):
-		self.a = a
-		self.g = g
-		self.h = h
+	def __init__(self, aArg, gArg, hArg, needRouterArg):
+		self.a = aArg
+		self.g = gArg
+		self.h = hArg
 		self.matrix = None
+		self.needRouter = needRouterArg
 		self.totalSwitches = self.a * self.g
 		self.switches = [0] * self.totalSwitches
 		switchName = "dragonflySwitch"
@@ -55,12 +56,16 @@ class DragonflyTopology:
 			currSwitch = sst.Component("Switch %d" % optical_switch_id, "macro.%s" % switchName)
 			currSwitch.addParam("id", i)
 			self.switches[i] = currSwitch
+		self.setup()
 		return
 	
 	# Have to assume that the topology is symmetrical, that means that all links
 	# are bidirectional between switch pairs, and that also means that the adjacency matrix will
 	# have to be symmetrical about the diagonal
-	def formTopology(self):
+	# NOTE: This forms the actual topology with each link in the simualation being the actual link in the
+	# 		HPC network. The downside to this way of forming the topology is that we have to figure out how 
+	# 		to actually route the simulation
+	def formPhysicalTopology(self):
 		inports = [0] * self.totalSwitches
 		outports = [0] * self.totalSwitches
 		for i in range(self.totalSwitches):
@@ -87,11 +92,36 @@ class DragonflyTopology:
 			currSwitch.addParam("numports", numports)
 		return
 
+	def formVirtualTopology(self):
+		inports = [0] * self.totalSwitches
+		outports = [0] * self.totalSwitches
+		for i in range(self.totalSwitches):
+			for j in range(i + 1, self.totalSwitches, 1):
+				assert(self.matrix[j][i] == self.matrix[i][j])
+				targetID = j
+				targetSwitch = self.switches[targetID]
+				makeUniNetworkLink(currSwitch, currID, outports[currID], targetSwitch, targetID, inports[targetID], smallLatency)
+				makeUniNetworkLink(targetSwitch, targetID, outports[targetID], currSwitch, currID, inports[currID], smallLatency)
+				numports += 1
+				currSwitch.addParam("outport:%d" % outports[currID], targetID)
+				targetSwitch.addParam("inport:%d" % inports[targetID], currID)
+				currSwitch.addParam("inport:%d" % inports[currID], targetID)
+				targetSwitch.addParam("outport:%d" % outports[targetID], currID)
+				inports[currID] += 1
+				inports[targetID] += 1
+				outports[currID] += 1
+				outports[targetID] += 1
+			currSwitch.addParam("numports", numports)
+		return
+
 	def setup(self):
 		filename = "adjacency_a-%d_g-%d_h-%d" % (self.a, self.g, self.h)
 		readMatrix = readSquareMatrix(filename)
 		self.matrix = readMatrix
-		self.formTopology()
+		if self.needRouter:
+			self.formPhysicalTopology()
+		else:
+			self.formVirtualTopology()
 		return
 
 
