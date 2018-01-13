@@ -17,6 +17,7 @@ namespace hw {
     												event_manager* mgr) : optical_switch(params, id, mgr) {
 		my_addr_ = params->get_int_param("id");
 		//num_ports_ = params->get_int_param("optical_switch_radix");
+		std::cout << "cibai siaoooooooo" << std::endl;
 		num_electrical_switches_ = params->get_int_param("num_electrical_switches");
 		num_groups_ = params->get_int_param("num_groups");
 		num_ports_ = num_groups_ * num_electrical_switches_;
@@ -57,6 +58,7 @@ namespace hw {
                               					event_handler* credit_handler) {
  		int input_port = dst_inport;
  		inport_handler_[input_port] = credit_handler;
+ 		//std::cout << "is flexfly_optical_network's connect_input function ever called? " << std::endl;
 		return;
 		
 	};
@@ -122,7 +124,7 @@ namespace hw {
 		//pisces_payload* msg = fpacket->get_pisces_packet();
 		int dst_node = packet->toaddr();
 		int src_node = packet->fromaddr();
-		std::cout << "This packet goes from source node id of: " << std::to_string(src_node) << " to node id: " << std::to_string(dst_node) << std::endl;
+		//std::cout << "This packet goes from source node id of: " << std::to_string(src_node) << " to node id: " << std::to_string(dst_node) << std::endl;
 		if (ftop_ == nullptr) {
 			int dst_switch = ftop_simplified_->node_to_switch(dst_node);
 			int src_switch = ftop_simplified_->node_to_switch(src_node);

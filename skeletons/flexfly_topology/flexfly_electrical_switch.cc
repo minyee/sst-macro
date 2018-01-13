@@ -49,6 +49,7 @@ namespace hw {
 	}
 
 	int flexfly_electrical_switch::queue_length(int port) const {
+		//std::cout << "queue length function is called" << std::endl;
 		return queue_length_[port];
 	}
 
@@ -67,7 +68,7 @@ namespace hw {
                               						event_handler* payload_handler) {
 		//if (src_outport < 0 || src_outport >= radix_)
 		//	spkt_abort_printf("Invalid inport %d in flexfly_electrical_switch::connect_output", src_outport);
-		//std::cout << "connect output is called on switch: " << std::to_string(my_addr_) << " with src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
+
 		outport_handlers_[src_outport] = payload_handler;
 	}
 
@@ -115,7 +116,7 @@ namespace hw {
 			if (dst_switch == my_addr_) {
 				int offset = dst % nodes_per_switch_;
 				send_to_link(outport_handlers_[offset + switches_per_group_], msg);
-				std::cout << "Some message actually got delivered to its destination" << std::endl;
+				//std::cout << "Some message actually got delivered to its destination" << std::endl;
 			} else if (dst_group == ftop_simplified_->group_from_swid(my_addr_)) {
 				//port_to_switch();
 				int outport = ftop_simplified_->get_output_port(my_addr_, dst_switch);
@@ -156,6 +157,9 @@ namespace hw {
 			int outport = offset + switches_per_group_;
 			//std::cout << "my_id_ is: " << std::to_string(my_addr_) << std::endl;
 			//std::cout << "outport is: " << std::to_string(outport) << std::endl;
+
+			pisces_credit* pc = new pisces_credit(switches_per_group_ + (src % nodes_per_switch_), 0, 100000000);
+			send_to_link(inport_handlers_[switches_per_group_ + (src % nodes_per_switch_)], pc);
 			send_to_link(outport_handlers_[outport], ev);
 			return; 
 		}
@@ -184,11 +188,25 @@ namespace hw {
 	};
 
 	void flexfly_electrical_switch::recv_nodal_credit(event* ev) {
+		
+		// need to generate a new flexfly_packet here
+		pisces_credit* msg = safe_cast(pisces_credit, ev);
+		//std::cout << "From node: " << std::to_string(msg->fromaddr()) << " to node: " + std::to_string(msg->toaddr()) << std::endl;
+		//std::cout << "The credits port is " << std::to_string(msg->port()) << std::endl;
+		//std::cout << "The num credit is " << std::to_string(msg->num_credits()) << std::endl;
+		//std::cout << "received an message at electrical_switch" << std::endl;
+		send_to_link(inport_handlers_[msg->port()], ev);
 		return;
 	};
 
 	void flexfly_electrical_switch::recv_credit(event* ev) {
 		std::cout << "RECEIVE CREDIT" << std::endl;
+		pisces_credit* msg = safe_cast(pisces_credit, ev);
+		//std::cout << "received_nodal_payload?" << std::endl;
+		//std::cout << "From node: " << std::to_string(msg->fromaddr()) << " to node: " + std::to_string(msg->toaddr()) << std::endl;
+		msg->port();
+		//std::cout << "received an message at electrical_switch" << std::endl;
+		send_to_link(inport_handlers_[msg->port()], ev);
 		return;
 	};
 

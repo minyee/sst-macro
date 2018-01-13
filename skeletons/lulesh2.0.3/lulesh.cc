@@ -92,6 +92,7 @@ void Release(T **ptr)
 static inline
 void TimeIncrement(Domain& domain)
 {
+  //printf("Got into TimeIncrement\n");
    Real_t targetdt = domain.stoptime() - domain.time() ;
 
    if ((domain.dtfixed() <= Real_t(0.0)) && (domain.cycle() != Int_t(0))) {
@@ -145,6 +146,7 @@ void TimeIncrement(Domain& domain)
    domain.time() += domain.deltatime() ;
 
    ++domain.cycle() ;
+  //printf("Got out of TimeIncrement\n");
 }
 
 /******************************************/
@@ -2492,7 +2494,6 @@ void CalcTimeConstraintsForElems(Domain& domain) {
 static inline
 void LagrangeLeapFrog(Domain& domain)
 {
-  printf("Inside LagrangeLeapFrog\n");
 #ifdef SEDOV_SYNC_POS_VEL_LATE
    Domain_member fieldData[6] ;
 #endif
@@ -2500,7 +2501,6 @@ void LagrangeLeapFrog(Domain& domain)
    /* calculate nodal forces, accelerations, velocities, positions, with
     * applied boundary conditions and slide surface considerations */
    LagrangeNodal(domain);
-printf("Inside LagrangeLeapFrog1\n");
 
 #ifdef SEDOV_SYNC_POS_VEL_LATE
 #endif
@@ -2590,7 +2590,6 @@ int main(int argc, char *argv[])
       printf("To write an output file for VisIt, use -v\n");
       printf("See help (-h) for more options\n\n");
    }
-   printf("here?\n");
    // Set up the mesh and decompose. Assumes regular cubes for now
    Int_t col, row, plane, side;
    InitMeshDecomp(numRanks, myRank, &col, &row, &plane, &side);
@@ -2598,7 +2597,6 @@ int main(int argc, char *argv[])
    // Build the main data structure and initialize it
    locDom = new Domain(numRanks, col, row, plane, opts.nx,
                        side, opts.numReg, opts.balance, opts.cost) ;
-   printf("here2\n");
 
 #if USE_MPI   
   #pragma sst delete
@@ -2616,7 +2614,6 @@ int main(int argc, char *argv[])
    // End initialization
    MPI_Barrier(MPI_COMM_WORLD);
 #endif   
-  printf("here1?\n"); 
    // BEGIN timestep to solution */
 #if USE_MPI   
    double start = MPI_Wtime();
@@ -2624,21 +2621,20 @@ int main(int argc, char *argv[])
    timeval start;
    gettimeofday(&start, NULL) ;
 #endif
-  printf("here3?\n");
 //debug to see region sizes
 //   for(Int_t i = 0; i < locDom->numReg(); i++)
 //      std::cout << "region" << i + 1<< "size" << locDom->regElemSize(i) <<std::endl;
-   printf("here4?\n");
    while((locDom->time() < locDom->stoptime()) && (locDom->cycle() < opts.its)) {
 
       TimeIncrement(*locDom) ;
-      printf("here6\n");
+      
       LagrangeLeapFrog(*locDom) ;
-      printf("here7\n");
+      
       if ((opts.showProg != 0) && (opts.quiet == 0) && (myRank == 0)) {
          printf("cycle = %d, time = %e, dt=%e\n",
                 locDom->cycle(), double(locDom->time()), double(locDom->deltatime()) ) ;
       }
+
    }
    printf("here5?\n");
    // Use reduced max elapsed time
