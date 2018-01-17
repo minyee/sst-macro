@@ -2636,7 +2636,6 @@ int main(int argc, char *argv[])
       }
 
    }
-   printf("here5?\n");
    // Use reduced max elapsed time
    double elapsed_time;
 #if USE_MPI   

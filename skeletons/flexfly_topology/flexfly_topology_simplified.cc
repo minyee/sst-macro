@@ -49,24 +49,6 @@ namespace hw {
   }
  	setup_flexfly_topology_simplified();
 
-  /****************************************************
-   ************ Testing for configure_optical ********* 
-   ****************************************************/
-  
-  /*
-  for (int optical_index = num_groups_ * switches_per_group_; 
-        optical_index < num_optical_switches_ + num_groups_ * switches_per_group_; 
-        optical_index++) {
-    std::pair<int, std::vector<int>> curr_pair (optical_index, std::vector<int> (optical_switch_radix_));
-    optical_inout_connectivity_.insert(curr_pair);
-  }
-  
-  configure_optical_switches_general(group_connectivity_matrix_, optical_inout_connectivity_);
-  */
-  /****************************************************
-   ************ Testing for configure_optical ********* 
-   ****************************************************/
-
  }
 
  flexfly_topology_simplified::~flexfly_topology_simplified() {
@@ -251,7 +233,6 @@ void flexfly_topology_simplified::connected_outports(const switch_id src,
                                             std::vector<topology::connection>& conns) const {
   std::unordered_map<switch_id, std::vector<switch_link*>>::const_iterator got = switch_outport_connection_map_.find(src);
   int cidx = 0;
-  std::cout << "IS IT THIS THAT GETS CALLED" << std::endl;
   if (got != switch_outport_connection_map_.end()) {
     const std::vector<switch_link*>& switch_link_vectors = got->second;
     for (switch_link* current_switch_link : switch_link_vectors) {
@@ -264,7 +245,7 @@ void flexfly_topology_simplified::connected_outports(const switch_id src,
       cidx++;
     }
   }
-  std::cout << "cidx is: " << std::to_string(cidx) << std::endl;
+  //std::cout << "cidx is: " << std::to_string(cidx) << std::endl;
 }
 
 

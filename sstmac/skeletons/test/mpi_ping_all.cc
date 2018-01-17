@@ -60,7 +60,6 @@ RegisterKeywords("print_times",
 
 int USER_MAIN(int argc, char** argv)
 {
-  std::cout << "MPI_PING ALL LEH WE ARE IN" << std::endl;
   MPI_Init(&argc, &argv);
 
   sstmac::runtime::add_deadlock_check(

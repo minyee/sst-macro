@@ -2,7 +2,7 @@ import sst
 import sst.macro
 
 opticalLatency = "0ps"
-smallLatency = "1us"
+smallLatency = "100ns"
 
 def makeUniLink(linkType,srcComp,srcId,srcPort,dstComp,dstId,dstPort,outLat=None,inLat=None):
 	if not outLat : outLat = inLat
@@ -28,9 +28,7 @@ class FlexflyInterconnectSimplified:
 		self.params = params
 		self.simplifiedSwitch = None
 		self.system = sst.macro.System(params)
-		self.num_nodes = self.system.numNodes()
-		
-		
+		self.num_nodes = self.system.numNodes()		
 		self.nodes = [0]*self.num_nodes #just expands the size of an initial array with 1 element 0 to size 1 * num_nodes
 		self.containsOptics = True
 		self.optical_topology_params = self.params["topology"]

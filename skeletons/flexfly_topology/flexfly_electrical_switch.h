@@ -85,6 +85,8 @@ void recv_nodal_credit(event* ev);
 private:
 void send_packet_to_node(event* ev, int node_id);
 
+void get_link_params(sprockit::sim_parameters* switch_param);
+
 protected:
 router* router_;
 std::vector<event_handler*> inport_handlers_;
@@ -101,8 +103,26 @@ int nodes_per_switch_;
 flexfly_topology* ftop_;
 flexfly_topology_simplified* ftop_simplified_;
 int num_groups_;
+
  //void (std::vector<>)
- 
+/*
+ * IMPORTANT: ADDED (01/17/2018 by minyee)
+ * BEGIN
+ * Note: These are all the bandwidths and send and credit lantecies 
+ *
+ */
+double optical_link_bw_;
+double electrical_link_bw_;
+timestamp inv_electrical_link_bw_;
+timestamp inv_optical_link_bw_;
+timestamp send_latency_;
+timestamp credit_latency_;
+/*
+ * IMPORTANT: ADDED (01/17/2018 by minyee)
+ * END
+ * Note: These are all the bandwidths and send and credit lantecies 
+ *
+ */
 };
  
 }

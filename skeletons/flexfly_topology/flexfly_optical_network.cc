@@ -16,8 +16,6 @@ namespace hw {
     												uint64_t id,
     												event_manager* mgr) : optical_switch(params, id, mgr) {
 		my_addr_ = params->get_int_param("id");
-		//num_ports_ = params->get_int_param("optical_switch_radix");
-		std::cout << "cibai siaoooooooo" << std::endl;
 		num_electrical_switches_ = params->get_int_param("num_electrical_switches");
 		num_groups_ = params->get_int_param("num_groups");
 		num_ports_ = num_groups_ * num_electrical_switches_;
