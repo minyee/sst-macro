@@ -276,8 +276,6 @@ public:
   
   virtual void configure_metis(metis_config* configuration) const override;
 
-  void print_topology() const;
-
   flexfly_topology_simplified(sprockit::sim_parameters* params); 
 
   switch_id node_to_switch(node_id nid) const;
@@ -296,7 +294,6 @@ public:
         config[i] = connectivity[i];
       }
     }
-    //return optical_inout_connectivity_[optical_switch_id];
   };
 
   int num_links_between_groups(int group1, int group2) const; 
@@ -351,7 +348,6 @@ private:
 
  bool is_optical_switch(switch_id sid) const;
 
-private:
  bool is_electrical_switch(switch_id sid) const;
  
  void print_port_connection_for_switch(switch_id swid) const;
@@ -362,15 +358,11 @@ private:
 
  void check_routing_table() const;
 
- bool delete_item(std::vector<int>& set, int optical_switch);
+ void route_single_switch_minimal(switch_id src, std::vector<std::vector<switch_id>>& adjacency_list);
 
- void add_item(std::vector<int>& set, int optical_switch);
+ void route_topology_minimal();
 
- int remaining_row_requirement(std::vector<int>& comm_requirement);
-
- int union_set_size(std::vector<std::vector<int>>& group_connectivity_vector, int start, int end);
-
- bool check_remaining(std::vector<std::vector<int>>& group_connectivity_vector, std::vector<int>& requirement);
+ void form_virtual_intergroup_topology(std::vector<std::vector<switch_id>>& adjacency_list);
 
  bool is_simplified_model_;
 
@@ -394,6 +386,7 @@ public:
  }
  
  void configure_optical_network(std::vector<std::vector<std::vector<int>>>& outport_options) const; 
+
 
 };
 

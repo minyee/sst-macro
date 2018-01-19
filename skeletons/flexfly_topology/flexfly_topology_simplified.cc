@@ -16,7 +16,7 @@
 namespace sstmac {
 namespace hw {
 
- 
+ // NOTE: the switch with the same id as the max_switch_id_ is the optical switch.
  flexfly_topology_simplified::flexfly_topology_simplified(sprockit::sim_parameters* params) : 
                               structured_topology(params,InitMaxPortsIntra::I_Remembered, 
                                                   InitGeomEjectID::I_Remembered) {
@@ -26,7 +26,7 @@ namespace hw {
  	nodes_per_switch_ = params->get_optional_int_param("nodes_per_switch", 4);
   optical_switch_radix_ = params->get_optional_int_param("optical_switch_radix", switches_per_group_);
   is_simplified_model_ = true;
- 	num_optical_switches_ = switches_per_group_;
+ 	num_optical_switches_ = 1;
   optical_switch_radix_ = num_groups_;
   max_switch_id_ = num_optical_switches_ + (num_groups_ * switches_per_group_) - 1;
   group_connectivity_matrix_.resize(num_groups_);
@@ -40,7 +40,6 @@ namespace hw {
       }
     }
   }
-  
 
 
   distance_matrix_.resize(num_groups_ * switches_per_group_);
@@ -154,6 +153,7 @@ namespace hw {
       return i;
     i++; 
   }
+  spkt_abort_printf("Get output port function in flexfly_topology_simplified has failed ");
   return -1;
  };
 
@@ -164,7 +164,7 @@ namespace hw {
   if (!valid_switch_id(swid)) {
  		return false;
  	} 
- 	return swid >= num_groups_ * switches_per_group_;
+ 	return swid == max_switch_id_;
  };
 
  /**
@@ -330,19 +330,6 @@ bool flexfly_topology_simplified::switch_id_slot_filled(switch_id sid) const {
   };
 
   /**
-   * Used to print the connectivity matrix of the entire topology 
-   * Doesn't need to take in any sort of arguments and does not return any
-   * argument
-   */
-  void flexfly_topology_simplified::print_topology() const {
-    for (std::pair<switch_id, std::vector<switch_link*>> key_val_pair : 
-                switch_outport_connection_map_ ) {
-      switch_id swid = key_val_pair.first;
-      print_port_connection_for_switch(swid);
-    }
-  };
-
-  /**
    * prints out the all the connections for each switch
    */
   void flexfly_topology_simplified::print_port_connection_for_switch(switch_id swid) const {
@@ -496,32 +483,6 @@ bool flexfly_topology_simplified::switch_id_slot_filled(switch_id sid) const {
       }
       std::cout << std::endl;
     }
-     /*
-    }
-    for (const std::vector<flexfly_path*>& routing_entry_iter : routing_table_) {
-      //std::cout << " got in here for: " + std::to_string(i) << std::endl;
-      //const std::vector<flexfly_path *>& switch_path = routing_entry_iter.second; 
-      std::string str = "Source Switch id: " + std::to_string(i) + " ";
-      int j = 0;
-      for (flexfly_path* f_path : routing_entry_iter) {
-        if (i == j) continue;
-
-        //const flexfly_path* f_path = flexfly_path_elem;
-        str += ("Dest Switch id: " + std::to_string(j) + " \n");
-        assert(f_path);
-        for (int i = 0; i < f_path->path.size(); i++) {
-          switch_port_pair* spp = f_path->path[i];
-          str += ("Switch id: " + std::to_string(spp->switch_id) + " outport: " + std::to_string(spp->outport) + "\n"); 
-        }
-        str += "\n";
-        j++;
-        
-      }
-      std::cout << str << std::endl;
-      i++;
-    }
-    std::cout << "Getting out of check_routing_table" << std::endl;
-    */
   };
 
   // NEWWWWWWW
@@ -553,9 +514,144 @@ bool flexfly_topology_simplified::switch_id_slot_filled(switch_id sid) const {
         }
       }
     }
+  };
+
+  // FIGURE OUT HOW TO HAVE A GLOBAL ROUTING FOR ALL NODES. FIRST, TAKE A LOOK AT GROUP TO GROUP CONNECTIVITY MATRIX
+  // THEN BASED ON THAT RANDOMLY CHOOSE INTERGROUP SWITCH PAIRS TO CONNECT, ASSUMING THAT THE GROUP CONNECTIVITY MATRIX
+  // DOES NOT VIOLATE THE CONSTRAINTS
+  // THEN PERFORM DIJKSTRA
+  void flexfly_topology_simplified::route_single_switch_minimal(switch_id src, std::vector<std::vector<switch_id>>& adjacency_list) {
+    if (src > max_switch_id_)
+      spkt_abort_printf("The switch for which we want to route should be within the topology");
+    int distance_vector[max_switch_id_ + 1];
+    bool visited_switches[max_switch_id_ + 1];
+    switch_id parent_switch[max_switch_id_ + 1];
+
+    // this is to make sure routing is equalized for all switches get used evenly for routing
+    // and no 1 switch gets too much favoritism
+    uint8_t used_for_routing[max_switch_id_ + 1];  
+
+    // Initialization phase BEGIN
+    for (int id = 0; id <= max_switch_id_; id++) {
+      distance_vector[id] = INT_MAX;
+      visited_switches[id] = false;
+    }
+    distance_vector[src] = 0;
+    // Initialization phase END
+    
+    std::queue<switch_id> queue;
+    queue.push(src);
+
+    // Breadth first search portion
+    while (!queue.empty()) {
+      switch_id curr_switch = queue.front();
+      queue.pop();
+      visited_switches[curr_switch] = true;
+      auto outgoing_edges = adjacency_list[curr_switch];
+      // CONTINUE HERE
+      for (auto neighbor_switch : outgoing_edges) {
+        
+        if (distance_vector[neighbor_switch] > distance_vector[curr_switch] + 1) {
+          distance_vector[neighbor_switch] = distance_vector[curr_switch] + 1;
+          parent_switch[neighbor_switch] = curr_switch;
+        }
+
+        if ((distance_vector[neighbor_switch] == distance_vector[curr_switch] + 1) &&
+            (curr_switch != src) &&
+            used_for_routing[curr_switch] < used_for_routing[parent_switch[neighbor_switch]]) {
+          
+          parent_switch[neighbor_switch] = curr_switch;
+
+        }
+
+        if (!visited_switches[neighbor_switch])
+          queue.push(neighbor_switch);
+      }
+    }
+
+    for (switch_id id = 0; id <= max_switch_id_ - 1; id++) {
+      if (id == src) continue;
+      if (routing_table_[src][id] == nullptr) routing_table_[src][id] = new flexfly_path();
+      switch_id parent = parent_switch[id];
+      while (parent != src)  {
+        switch_port_pair* spp = new switch_port_pair();
+        spp->switch_id = parent;
+        auto it = switch_inport_connection_map_.find(id);
+        int port = 0;
+        for (auto incoming_switch : it->second) {
+          if (incoming_switch->src_sid == parent) {
+            spp->outport = port;
+            break;
+          }
+          port++;
+        }
+        (routing_table_[src][id]->path).insert(routing_table_[src][id]->path.begin(), spp);
+      }
+    }
+
+  };
+
+  void flexfly_topology_simplified::route_topology_minimal() {
+    // Massage the virtual adjacency list of the graph 
+    std::vector<std::vector<switch_id>> adjacency_list; // NOTE THAT FLEXFLY IS FUNDAMENTALLY A DIRECTED TOPOLOGY
+                                                        // So the adjacency represents a directed topology
+    adjacency_list.resize(max_switch_id_);
+    for (auto row : routing_table_) {
+      for (auto f_path : row) {
+        if (nullptr != f_path) delete f_path;
+      }
+    }
+    form_virtual_intergroup_topology(adjacency_list);
+
+    for (int swid = 0; swid <= max_switch_id_; swid++) {
+      route_single_switch_minimal(swid, adjacency_list);
+    }
+    
+    return;
+  };
+
+  /**
+   * This function forms the virtual inter-group switch-pair connection
+   * so that route_topology_minimal can actually use this to 
+   **/
+  void flexfly_topology_simplified::form_virtual_intergroup_topology(std::vector<std::vector<switch_id>>& adjacency_list) {
+    
+    std::vector<std::vector<switch_id>> groups_available_switches_outports;
+    std::vector<std::vector<switch_id>> groups_available_switches_inports;
+    groups_available_switches_outports.resize(num_groups_);
+    groups_available_switches_inports.resize(num_groups_);
+    std::srand(100);
+    // 1) first we want to form the sets of switches that each group can use to
+    //    to connect
+    for (int k = 0; k < num_groups_; k++) {
+      int id_offset = k * switches_per_group_;
+      for (int m = 0; m < switches_per_group_; m++) {
+        groups_available_switches_outports[k].push_back(id_offset + m);
+        groups_available_switches_inports[k].push_back(id_offset + m);
+      }
+    }
+
+    for (int i = 0; i < num_groups_; i++) {
+      for (int j = 0; j < num_groups_; j++) {
+        int formed_pairs = 0;
+        while (formed_pairs < group_connectivity_matrix_[i][j]) {
+          switch_id src_id = rand() % groups_available_switches_outports[i].size();
+          switch_id dst_id = rand() % groups_available_switches_inports[j].size();
+          adjacency_list[src_id].push_back(dst_id);
+          // Delete the switches from the sets of available switches from either groups
+          auto src_it = std::find(groups_available_switches_outports[i].begin(), 
+                                  groups_available_switches_outports[i].end(), 
+                                  src_id);
+          auto dst_it = std::find(groups_available_switches_inports[j].begin(), 
+                                  groups_available_switches_inports[j].end(), 
+                                  dst_id);
+          groups_available_switches_outports[i].erase(src_it);
+          groups_available_switches_inports[j].erase(dst_it);
+          formed_pairs++;
+        }
+      }
+    }
   }
-
-
 }
 }
 
