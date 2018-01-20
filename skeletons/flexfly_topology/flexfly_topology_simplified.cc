@@ -569,23 +569,38 @@ bool flexfly_topology_simplified::switch_id_slot_filled(switch_id sid) const {
       }
     }
 
+    // Now that Dijkstra's is done, put routing information
     for (switch_id id = 0; id <= max_switch_id_ - 1; id++) {
       if (id == src) continue;
       if (routing_table_[src][id] == nullptr) routing_table_[src][id] = new flexfly_path();
       switch_id parent = parent_switch[id];
-      while (parent != src)  {
-        switch_port_pair* spp = new switch_port_pair();
-        spp->switch_id = parent;
-        auto it = switch_inport_connection_map_.find(id);
-        int port = 0;
-        for (auto incoming_switch : it->second) {
-          if (incoming_switch->src_sid == parent) {
-            spp->outport = port;
-            break;
+      switch_id current = id;
+      while (current != src)  {
+        if (group_from_swid(parent) != group_from_swid(id)) {
+          switch_port_pair* spp1 = new switch_port_pair();
+          switch_port_pair* spp2 = new switch_port_pair();
+          spp1->switch_id = max_switch_id_;
+          spp1->outport = current; // NOTE that for the optical network, the port number leading to a switch is the same as the switch_id
+          spp2->switch_id = parent;
+          spp2->outport = switches_per_group_ - 1 ;
+          (routing_table_[src][id]->path).insert(routing_table_[src][id]->path.begin(), spp1);
+          (routing_table_[src][id]->path).insert(routing_table_[src][id]->path.begin(), spp2);
+        } else {
+          switch_port_pair* spp = new switch_port_pair();
+          spp->switch_id = parent;
+          auto it = switch_inport_connection_map_.find(id);
+          int port = 0;
+          for (auto incoming_switch : it->second) {
+            if (incoming_switch->src_sid == parent) {
+              spp->outport = port;
+              break;
+            }
+            port++;
           }
-          port++;
+          (routing_table_[src][id]->path).insert(routing_table_[src][id]->path.begin(), spp);
         }
-        (routing_table_[src][id]->path).insert(routing_table_[src][id]->path.begin(), spp);
+        current = parent;
+        parent = parent_switch[parent];
       }
     }
 
