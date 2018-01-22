@@ -85,6 +85,7 @@ namespace hw {
                               						event_handler* credit_handler) {
 		//if (dst_inport < 0 || dst_inport >= radix_)
 		//	spkt_abort_printf("Invalid inport %d in flexfly_electrical_switch::connect_input", dst_inport);
+		
 		inport_handlers_[dst_inport] = credit_handler;
 	}
 
@@ -184,21 +185,21 @@ namespace hw {
 			dst_switch = ftop_simplified_->node_to_switch(dst);
 			src_switch = ftop_simplified_->node_to_switch(src);
 		}
-		//std::cout << "electrical switch received a payload from a node" << std::endl;
+		
+		/*
+		 * Case 1: When the packet has reached its final switch
+		 */
 		if (src_switch == dst_switch) {
-			int offset = dst % nodes_per_switch_;
-			int outport = offset + switches_per_group_;
-			//std::cout << "my_id_ is: " << std::to_string(my_addr_) << std::endl;
-			//std::cout << "outport is: " << std::to_string(outport) << std::endl;
-
-			pisces_credit* pc = new pisces_credit(switches_per_group_ + (src % nodes_per_switch_), 0, 100000000);
-			send_delayed_to_link(electrical_delay, inport_handlers_[switches_per_group_ + (src % nodes_per_switch_)], pc);
-			send_delayed_to_link(electrical_delay, outport_handlers_[outport], ev);
+			//send_credit_to_node(msg->num_bytes(), src);
+			send_credit_to_node(1000000, src);
+			send_packet_to_node(dst, electrical_delay, ev);
 			return; 
 		}
 
-		flexfly_packet* fpacket = new flexfly_packet(msg);
+		// If we are here, that means that we do need to route properly
+		
 		if (ftop_ != nullptr) {
+			flexfly_packet* fpacket = new flexfly_packet(msg);
 			ftop_->route_minimal(my_addr_, ftop_->node_to_switch(msg->toaddr()), fpacket);
 			int next_port = fpacket->next_outport();
 			//std::cout << "Next port is: " + std::to_string(next_port) << std::endl;
@@ -207,6 +208,12 @@ namespace hw {
 			// In this case, we are in the simplified
 			int src_group = ftop_simplified_->group_from_swid(src_switch);
 			int dst_group = ftop_simplified_->group_from_swid(dst_switch);
+			routable::path new_path;
+			ftop_simplified_->minimal_route_to_switch(my_addr_, dst_switch, new_path);
+			int outport = new_path.outport();
+			send_delayed_to_link(electrical_delay, outport_handlers_[outport], ev);
+			return;
+			/*
 			if (src_group == dst_group) {
 				int outgoing_port = ftop_simplified_->get_output_port(src_switch, dst_switch);
 				assert(outgoing_port >= 0);
@@ -215,6 +222,7 @@ namespace hw {
 				// If not in the same group, then just send it over to the optical_network
 				send_delayed_to_link(optical_delay, outport_handlers_[switches_per_group_ - 1], ev);
 			}
+			*/
 		}
 		
 		
@@ -233,10 +241,7 @@ namespace hw {
 	};
 
 	void flexfly_electrical_switch::recv_credit(event* ev) {
-		std::cout << "RECEIVE CREDIT" << std::endl;
 		pisces_credit* msg = safe_cast(pisces_credit, ev);
-		//std::cout << "received_nodal_payload?" << std::endl;
-		//std::cout << "From node: " << std::to_string(msg->fromaddr()) << " to node: " + std::to_string(msg->toaddr()) << std::endl;
 		msg->port();
 		//std::cout << "received an message at electrical_switch" << std::endl;
 		send_delayed_to_link(credit_latency_, inport_handlers_[msg->port()], ev);
@@ -248,12 +253,21 @@ namespace hw {
 	//}
 
 	/**
-	 * Has to be called when received a packet and the target node is
-	 * connected to current switch
+	 * This function sends a delayed packet to the node connected to this switch with node_id 
+	 * as the node id
 	 **/
-	void flexfly_electrical_switch::send_packet_to_node(event* ev, int node_id) {
-		//int port_id = node_to_port(node_id);
-		//send_delayed_to_link(outport_handlers_[port_id], ev);
+	void flexfly_electrical_switch::send_packet_to_node(int node_id, timestamp delay, event* ev) {
+		assert(ftop_simplified_->node_to_switch(node_id) == my_addr_);
+		int offset = node_id % nodes_per_switch_;
+		int outport = offset + switches_per_group_;
+		send_delayed_to_link(delay, outport_handlers_[outport], ev);
+	}
+
+	void flexfly_electrical_switch::send_credit_to_node(uint32_t credit_amount, int node_id) {
+		assert(ftop_simplified_->node_to_switch(node_id) == my_addr_);
+		int port = switches_per_group_ + (node_id % nodes_per_switch_);
+		pisces_credit* pc = new pisces_credit(port, 0, credit_amount);
+		send_delayed_to_link(send_latency_ , inport_handlers_[port], pc);
 	}
 }
 }

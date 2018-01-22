@@ -83,7 +83,9 @@ void recv_nodal_payload(event* ev);
 void recv_nodal_credit(event* ev);
 
 private:
-void send_packet_to_node(event* ev, int node_id);
+void send_packet_to_node(int node_id, timestamp delay, event* ev);
+
+void send_credit_to_node(uint32_t credit_amount, int node_id);
 
 void get_link_params(sprockit::sim_parameters* switch_param);
 

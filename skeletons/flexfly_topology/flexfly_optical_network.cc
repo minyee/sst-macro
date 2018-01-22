@@ -75,7 +75,7 @@ namespace hw {
 	};
 
 	link_handler* flexfly_optical_network::payload_handler(int port) const {
-		return new_link_handler(this, &flexfly_optical_network::recv_payload_smart);
+		return new_link_handler(this, &flexfly_optical_network::recv_payload);
 	};
 
 	link_handler* flexfly_optical_network::credit_handler(int port) const {
@@ -103,12 +103,13 @@ namespace hw {
 		assert(packet);
 		//pisces_payload* msg = fpacket->get_pisces_packet();
 		int dst_node = packet->toaddr();
-
+		int src_node = packet->fromaddr();
 		//ftop_->group_from_swid(dst_switch);
 		if (ftop_ == nullptr) {
 			int dst_switch = ftop_simplified_->node_to_switch(dst_node);
-			int outport = ftop_simplified_->get_output_port(my_addr_, dst_switch);	
-			assert(outport >= 0);
+			int src_switch = ftop_simplified_->node_to_switch(src_node);
+			int outport;
+			ftop_simplified_->minimal_route_to_switch_optical(src_switch, dst_switch, outport);
 			send_to_link(outport_handler_[outport], ev);
 		}
 		

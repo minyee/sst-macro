@@ -41,13 +41,14 @@ namespace hw {
     }
   }
 
-
+  routing_table_.resize(num_groups_ * switches_per_group_);
   distance_matrix_.resize(num_groups_ * switches_per_group_);
   for (int i = 0; i < num_groups_ * switches_per_group_; i++) {
     distance_matrix_[i].resize(num_groups_ * switches_per_group_);
+    routing_table_[i].resize(num_groups_ * switches_per_group_);
   }
  	setup_flexfly_topology_simplified();
-
+  route_topology_minimal();
  }
 
  flexfly_topology_simplified::~flexfly_topology_simplified() {
@@ -129,18 +130,11 @@ namespace hw {
   // should not call this function if this were the case
   assert(src_switch_addr != dst_switch_addr);
   // if both nodes are connected to the same switch
-  if (src_group == dst_group) {
-    std::vector<topology::connection> conns;  
-    connected_outports(src_switch_addr, conns);
-    for (int i = 0; i < conns.size(); i++) {
-      if (conns[i].dst == dst_switch_addr) {
-        path.set_outport(i);
-        return;
-      }
-    }
-  } else {
-  }
-
+  flexfly_path* fpath = routing_table_[src_switch_addr][dst_switch_addr];
+  assert(fpath != nullptr);
+  switch_port_pair* spp = fpath->path[0];
+  assert(spp->switch_id == src_switch_addr);
+  path.set_global_outport(spp->outport);
  };
 
  int flexfly_topology_simplified::get_output_port(int src_switch, int dst_switch) const {
@@ -551,11 +545,6 @@ bool flexfly_topology_simplified::switch_id_slot_filled(switch_id sid) const {
       // CONTINUE HERE
       for (auto neighbor_switch : outgoing_edges) {
         
-        if (distance_vector[neighbor_switch] > distance_vector[curr_switch] + 1) {
-          distance_vector[neighbor_switch] = distance_vector[curr_switch] + 1;
-          parent_switch[neighbor_switch] = curr_switch;
-        }
-
         if ((distance_vector[neighbor_switch] == distance_vector[curr_switch] + 1) &&
             (curr_switch != src) &&
             used_for_routing[curr_switch] < used_for_routing[parent_switch[neighbor_switch]]) {
@@ -564,17 +553,27 @@ bool flexfly_topology_simplified::switch_id_slot_filled(switch_id sid) const {
 
         }
 
+        if (distance_vector[neighbor_switch] > distance_vector[curr_switch] + 1) {
+          distance_vector[neighbor_switch] = distance_vector[curr_switch] + 1;
+          parent_switch[neighbor_switch] = curr_switch;
+        }
+
+        
+
         if (!visited_switches[neighbor_switch])
           queue.push(neighbor_switch);
       }
     }
-
+    
     // Now that Dijkstra's is done, put routing information
     for (switch_id id = 0; id <= max_switch_id_ - 1; id++) {
       if (id == src) continue;
-      if (routing_table_[src][id] == nullptr) routing_table_[src][id] = new flexfly_path();
+      
+      if (routing_table_[src][id] != nullptr) delete routing_table_[src][id];
+      routing_table_[src][id] = new flexfly_path();
       switch_id parent = parent_switch[id];
       switch_id current = id;
+      
       while (current != src)  {
         if (group_from_swid(parent) != group_from_swid(id)) {
           switch_port_pair* spp1 = new switch_port_pair();
@@ -617,11 +616,9 @@ bool flexfly_topology_simplified::switch_id_slot_filled(switch_id sid) const {
       }
     }
     form_virtual_intergroup_topology(adjacency_list);
-
-    for (int swid = 0; swid <= max_switch_id_; swid++) {
+    for (int swid = 0; swid < max_switch_id_; swid++) {
       route_single_switch_minimal(swid, adjacency_list);
     }
-    
     return;
   };
 
@@ -644,14 +641,22 @@ bool flexfly_topology_simplified::switch_id_slot_filled(switch_id sid) const {
         groups_available_switches_outports[k].push_back(id_offset + m);
         groups_available_switches_inports[k].push_back(id_offset + m);
       }
+      for (int i = 0; i < switches_per_group_ - 1; i++) {
+        switch_id sid_src = k * switches_per_group_ + i;
+        for (int j = i + 1; j < switches_per_group_; j++) {
+          switch_id sid_dst = k * switches_per_group_ + j;
+          adjacency_list[sid_src].push_back(sid_dst);
+          adjacency_list[sid_dst].push_back(sid_src);
+        }
+      }
     }
 
     for (int i = 0; i < num_groups_; i++) {
       for (int j = 0; j < num_groups_; j++) {
         int formed_pairs = 0;
         while (formed_pairs < group_connectivity_matrix_[i][j]) {
-          switch_id src_id = rand() % groups_available_switches_outports[i].size();
-          switch_id dst_id = rand() % groups_available_switches_inports[j].size();
+          switch_id src_id = groups_available_switches_outports[i][rand() % groups_available_switches_outports[i].size()];
+          switch_id dst_id = groups_available_switches_inports[j][rand() % groups_available_switches_inports[j].size()];
           adjacency_list[src_id].push_back(dst_id);
           // Delete the switches from the sets of available switches from either groups
           auto src_it = std::find(groups_available_switches_outports[i].begin(), 
@@ -660,13 +665,29 @@ bool flexfly_topology_simplified::switch_id_slot_filled(switch_id sid) const {
           auto dst_it = std::find(groups_available_switches_inports[j].begin(), 
                                   groups_available_switches_inports[j].end(), 
                                   dst_id);
+          assert(src_it != groups_available_switches_outports[i].end());
+          assert(dst_it != groups_available_switches_inports[j].end());
           groups_available_switches_outports[i].erase(src_it);
           groups_available_switches_inports[j].erase(dst_it);
           formed_pairs++;
         }
       }
     }
+  };
+
+  /**
+   * This 
+   **/
+  void flexfly_topology_simplified::minimal_route_to_switch_optical(switch_id src, switch_id dst, int& outport_arg) const {
+    flexfly_path* fpath = routing_table_[src][dst];
+    assert(fpath != nullptr);
+    for (auto spp : fpath->path) {
+      if (spp->switch_id == max_switch_id_) {
+        outport_arg = spp->outport; 
+      }
+    }
   }
+
 }
 }
 

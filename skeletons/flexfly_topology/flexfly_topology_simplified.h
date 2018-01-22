@@ -387,7 +387,8 @@ public:
  
  void configure_optical_network(std::vector<std::vector<std::vector<int>>>& outport_options) const; 
 
-
+ void minimal_route_to_switch_optical(switch_id src, switch_id dst, int& outport_arg) const;
+ 
 };
 
  /**
