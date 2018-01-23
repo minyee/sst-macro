@@ -140,6 +140,7 @@ int main(int argc, char * argv[]) {
   double setup_time = mytimer();
 
   if (params.comm_rank == 0){
+    printf("HPCG 3.0 Applications Simulation - Hi Jason");
     printf("Running local grid nx=%d ny=%d nz=%d\n",
     params.nx, params.ny, params.nz);
   }

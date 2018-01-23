@@ -24,13 +24,11 @@ while isSoFile:
 		sys.path.append(folder)
 		importer = ".".join(lib[3:].split(".")[:-1]) #chop off lib and last so
 		importer = "sst." + importer
-		importer = "librunlulesh2_0_3"
 		cmd = "import %s" % importer
 		exec(cmd)
 		del sys.argv[idx]
 	else: isSoFile = False
 	idx += 1
-
 if False:
 	setupTopology()
 else:
