@@ -2548,7 +2548,7 @@ int main(int argc, char *argv[])
    Int_t numRanks ;
    Int_t myRank ;
    struct cmdLineOpts opts;
-
+   //printf("IN LULESH YO - JASON");
 #if USE_MPI   
    Domain_member fieldData ;
 

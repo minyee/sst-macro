@@ -2,7 +2,7 @@
 #define CoMD_info_hpp
 
 #define CoMD_VARIANT "openmp-mpi"
-#define CoMD_HOSTNAME "Mins-MBP.columbia.edu"
+#define CoMD_HOSTNAME "dyn-128-59-87-11.dyn.columbia.edu"
 #define CoMD_KERNEL_NAME "'Darwin'"
 #define CoMD_KERNEL_RELEASE "'17.2.0'"
 #define CoMD_PROCESSOR "'i386'"

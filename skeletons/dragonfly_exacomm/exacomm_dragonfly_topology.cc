@@ -20,11 +20,17 @@ namespace hw {
  	switches_per_group_ = params->get_int_param("switches_per_group"); // controls a
   optical_links_per_switch_ = params->get_int_param("optical_links_per_switch");
  	nodes_per_switch_ = params->get_optional_int_param("nodes_per_switch", 4);
+  std::string filename = params->get_param("adjacency_matrix_filename");
   max_switch_id_ = (num_groups_ * switches_per_group_) - 1;
-  outgoing_adjacency_matrix_.resize(num_groups_ * switches_per_group_);
-  incoming_adjacency_matrix_.resize(num_groups_ * switches_per_group_);
+  outgoing_adjacency_list_.resize(num_groups_ * switches_per_group_);
+  incoming_adjacency_list_.resize(num_groups_ * switches_per_group_);
+  distance_matrix_.resize(max_switch_id_ + 1);
+  for (int i = 0; i <= max_switch_id_; i++) {
+    distance_matrix_[i].resize(max_switch_id_ + 1);
+  }
   // now figure out what the adjacency matrix of the entire topology looks like
   // more importantly how do I transfer that information from 
+  form_topology(filename);
  };
 
  exacomm_dragonfly_topology::~exacomm_dragonfly_topology() {};
@@ -59,18 +65,12 @@ namespace hw {
 void exacomm_dragonfly_topology::connected_outports(const switch_id src, 
                                             std::vector<topology::connection>& conns) const {
   int cidx = 0;
-  for (auto switch_swid : outgoing_adjacency_matrix_[src]) {
+  for (auto outgoing_link : outgoing_adjacency_list_[src]) {
     conns.push_back(topology::connection());
-    conns[cidx].src = src;
-    conns[cidx].dst = switch_swid;
-    conns[cidx].src_outport = cidx; 
-    int target_port = 0;
-    for (auto src_swid : incoming_adjacency_matrix_[switch_swid]) {
-      if (src_swid == src) 
-        break;
-      target_port++;
-    }
-    conns[cidx].dst_inport = target_port;
+    conns[cidx].src = outgoing_link->get_src();
+    conns[cidx].dst = outgoing_link->get_dst();
+    conns[cidx].src_outport = outgoing_link->get_src_outport();
+    conns[cidx].dst_inport = outgoing_link->get_dst_inport(); 
     cidx++;
   }
 }
@@ -91,7 +91,7 @@ void exacomm_dragonfly_topology::configure_vc_routing(std::map<routing::algorith
 switch_id exacomm_dragonfly_topology::node_to_ejection_switch(node_id addr, uint16_t& port) const {
   switch_id swid = addr / nodes_per_switch_; // this gives us the switch id of the switch node addr is connected to
   int ind = addr % nodes_per_switch_;
-  int offset = outgoing_adjacency_matrix_[swid].size();
+  int offset = outgoing_adjacency_list_[swid].size();
   port = offset + ind;
   return swid;
 };
@@ -104,23 +104,7 @@ switch_id exacomm_dragonfly_topology::node_to_ejection_switch(node_id addr, uint
    * NOTE: This method does not include the hop to an optical switch
    **/
   int exacomm_dragonfly_topology::minimal_distance(switch_id src, switch_id dst) const {
-    //std::cout << "src switch id: " << std::to_string(src) << " dst switch id: " << std::to_string(dst) << std::endl;
-    int src_group = group_from_swid(src);
-    int dst_group = group_from_swid(dst);
-    if (src == dst) { // same switch
-      return 0;
-    } else if (src_group == dst_group) { // same group
-      return 1;
-    } else { // different group but can reach either by 1 global and 1 local or 1 local and then 1 global
-      //bool directly_connected = false;
-      for (auto target_id : outgoing_adjacency_matrix_[src]) {
-        if (target_id == dst) {
-          return 1;
-          break;
-        }
-      }
-      return 3;
-    }
+    return distance_matrix_[src][dst];
   };
 
   // need to figure out how to implement this function now that we cannot figure out the distance matrix
@@ -220,24 +204,46 @@ switch_id exacomm_dragonfly_topology::node_to_ejection_switch(node_id addr, uint
     return swid;
   };
 
-
-
-  void exacomm_dragonfly_topology::set_connection(int src_switch, int port_num, int dst_switch, bool inport_or_outport) {
-    if (inport_or_outport) {
-      if (incoming_adjacency_matrix_[src_switch].size() == 0) 
-        incoming_adjacency_matrix_[src_switch].resize(num_groups_ * switches_per_group_);
-      incoming_adjacency_matrix_[src_switch][port_num] = dst_switch;
-    } else {
-      if (outgoing_adjacency_matrix_[src_switch].size() == 0) 
-        outgoing_adjacency_matrix_[src_switch].resize(num_groups_ * switches_per_group_);
-      outgoing_adjacency_matrix_[src_switch][port_num] = dst_switch;
-    }
-    return;
-  };
-
   void exacomm_dragonfly_topology::configure_individual_port_params(switch_id src,
           sprockit::sim_parameters* switch_params) const {
 
+  };
+
+  /**
+   * Configures the actual topology by populating the connected_outports and connected_inports 
+   * of the topology
+   **/
+  void exacomm_dragonfly_topology::form_topology(std::string filename) { 
+    std::ifstream mat_file(filename);
+    int last_used_inport[max_switch_id_ + 1];
+    int last_used_outport[max_switch_id_ + 1];
+    std::memset(&last_used_outport, 0, (max_switch_id_ + 1) * sizeof(int));
+    std::memset(&last_used_inport, 0, (max_switch_id_ + 1) * sizeof(int));
+    if (mat_file.is_open()) {
+      std::string line;
+      std::getline(mat_file, line);
+      int size = std::stoi(line, 0);
+      assert(size == max_switch_id_ + 1);
+      int i = 0;
+      while ( std::getline(mat_file, line) ) {
+        char* dup = (char *) line.c_str();
+
+        const char* entry = std::strtok(dup, " ");
+        int j = 0;
+        while (entry!= NULL) {
+          int cnt = std::stoi(entry, 0);
+          if (cnt > 0) {
+            sstmac::hw::Link_Type ltype = Electrical;
+            if (group_from_swid(i) != group_from_swid(j)) ltype = Optical;
+            outgoing_adjacency_list_[i].push_back(new dfly_link(i, last_used_outport[i], j , last_used_inport[j], ltype));
+          }
+          entry = std::strtok(NULL, " ");
+          j++;
+        }
+      }
+    } else {
+      spkt_abort_printf("Cannot Open the adjacency_matrix file");
+    }
   };
 }
 }

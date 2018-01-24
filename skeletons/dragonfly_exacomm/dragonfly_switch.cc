@@ -26,7 +26,8 @@ namespace hw {
 		num_optical_links_ = params->get_int_param("num_optical_links");
 		nodes_per_switch_ = params->get_int_param("nodes_per_switch");
 		
-		
+		credits_nodal_ = new int[nodes_per_switch_]; 
+		credits_switch_ = new int[radix_]; 
 		// Initiate the outport handlers and their corresponding outport switches
 		inport_handlers_.resize(radix_);
 		outport_handlers_.resize(radix_);
@@ -34,9 +35,7 @@ namespace hw {
 		outport_switch_.resize(radix_);
 		dtop_ = dynamic_cast<exacomm_dragonfly_topology *>(topology::static_topology(params));
 
-		std::string outport_prefix = "outport";
-		std::string inport_prefix = "inport";
-
+		/*
 		for (int i = 0; i < radix_; i++) {
 			int target_switch = params->get_int_param(outport_prefix + std::to_string(i));
 			int source_switch = params->get_int_param(inport_prefix + std::to_string(i));
@@ -45,10 +44,19 @@ namespace hw {
 			dtop_->set_connection(my_addr_, i, target_switch, false);
 			dtop_->set_connection(my_addr_, i, source_switch, true);
 		}
+		*/
+		// If we are at the final switch
+		//if (my_addr_ == dtop_->max_switch_id()) {
+		//	dtop_->initiate_topology();
+		//}
 		init_links(params);
 	}
 
 	dragonfly_switch::~dragonfly_switch() {
+		if (credits_switch_ != nullptr)
+			delete [] credits_nodal_;
+		if (credits_nodal_ != nullptr) 
+			delete [] credits_switch_;
 	}
 
 	int dragonfly_switch::queue_length(int port) const {
@@ -125,7 +133,7 @@ namespace hw {
 				send_to_link(outport_handlers_[offset + switches_per_group_], msg);
   			} else {
   				int port = find_outport(dst_switch); 
-  				timestamp delay = dtop_->min_distance
+  				//timestamp delay = dtop_->min_distance
   			}
   		}
 	}

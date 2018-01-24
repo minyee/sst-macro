@@ -7,7 +7,7 @@
 #include <vector>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/topology/structured_topology.h>
-#include <unordered_map>
+#include "dfly_link.h"
 
 namespace sstmac{
 namespace hw {
@@ -271,9 +271,9 @@ private:
 
  uint32_t max_switch_id_;
 
- std::vector<std::vector<switch_id>> outgoing_adjacency_matrix_;
+ std::vector<std::vector<dfly_link *>> outgoing_adjacency_list_;
 
- std::vector<std::vector<switch_id>> incoming_adjacency_matrix_;
+ std::vector<std::vector<dfly_link *>> incoming_adjacency_list_;
 
  std::vector<std::vector<int>> distance_matrix_;
 
@@ -283,7 +283,8 @@ private:
  };
 
 private:
- 
+ void form_topology(std::string filename);
+
  void print_port_connection_for_switch(switch_id swid) const;
 
 
@@ -301,11 +302,6 @@ public:
  int nodes_per_switch() {
   return nodes_per_switch_;
  };
-
- // called by the dragonfly_switch to that the topology can be configured by having 
- // the dragonfly switches configure how the topology looks like
- // if inport_or_outport is true, then sets the inport, otherwise sets the outport
- void set_connection(int src_switch, int port_num, int dst_swtich, bool inport_or_outport);
 };
 
  /**

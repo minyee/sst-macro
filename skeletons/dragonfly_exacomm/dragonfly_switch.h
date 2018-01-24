@@ -5,7 +5,6 @@
 #include <sstmac/hardware/router/router.h>
 #include <sstmac/hardware/router/minimal_routing.h>
 #include "exacomm_dragonfly_topology.h"
-#include "dfly_mindist_router.h"
 
 
 namespace sstmac {
@@ -96,13 +95,15 @@ std::vector<event_handler*> outport_handlers_;
 std::vector<int> inport_switch_;
 std::vector<int> outport_switch_;
 int radix_;
+int* credits_nodal_;
+int* credits_switch_;
 switch_id my_addr_;
 int switches_per_group_;
 int nodes_per_switch_;
 int num_groups_;
 int num_optical_links_;
 exacomm_dragonfly_topology* dtop_;
-dfly_mindist_router* router_;
+
 
 bool need_router_; // this boolean determines if a router class is needed to route the packets, or a simple delay model is used
 };
