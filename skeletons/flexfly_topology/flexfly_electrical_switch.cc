@@ -237,6 +237,7 @@ namespace hw {
 		//std::cout << "The num credit is " << std::to_string(msg->num_credits()) << std::endl;
 		//std::cout << "received an message at electrical_switch" << std::endl;
 		send_delayed_to_link(credit_latency_, inport_handlers_[msg->port()], ev);
+		//delete msg;
 		return;
 	};
 

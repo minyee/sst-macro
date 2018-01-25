@@ -277,6 +277,10 @@ private:
 
  std::vector<std::vector<int>> distance_matrix_;
 
+ std::vector<std::vector<switch_id>> routing_table_;
+
+ std::vector<uint16_t> switch_usage_; // used to keep count how much each switch has been used for routing
+                                      // this allows for uniform traffic for statis routing
 private:
  bool valid_switch_id(switch_id id) const {
     return id < (switches_per_group_ * num_groups_);
@@ -287,8 +291,11 @@ private:
 
  void print_port_connection_for_switch(switch_id swid) const;
 
-
  void check_routing_table() const;
+
+ void route_minimal_topology();
+
+ void route_minimal_individual_switch(switch_id src);
 
 public:
  int num_groups() {

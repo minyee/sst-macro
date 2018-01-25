@@ -51,7 +51,7 @@ class DragonflyTopology:
 		self.needRouter = needRouterArg
 		self.totalSwitches = self.a * self.g
 		self.switches = [0] * self.totalSwitches
-		switchName = "dragonflySwitch"
+		switchName = "dragonfly_switch"
 		for i in range(self.totalSwitches):
 			currSwitch = sst.Component("Switch %d" % optical_switch_id, "macro.%s" % switchName)
 			currSwitch.addParam("id", i)
@@ -127,46 +127,17 @@ class DragonflyTopology:
 
 class Interconnect:
 	def __init__(self, params):
-		topologiesWithOptics = [
-			"flexfly",
-			"flexfly_topology"
-		]
 		self.params = params
-		self.simplifiedSwitch = None
 		self.system = sst.macro.System(params)
 		self.num_nodes = self.system.numNodes()
 		self.num_switches = self.system.numSwitches()
 		self.switches = [0]*self.num_switches
 		self.nodes = [0]*self.num_nodes #just expands the size of an initial array with 1 element 0 to size 1 * num_nodes
-		topologyName = (self.params["topology"])["name"]
-		if topologyName in topologiesWithOptics:
-			self.containsOptics = True
-			self.optical_topology_params = self.params["topology"]
-			self.num_groups = int(self.optical_topology_params["groups"])
-			self.switches_per_group = int(self.optical_topology_params["switches_per_group"])
-			self.num_elec_switches = self.num_groups * self.switches_per_group
-			self.nodes_per_switch = int(self.optical_topology_params["nodes_per_switch"])
-			self.optical_switch_radix = int(self.optical_topology_params["optical_switch_radix"])
-			self.optical_switch_radix = self.num_groups
-			if self.optical_topology_params.has_key("link_multiplicity"):
-				self.link_multiplicity = int(self.optical_topology_params["link_multiplicity"])
-			else:
-				self.link_multiplicity = 1
-			# really just equals to h in Kim's literature (num of global links per switch)
-			self.num_nodes = self.num_groups * self.switches_per_group * self.nodes_per_switch
-			self.optical_switches_per_group = self.switches_per_group * self.link_multiplicity / self.optical_switch_radix
-			if self.optical_switches_per_group % self.optical_switch_radix > 0:
-				self.optical_switch_radix += 1
-		else:
-			self.containsOptics = False
-
-	def receiveAdjacencyMatrix(self, matrix):
-		length = len(matrix)
-		for i in range(length):
-			for j in range(length):
-				if matrix[i][j] > 0:
+		topolParams = self.params["topology"]
+		self.switches_per_group = int(topolParams["switches_per_group"])
+		self.nodes_per_switch = int(topolParams["nodes_per_switch"])
+		self.num_groups = int(topolParams["groups"])
 					
-
 	def buildEndpoints(self):
 		nodeParams = self.params["node"]
 		modelName = nodeParams["model"]
@@ -176,35 +147,20 @@ class Interconnect:
 			self.nodes[i].addParam("id", i)       
 		return
 
-	def buildOpticalSwitches(self):
-		switchParams = self.params["switch"]
-		switchName = "flexfly_optical" + "_switch"
-		#switchName = switchParams["model"] + "_switch"
-		for index in range(self.switches_per_group):
-			optical_switch_id = index + self.num_elec_switches
-			switch = sst.Component("Switch %d" % optical_switch_id, "macro.%s" % switchName)
-			switch.addParam("id" , optical_switch_id)
-			switch.addParams(macroToCoreParams(switchParams))
-			switch.addParam("switch_type" , "optical")
-			switch.addParam("optical_switch_radix", self.opticalSwitchRadix)
-			switch.addParam("num_electrical_switches", self.num_elec_switches)
-			self.switches[optical_switch_id] = switch
-		return
-
 	def buildElectricalSwitches(self):
 		switchParams = self.params["switch"]
-		switchName = "flexfly_electrical" + "_switch"
+		switchName = "dragonfly" + "_switch"
 		#totalSwitchesPerGroup = self.optical_switches_per_group + self.switches_per_group
-		for i in range(self.num_elec_switches):
+		for i in range(self.num_switches):
 			#if self.containsOptics and i % (totalSwitchesPerGroup) >= self.switches_per_group:
 				#continue
 			switch = sst.Component("Switch %d" % i, "macro.%s" % switchName)
 			switch.addParam("id" , i) 
 			switch.addParams(macroToCoreParams(switchParams))
 			switch.addParam("switch_type" , "electrical")
-			switch.addParam("total_radix", self.switches_per_group + self.nodes_per_switch)
+			#switch.addParam("switch_radix", self.switches_per_group + self.nodes_per_switch)
 			switch.addParam("switches_per_group", self.switches_per_group)
-			switch.addParam("num_groups", self.num_groups);
+			switch.addParam("nodes_per_switch", self.nodes_per_switch)
 			self.switches[i] = switch 
 		return
 
@@ -236,7 +192,8 @@ class Interconnect:
 			for srcId, dstId, srcOutport, dstInport in connections:
 				#print "srcId: %d and dstId: %d srcOutport: %d, dstInport: %d" % (srcId, dstId, srcOutport, dstInport)
 				#print self.switches
-				print "connecting - srcID: %d -> dstID: %d" % (srcId, dstId)
+				#print "connecting - srcID: %d -> dstID: %d" % (srcId, dstId)
+				srcSwitch.addParam("switch_radix", len(connections))
 				dstSwitch = self.switches[dstId]
 				linkName = "network %d:%d->%d:%d" % (srcId, srcOutport ,dstId, dstInport)
         		link = sst.Link(linkName)
@@ -247,28 +204,6 @@ class Interconnect:
 				#makeUniNetworkLink(srcSwitch, srcId, srcOutport,
 				#					dstSwitch, dstId, dstInport, lat)
 		return
-	## THIS ONE DOES NOT BUILD IT LIKE LOGP
-	def buildTopology2(self):
-		switchParams = self.params["switch"]
-		for i in range(self.num_switches):
-			linkParams = switchParams["link"]
-			connections = self.system.switchConnections(i)
-			srcSwitch = self.switches[i]
-			lat = self.latency(linkParams)
-			for srcId, dstId, srcOutport, dstInport in connections:
-				#print "srcId: %d and dstId: %d srcOutport: %d, dstInport: %d" % (srcId, dstId, srcOutport, dstInport)
-				#print self.switches
-				print "connecting - srcID: %d port %d -> dstID: %d port %d" % (srcId, srcOutport, dstId, dstInport)
-				dstSwitch = self.switches[dstId]
-				makeUniLink("network", srcSwitch, srcId, srcOutport, dstSwitch, dstId, dstInport, smallLatency)
-				#linkName = "network %d:%d->%d:%d" % (srcId, srcOutport ,dstId, dstInport)
-        		#link = sst.Link(linkName)
-        		#portName = "output %d %d" % (srcOutport, dstInport)
-        		#srcSwitch.addLink(link, portName, lat)
-        		#portName = "input %d %d" % (srcOutport, dstInport)
-        		#dstSwitch.addLink(link, portName, lat)
-
-		return		
 
 	def buildNodeConnections(self):
 		for i in range(self.num_groups * self.switches_per_group):
@@ -279,20 +214,6 @@ class Interconnect:
 				switchPortIndex = self.switches_per_group - 1 + 1 + nodeIndex
 				makeUniLink("injection",node,index,0,switch,i,switchPortIndex,smallLatency)
 				makeUniLink("ejection",switch,i,switchPortIndex,node,index,0,smallLatency)
-			#switchId = self.system.nodeToLogPSwitch(i)
-			#switchId = i / self.nodes_per_switch
-			#linkname = "InjectionLink%d:Node%d->Switch%d" % (linkCnt, i, switchId)
-			#link = sst.Link(linkname)
-			#portName1 = "srcPort: %d -> dstPort: %d" % (linkCnt,linkCnt)
-			#portName2 = "srcPort: %d -> dstPort: %d" % (linkCnt,linkCnt)
-			#node = self.nodes[i]
-			
-			#switch = self.switches[switchId]
-			#portName1 = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
-			#portName2 = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
-			#node.addLink(link, portName1, smallLatency)
-			#switch.addLink(link, portName2, smallLatency)
-			#linkCnt += 1
 
 	def buildNodeConnections2(self):
 		for i in range(self.num_groups * self.switches_per_group):
@@ -305,9 +226,7 @@ class Interconnect:
 				link = sst.Link(linkName)
 				print "NICLogInjectionPort: %d and SwitchLogPInjectionPort: %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
 				portName = "in-out %d %d" % (sst.macro.NICLogPInjectionPort, sst.macro.SwitchLogPInjectionPort)
-				#portName = "in-out %d %d" % (0, self.switches_per_group - 1 + nodeIndex)
 				node.addLink(link, portName, smallLatency)
-				#portName = "in-out %d %d" % (0, self.switches_per_group - 1 + nodeIndex)
 				portName = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
 				switch.addLink(link, portName, smallLatency)
 
@@ -328,7 +247,7 @@ class Interconnect:
 		lat = "%8.4f%s" % (num,units.strip())
 		switches = []
 		for i in range(nproc):
-			switch = sst.Component("my_logp %d" % i, "macro.my_logp_switch")
+			switch = sst.Component("logp %d" % i, "macro.logp_switch")
 			#switch = sst.Component("logp %d" % i, "macro.logp_switch")
 			switch.addParams(macroToCoreParams(switchParams))
 			switch.addParam("id", i)
@@ -370,13 +289,7 @@ class Interconnect:
 		opticalSwitch.addParam("switch_type" , "optical")
 		opticalSwitch.addParam("optical_switch_radix", self.opticalSwitchRadix)
 	
-	def buildNetworkMonitor(self):
-		nodeParams = self.params["node"]
-		self.network_manager_node = sst.Component("Node %d" % self*num_nodes, "macro.%s" % ("network_manager" + "_node"))
-		self.network_manager_node.addParams(macroToCoreParams(nodeParams))
-		id = self.num_nodes
-		self.network_manager_node.addParam("id", i);
-		return
+
 
 	def build(self, islogP):
 		if not islogP:
@@ -384,13 +297,8 @@ class Interconnect:
 			topologyParams = self.params["topology"]
 			topologyName = topologyParams["name"]
 			self.buildElectricalSwitches()
-			if self.containsOptics:
-				self.opticalSwitchRadix = topologyParams["optical_switch_radix"]
-				self.buildOpticalSwitches()
-			#self.buildTopology()
-			self.buildTopology2()
+			self.buildTopology()
 			self.buildNodeConnections()
-			#self. buildNodeConnections2()
 			self.buildLogPNetwork()
 		else:
 			self.buildEndpoints()

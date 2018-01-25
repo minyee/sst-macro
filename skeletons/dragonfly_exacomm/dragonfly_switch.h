@@ -2,7 +2,7 @@
 #include <sstmac/hardware/topology/topology.h>
 #include <vector> 
 #include <sstmac/hardware/router/router_fwd.h>
-#include <sstmac/hardware/router/router.h>
+
 #include <sstmac/hardware/router/minimal_routing.h>
 #include "exacomm_dragonfly_topology.h"
 
@@ -71,10 +71,6 @@ virtual link_handler* payload_handler(int port) const override;
 
 virtual int queue_length(int port) const override;
 
-private:
-
-int find_outport(switch_id target_switch) const;
-
 protected:
 
 void recv_payload(event* ev);
@@ -85,27 +81,27 @@ void recv_nodal_payload(event* ev);
 
 void recv_nodal_credit(event* ev);
 
-protected:
-//router* router_;
-
-
 private:
-std::vector<event_handler*> inport_handlers_;
-std::vector<event_handler*> outport_handlers_;
-std::vector<int> inport_switch_;
-std::vector<int> outport_switch_;
-int radix_;
+std::vector<event_handler*> switch_inport_handlers_;
+std::vector<event_handler*> switch_outport_handlers_;
+std::vector<event_handler*> nodal_inport_handlers_;
+std::vector<event_handler*> nodal_outport_handlers_;
+int switch_radix_;
 int* credits_nodal_;
 int* credits_switch_;
 switch_id my_addr_;
 int switches_per_group_;
 int nodes_per_switch_;
 int num_groups_;
-int num_optical_links_;
 exacomm_dragonfly_topology* dtop_;
 
+double optical_link_bw_;
+double electrical_link_bw_;
+timestamp inv_optical_link_bw_;
+timestamp inv_electrical_link_bw_;
+timestamp send_payload_latency_;
+timestamp send_credit_latency_;
 
-bool need_router_; // this boolean determines if a router class is needed to route the packets, or a simple delay model is used
 };
  
 }

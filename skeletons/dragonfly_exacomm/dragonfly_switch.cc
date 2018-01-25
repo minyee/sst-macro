@@ -2,9 +2,7 @@
 #include <sstmac/hardware/common/connection.h>
 #include <sprockit/sim_parameters.h>
 #include <sprockit/util.h>
-#include <sstmac/hardware/switch/network_switch.h>
 #include <sprockit/factories/factory.h>
-#include <sstmac/hardware/router/minimal_routing.h>
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/network/network_message.h>
 
@@ -19,36 +17,29 @@ namespace hw {
 																				id,
 																				mgr, 
 																				device_id::logp_overlay) {
-		my_addr_ = params->get_int_param("id");
-		radix_ = params->get_int_param("num_ports");
-		switches_per_group_ = params->get_int_param("switches_per_group");
-		num_groups_ = params->get_int_param("num_groups");
-		num_optical_links_ = params->get_int_param("num_optical_links");
-		nodes_per_switch_ = params->get_int_param("nodes_per_switch");
-		
-		credits_nodal_ = new int[nodes_per_switch_]; 
-		credits_switch_ = new int[radix_]; 
-		// Initiate the outport handlers and their corresponding outport switches
-		inport_handlers_.resize(radix_);
-		outport_handlers_.resize(radix_);
-		inport_switch_.resize(radix_);
-		outport_switch_.resize(radix_);
-		dtop_ = dynamic_cast<exacomm_dragonfly_topology *>(topology::static_topology(params));
 
-		/*
-		for (int i = 0; i < radix_; i++) {
-			int target_switch = params->get_int_param(outport_prefix + std::to_string(i));
-			int source_switch = params->get_int_param(inport_prefix + std::to_string(i));
-			outport_switch_[i] = target_switch;
-			inport_switch_[i] = source_switch;
-			dtop_->set_connection(my_addr_, i, target_switch, false);
-			dtop_->set_connection(my_addr_, i, source_switch, true);
-		}
-		*/
-		// If we are at the final switch
-		//if (my_addr_ == dtop_->max_switch_id()) {
-		//	dtop_->initiate_topology();
-		//}
+		my_addr_ = params->get_int_param("id");
+		switches_per_group_ = params->get_int_param("switches_per_group");
+		//num_groups_ = params->get_int_param("groups");
+		switch_radix_ = params->get_int_param("switch_radix");
+		nodes_per_switch_ = params->get_int_param("nodes_per_switch");
+		sprockit::sim_parameters* link_params = params->get_namespace("link");
+		electrical_link_bw_ = link_params->get_bandwidth_param("electrical_link_bandwidth");
+		optical_link_bw_ = link_params->get_bandwidth_param("electrical_link_bandwidth");
+		inv_optical_link_bw_ = 1 / optical_link_bw_;
+		inv_electrical_link_bw_ = 1 / electrical_link_bw_;
+		send_payload_latency_ = link_params->get_time_param("send_latency");
+		send_credit_latency_ = link_params->get_time_param("credit_latency");
+		credits_nodal_ = new int[nodes_per_switch_]; 
+		credits_switch_ = new int[switch_radix_]; 
+		std::memset(credits_nodal_, 0, sizeof(int) * nodes_per_switch_);
+		std::memset(credits_switch_, 0, sizeof(int) * switch_radix_);
+		// Initiate the outport handlers and their corresponding outport switches
+		switch_inport_handlers_.resize(switch_radix_);
+		switch_outport_handlers_.resize(switch_radix_);
+		nodal_inport_handlers_.resize(nodes_per_switch_);
+		nodal_outport_handlers_.resize(nodes_per_switch_);
+		dtop_ = dynamic_cast<exacomm_dragonfly_topology *>(topology::static_topology(params));
 		init_links(params);
 	}
 
@@ -67,19 +58,30 @@ namespace hw {
                               						int src_outport, 
                               						int dst_inport,
                               						event_handler* credit_handler) {
-		inport_handlers_[dst_inport] = credit_handler;
+		if (dst_inport < switch_radix_) {
+			switch_inport_handlers_[dst_inport] = credit_handler;
+		} else if (dst_inport <= switch_radix_ + nodes_per_switch_ - 1) {
+			nodal_inport_handlers_[dst_inport - switch_radix_] = credit_handler;
+		} else {
+			spkt_abort_printf("Invalid connect inport for switch with id: %d", my_addr_);
+		}
 	}
 
 	void dragonfly_switch::connect_output(sprockit::sim_parameters* params, 
                               						int src_outport, 
                               						int dst_inport,
                               						event_handler* payload_handler) {
-		std::cout << "connect output is called on switch: " << std::to_string(my_addr_) << " with src_outport: " << std::to_string(src_outport) << " and dst_inport: " << std::to_string(dst_inport) << std::endl;
-		outport_handlers_[src_outport] = payload_handler;
+		if (src_outport < switch_radix_) {
+			switch_outport_handlers_[src_outport] = payload_handler;
+		} else if (src_outport <= switch_radix_ + nodes_per_switch_ - 1) {
+			nodal_outport_handlers_[src_outport - switch_radix_] = payload_handler;
+		} else {
+			spkt_abort_printf("Invalid connect outport for switch with id: %d", my_addr_);
+		}
 	}
 
 	link_handler* dragonfly_switch::credit_handler(int port) const {
-		if (port < switches_per_group_) {
+		if (port < switch_radix_) {
 			return new_link_handler(this, &dragonfly_switch::recv_credit);
 		} else {
 			return new_link_handler(this, &dragonfly_switch::recv_nodal_credit);
@@ -100,42 +102,27 @@ namespace hw {
 	void dragonfly_switch::recv_payload(event* ev) { 
   		pisces_default_packet* msg = safe_cast(pisces_default_packet, ev);
   		int dst = msg->toaddr();
-		int src = msg->fromaddr();
 		int dst_switch = dtop_->node_to_switch(dst);
-		int src_switch = dtop_->node_to_switch(src);
 		int dst_group = dtop_->group_from_swid(dst_switch);
-		int src_group = dtop_->group_from_swid(src_switch);
-		
-		if (need_router_) {
-			// if using the complicatd model that requires actual routing in the topology
-			if (dst_switch == my_addr_) {
-				int offset = dst % nodes_per_switch_;
-				send_to_link(outport_handlers_[offset + switches_per_group_], msg);
-			} else if (dst_group == dtop_->group_from_swid(my_addr_)) {
-				//port_to_switch();
-				int outport = 0;
-				for (outport = 0; outport < radix_; outport++) {
-					if (outport_switch_[outport] == dst_switch) {
-						send_to_link(outport_handlers_[outport], ev);
-						return;
-					}
-				}
-				//outport = dtop_->get_output_port(my_addr_, dst_switch);
-			
-			} else {
-				assert(dst_group != dtop_->group_from_swid(my_addr_));
-				send_to_link(outport_handlers_[switches_per_group_ - 1], msg);
-			}
-  		} else {
-  			// if using the complicatd model that requires actual routing in the topology
-  			if (dst_switch == my_addr_) {
-				int offset = dst % nodes_per_switch_;
-				send_to_link(outport_handlers_[offset + switches_per_group_], msg);
-  			} else {
-  				int port = find_outport(dst_switch); 
-  				//timestamp delay = dtop_->min_distance
-  			}
-  		}
+		int outport;
+		timestamp actual_delay = send_payload_latency_ + (8 * msg->num_bytes()) * inv_electrical_link_bw_;
+		//timestamp optical_delay = send_payload_latency_ + (8 * msg->num_bytes()) * inv_optical_link_bw_;
+		event_handler* eh; 
+		if (dst_switch == my_addr_) {
+			outport = dst % nodes_per_switch_;
+			eh = nodal_outport_handlers_[outport];
+			//send_delayed_to_link(electrical_delay, nodal_outport_handlers_[outport], ev);
+		} else {
+			routable::path pth;
+			dtop_->minimal_route_to_switch(my_addr_, dst_switch, pth);
+			outport = pth.outport();
+			eh = switch_outport_handlers_[outport];
+			if (dst_group != dtop_->group_from_swid(my_addr_)) {
+				actual_delay = send_payload_latency_ + (8 * msg->num_bytes()) * inv_optical_link_bw_;	
+			} 
+		}
+		send_delayed_to_link(actual_delay, eh, ev);
+		return;
 	}
 
 	/**
@@ -145,50 +132,48 @@ namespace hw {
 	 **/
 	void dragonfly_switch::recv_nodal_payload(event* ev) {
 		pisces_default_packet* msg = safe_cast(pisces_default_packet, ev);
-		
-		
-		int dst = msg->toaddr();
 		int src = msg->fromaddr();
-		int dst_switch = dtop_->node_to_switch(dst);
+		int dst = msg->toaddr();
 		int src_switch = dtop_->node_to_switch(src);
-		int dst_group = dtop_->group_from_swid(dst_switch);
+		int dst_switch = dtop_->node_to_switch(dst);
 		int src_group = dtop_->group_from_swid(src_switch);
-		int port_index = num_groups_ * switches_per_group_ + num_optical_links_;;
-		if (src_switch == dst_switch) {
-			port_index += (dst % nodes_per_switch_);
-		} else if (false) {
-			
-			for (auto swid : outport_switch_) {
-				if (swid == 1) {
-					
-				}
-			}
-		}
-		send_to_link(outport_handlers_[port_index], ev);
+		int dst_group = dtop_->group_from_swid(dst_switch);
+		
+		timestamp actual_delay = send_payload_latency_ + (8 * msg->num_bytes()) * inv_electrical_link_bw_;
+		int outport; 
+		event_handler* eh; 
+		pisces_credit* cred = new pisces_credit(0, 0, 100000);
+		send_delayed_to_link(send_credit_latency_, nodal_inport_handlers_[src % nodes_per_switch_], cred);
+		if (my_addr_ == dst_switch) {
+			outport = dst % nodes_per_switch_;
+			eh = nodal_outport_handlers_[outport];
+		} else {
+			routable::path pth;
+			dtop_->minimal_route_to_switch(my_addr_, dst_switch, pth); // CONTINUE HERE, THIS IS WHERE IT FAILS
+			outport = pth.outport();
+			eh = switch_outport_handlers_[outport];
+			if (dst_group != src_group) {
+				actual_delay = send_payload_latency_ + (8 * msg->num_bytes()) * inv_optical_link_bw_;	
+			} 
+		} 
+		send_delayed_to_link(actual_delay, eh, ev);
+
 	};
 
 	void dragonfly_switch::recv_nodal_credit(event* ev) {
+		pisces_credit* cred = safe_cast(pisces_credit, ev);
+		credits_nodal_[cred->port()] += cred->num_credits();
 		return;
 	};
 
 	void dragonfly_switch::recv_credit(event* ev) {
+		pisces_credit* cred = safe_cast(pisces_credit, ev);
+		credits_switch_[cred->port()] += cred->num_credits();
 		return;
 	};
 
+	//void dragonfly_switch::send_credit() {
 
-	/**
-	 ** Given a target_switch, find the corresponding output port
-	 **/
-	int dragonfly_switch::find_outport(switch_id target_switch) const {
-		int port = -1;
-		int current_port = 0;
-		for (auto id : outport_switch_) {
-			if (id == target_switch) {
-				return current_port;
-			}
-			current_port++;
-		}
-		return port;
-	}
+	//}
 }
 }

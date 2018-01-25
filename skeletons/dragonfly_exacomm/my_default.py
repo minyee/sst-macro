@@ -2,10 +2,8 @@
 import sys
 import os
 import sst
-import sst.macro
-#from . import setupTopology 
+import sst.macro 
 from setupTopology import *
-from setupTopologySimplified import *
 
 isSoFile = True
 idx = 1
@@ -31,7 +29,5 @@ while isSoFile:
 	else: isSoFile = False
 	idx += 1
 
-if False:
-	setupTopology()
-else:
-	setupTopologySimplified()
+setupTopology()
+

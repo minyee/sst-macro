@@ -6,6 +6,7 @@
 #include <sstmac/common/node_address.h>
 #include <sprockit/sim_parameters.h>
 #include <stdlib.h>
+#include <queue>
 #include <sstmac/hardware/topology/topology.h>
 #include "exacomm_dragonfly_topology.h"
 
@@ -18,19 +19,24 @@ namespace hw {
                                                   InitGeomEjectID::I_Remembered) {
  	num_groups_ = params->get_int_param("groups"); // controls g
  	switches_per_group_ = params->get_int_param("switches_per_group"); // controls a
-  optical_links_per_switch_ = params->get_int_param("optical_links_per_switch");
+  //optical_links_per_switch_ = params->get_int_param("optical_links_per_switch");
  	nodes_per_switch_ = params->get_optional_int_param("nodes_per_switch", 4);
   std::string filename = params->get_param("adjacency_matrix_filename");
   max_switch_id_ = (num_groups_ * switches_per_group_) - 1;
   outgoing_adjacency_list_.resize(num_groups_ * switches_per_group_);
   incoming_adjacency_list_.resize(num_groups_ * switches_per_group_);
   distance_matrix_.resize(max_switch_id_ + 1);
+  switch_usage_.resize(max_switch_id_ + 1);
+  std::cout << "Initialized the dragonfly topology" << std::endl;
   for (int i = 0; i <= max_switch_id_; i++) {
     distance_matrix_[i].resize(max_switch_id_ + 1);
   }
   // now figure out what the adjacency matrix of the entire topology looks like
   // more importantly how do I transfer that information from 
   form_topology(filename);
+  for (int i = 0; i <= max_switch_id_; i++) {
+    print_port_connection_for_switch(i);
+  }
  };
 
  exacomm_dragonfly_topology::~exacomm_dragonfly_topology() {};
@@ -41,24 +47,22 @@ namespace hw {
  void exacomm_dragonfly_topology::minimal_route_to_switch(switch_id src_switch_addr, 
  												switch_id dst_switch_addr, 
  												routable::path& path) const {
-  int src_group = src_switch_addr/switches_per_group_;
-  int dst_group = src_switch_addr/switches_per_group_;
-  // both the source and dest switch cannot be the same, because the caller 
-  // should not call this function if this were the case
-  assert(src_switch_addr != dst_switch_addr);
-  // if both nodes are connected to the same switch
-  if (src_group == dst_group) {
-    std::vector<topology::connection> conns;  
-    connected_outports(src_switch_addr, conns);
-    for (int i = 0; i < conns.size(); i++) {
-      if (conns[i].dst == dst_switch_addr) {
-        path.set_outport(i);
-        return;
+    int dist = 0;
+    switch_id curr_switch = dst_switch_addr;
+    switch_id parent = curr_switch;
+    while (curr_switch != src_switch_addr) {
+      if (dist >= 4)
+        spkt_abort_printf("ROUTING IS WRONG!!!!!!!!!!");
+      parent = curr_switch;
+      curr_switch = routing_table_[src_switch_addr][curr_switch];
+      dist++;
+    }
+    // at this point the parent switch should be the next switch
+    for (auto link : outgoing_adjacency_list_[src_switch_addr]) {
+      if (link->get_dst() == parent) {
+        path.set_outport(link->get_src_outport());
       }
     }
-  } else {
-  }
-
  };
 
 
@@ -146,7 +150,11 @@ switch_id exacomm_dragonfly_topology::node_to_ejection_switch(node_id addr, uint
    * prints out the all the connections for each switch
    */
   void exacomm_dragonfly_topology::print_port_connection_for_switch(switch_id swid) const {
-    // empty for now
+    std::cout << "This is connections for switch: " << std::to_string(swid) << std::endl;
+    for (auto link : outgoing_adjacency_list_[swid]) {
+      std::cout << "Port: " << std::to_string(link->get_src_outport()) << " goes to inport " << std::to_string(link->get_dst_inport())
+              << " for switch " << std::to_string(link->get_dst()) << std::endl;
+    }
   };
 
 
@@ -206,7 +214,6 @@ switch_id exacomm_dragonfly_topology::node_to_ejection_switch(node_id addr, uint
 
   void exacomm_dragonfly_topology::configure_individual_port_params(switch_id src,
           sprockit::sim_parameters* switch_params) const {
-
   };
 
   /**
@@ -227,7 +234,6 @@ switch_id exacomm_dragonfly_topology::node_to_ejection_switch(node_id addr, uint
       int i = 0;
       while ( std::getline(mat_file, line) ) {
         char* dup = (char *) line.c_str();
-
         const char* entry = std::strtok(dup, " ");
         int j = 0;
         while (entry!= NULL) {
@@ -236,15 +242,73 @@ switch_id exacomm_dragonfly_topology::node_to_ejection_switch(node_id addr, uint
             sstmac::hw::Link_Type ltype = Electrical;
             if (group_from_swid(i) != group_from_swid(j)) ltype = Optical;
             outgoing_adjacency_list_[i].push_back(new dfly_link(i, last_used_outport[i], j , last_used_inport[j], ltype));
+            last_used_outport[i]++;
+            last_used_inport[j]++;
           }
           entry = std::strtok(NULL, " ");
           j++;
         }
+        i++;
       }
     } else {
       spkt_abort_printf("Cannot Open the adjacency_matrix file");
     }
+    std::cout << "GOT OUT OF FORM TOPOLOGY" << std::endl;
   };
+
+  /**
+   * Routes a single switch with id src so that it populates it's own row
+   * of the routing table. This uses a queue and so it is a BFS. This makes sure
+   * that the traffic balancing can be used to do load balancing routing
+   * NOTE: The routing table stores that number of available ways one switch can be gotten by from its neighbors 
+   **/
+  void exacomm_dragonfly_topology::route_minimal_individual_switch(switch_id src) {
+    std::vector<int>& distance_vector = distance_matrix_[src];
+    std::vector<switch_id>& parent_vector = routing_table_[src];
+
+    distance_vector.resize(max_switch_id_ + 1);
+    bool visited[max_switch_id_ + 1];
+
+    for (int i = 0; i <= max_switch_id_; i++) {
+      visited[i] = false;
+    }
+    std::fill(distance_vector.begin(), distance_vector.end(), INT_MAX);
+    distance_vector[src] = 0;
+    switch_id curr_switch = src;
+    std::queue<switch_id> queue;
+    queue.push(curr_switch);
+    while (!queue.empty()) {
+      curr_switch = queue.front();
+      queue.pop();
+      visited[curr_switch] = true;
+      for (auto link : outgoing_adjacency_list_[curr_switch]) {
+        switch_id neighbor = link->get_dst();
+        if (distance_vector[neighbor] > distance_vector[curr_switch] + 1) {
+          distance_vector[neighbor] = distance_vector[curr_switch] + 1;
+          parent_vector[neighbor] = curr_switch;
+        } else if ((distance_vector[neighbor] == distance_vector[curr_switch] + 1) && visited[parent_vector[neighbor]]) {
+          if (switch_usage_[parent_vector[neighbor]] > switch_usage_[curr_switch]) {
+            assert(switch_usage_[parent_vector[neighbor]] > 0);
+            switch_usage_[parent_vector[neighbor]]--;
+            parent_vector[neighbor] = curr_switch;
+            switch_usage_[curr_switch]++;
+          }
+        }
+        if (!visited[neighbor]) {
+          queue.push(neighbor);
+        }  
+      }
+    }
+    return;
+  }
+
+  void exacomm_dragonfly_topology::route_minimal_topology() {
+    std::fill(switch_usage_.begin(), switch_usage_.end(), 0);
+    for (int i = 0; i <= max_switch_id_; i++ ) {
+      route_minimal_individual_switch(i);
+    }
+    return;
+  }
 }
 }
 
