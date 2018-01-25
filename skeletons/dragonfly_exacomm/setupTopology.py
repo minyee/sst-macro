@@ -157,21 +157,9 @@ class Interconnect:
 			switch = sst.Component("Switch %d" % i, "macro.%s" % switchName)
 			switch.addParam("id" , i) 
 			switch.addParams(macroToCoreParams(switchParams))
-			switch.addParam("switch_type" , "electrical")
-			#switch.addParam("switch_radix", self.switches_per_group + self.nodes_per_switch)
 			switch.addParam("switches_per_group", self.switches_per_group)
 			switch.addParam("nodes_per_switch", self.nodes_per_switch)
 			self.switches[i] = switch 
-		return
-
-	def buildSimplifiedTopology(self, latency):
-		self.simplifiedSwitch = sst.Component("Switch 0" , "macro.my_logp_switch")
-		self.simplifiedSwitch.addParam("id" , 90) 
-		self.simplifiedSwitch.addParam("optical_bandwidth" , "10Gb/s") 
-		self.simplifiedSwitch.addParam("electrical_bandwidth" , "1Mb/s") 
-		#switch.addParam("")
-		for i in range(self.num_nodes):
-			makeBiLink("network", self.simplifiedSwitch, 90, i, self.nodes[i], i, 0, latency, latency)
 		return
 
 	def latency(self, params):
@@ -192,17 +180,17 @@ class Interconnect:
 			for srcId, dstId, srcOutport, dstInport in connections:
 				#print "srcId: %d and dstId: %d srcOutport: %d, dstInport: %d" % (srcId, dstId, srcOutport, dstInport)
 				#print self.switches
-				#print "connecting - srcID: %d -> dstID: %d" % (srcId, dstId)
+				print "connecting - srcID: %d outport: %d -> dstID: %d inport: %d" % (srcId,	 srcOutport, dstId, dstInport)
 				srcSwitch.addParam("switch_radix", len(connections))
 				dstSwitch = self.switches[dstId]
-				linkName = "network %d:%d->%d:%d" % (srcId, srcOutport ,dstId, dstInport)
-        		link = sst.Link(linkName)
-        		portName = "output %d %d" % (srcOutport, dstInport)
-        		srcSwitch.addLink(link, portName, lat)
-        		portName = "input %d %d" % (srcOutport, dstInport)
-        		dstSwitch.addLink(link, portName, lat)
-				#makeUniNetworkLink(srcSwitch, srcId, srcOutport,
-				#					dstSwitch, dstId, dstInport, lat)
+				#linkName = "network %d:%d->%d:%d" % (srcId, srcOutport ,dstId, dstInport)
+        		#link = sst.Link(linkName)
+        		#portName = "output %d %d" % (srcOutport, dstInport)
+        		#srcSwitch.addLink(link, portName, lat)
+        		#portName = "input %d %d" % (srcOutport, dstInport)
+        		#dstSwitch.addLink(link, portName, lat)
+				makeUniNetworkLink(srcSwitch, srcId, srcOutport,
+									dstSwitch, dstId, dstInport, lat)
 		return
 
 	def buildNodeConnections(self):
@@ -280,15 +268,6 @@ class Interconnect:
 			portName = "in-out %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
 			#portName = "ejection %d %d" % (i, sst.macro.SwitchLogPInjectionPort)
 			sw.addLink(link, portName, smallLatency)
-
-	def makeOneOpticalSwitch(self, switchParams, i):
-		opticalSwitchName = "macro." + "flexfly_optical_switch"
-		opticalSwitch = sst.Component("Switch %d" % i, opticalSwitchName)
-		opticalSwitch.addParam("id" , i) 
-		opticalSwitch.addParams(macroToCoreParams(switchParams))
-		opticalSwitch.addParam("switch_type" , "optical")
-		opticalSwitch.addParam("optical_switch_radix", self.opticalSwitchRadix)
-	
 
 
 	def build(self, islogP):

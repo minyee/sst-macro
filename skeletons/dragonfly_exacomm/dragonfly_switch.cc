@@ -60,7 +60,7 @@ namespace hw {
                               						event_handler* credit_handler) {
 		if (dst_inport < switch_radix_) {
 			switch_inport_handlers_[dst_inport] = credit_handler;
-		} else if (dst_inport <= switch_radix_ + nodes_per_switch_ - 1) {
+		} else if (switch_radix_ <= dst_inport) {
 			nodal_inport_handlers_[dst_inport - switch_radix_] = credit_handler;
 		} else {
 			spkt_abort_printf("Invalid connect inport for switch with id: %d", my_addr_);
@@ -89,7 +89,8 @@ namespace hw {
 	}
 
 	link_handler* dragonfly_switch::payload_handler(int port) const {
-		if (port < switches_per_group_) {
+		std::cout << "Payload Handler for switch id : " << std::to_string(my_addr_) << " for port : " << std::to_string(port) << std::endl;
+		if (port < switch_radix_) {
 			return new_link_handler(this, &dragonfly_switch::recv_payload);
 		} else {
 			return new_link_handler(this, &dragonfly_switch::recv_nodal_payload);
@@ -138,10 +139,9 @@ namespace hw {
 		int dst_switch = dtop_->node_to_switch(dst);
 		int src_group = dtop_->group_from_swid(src_switch);
 		int dst_group = dtop_->group_from_swid(dst_switch);
-		
 		timestamp actual_delay = send_payload_latency_ + (8 * msg->num_bytes()) * inv_electrical_link_bw_;
 		int outport; 
-		event_handler* eh; 
+		event_handler* eh = nullptr; 
 		pisces_credit* cred = new pisces_credit(0, 0, 100000);
 		send_delayed_to_link(send_credit_latency_, nodal_inport_handlers_[src % nodes_per_switch_], cred);
 		if (my_addr_ == dst_switch) {
@@ -156,8 +156,8 @@ namespace hw {
 				actual_delay = send_payload_latency_ + (8 * msg->num_bytes()) * inv_optical_link_bw_;	
 			} 
 		} 
+		assert(eh != nullptr);
 		send_delayed_to_link(actual_delay, eh, ev);
-
 	};
 
 	void dragonfly_switch::recv_nodal_credit(event* ev) {

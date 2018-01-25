@@ -28,15 +28,20 @@ namespace hw {
   distance_matrix_.resize(max_switch_id_ + 1);
   switch_usage_.resize(max_switch_id_ + 1);
   std::cout << "Initialized the dragonfly topology" << std::endl;
+  routing_table_.resize(max_switch_id_ + 1);
   for (int i = 0; i <= max_switch_id_; i++) {
+    std::cout << "The distance matrix has size " << std::to_string(max_switch_id_ + 1) << std::endl;
     distance_matrix_[i].resize(max_switch_id_ + 1);
+    routing_table_.resize(max_switch_id_ + 1);
   }
   // now figure out what the adjacency matrix of the entire topology looks like
-  // more importantly how do I transfer that information from 
+  // more importantly how do I transfer that information from
   form_topology(filename);
   for (int i = 0; i <= max_switch_id_; i++) {
     print_port_connection_for_switch(i);
   }
+
+  route_minimal_topology();
  };
 
  exacomm_dragonfly_topology::~exacomm_dragonfly_topology() {};
@@ -266,9 +271,8 @@ switch_id exacomm_dragonfly_topology::node_to_ejection_switch(node_id addr, uint
     std::vector<int>& distance_vector = distance_matrix_[src];
     std::vector<switch_id>& parent_vector = routing_table_[src];
 
-    distance_vector.resize(max_switch_id_ + 1);
+    //distance_vector.resize(max_switch_id_ + 1);
     bool visited[max_switch_id_ + 1];
-
     for (int i = 0; i <= max_switch_id_; i++) {
       visited[i] = false;
     }
@@ -276,24 +280,31 @@ switch_id exacomm_dragonfly_topology::node_to_ejection_switch(node_id addr, uint
     distance_vector[src] = 0;
     switch_id curr_switch = src;
     std::queue<switch_id> queue;
-    queue.push(curr_switch);
+    queue.push(src);
     while (!queue.empty()) {
       curr_switch = queue.front();
       queue.pop();
       visited[curr_switch] = true;
       for (auto link : outgoing_adjacency_list_[curr_switch]) {
         switch_id neighbor = link->get_dst();
+        assert(link->get_src() == curr_switch);
+        distance_vector[neighbor];
+        
+        distance_vector[curr_switch];
+        
         if (distance_vector[neighbor] > distance_vector[curr_switch] + 1) {
+        
           distance_vector[neighbor] = distance_vector[curr_switch] + 1;
           parent_vector[neighbor] = curr_switch;
-        } else if ((distance_vector[neighbor] == distance_vector[curr_switch] + 1) && visited[parent_vector[neighbor]]) {
-          if (switch_usage_[parent_vector[neighbor]] > switch_usage_[curr_switch]) {
-            assert(switch_usage_[parent_vector[neighbor]] > 0);
-            switch_usage_[parent_vector[neighbor]]--;
-            parent_vector[neighbor] = curr_switch;
-            switch_usage_[curr_switch]++;
-          }
-        }
+        
+        } //else if ((distance_vector[neighbor] == distance_vector[curr_switch] + 1) && visited[neighbor]) {
+          //if (switch_usage_[parent_vector[neighbor]] > switch_usage_[curr_switch]) {
+            //assert(switch_usage_[parent_vector[neighbor]] > 0);
+            //switch_usage_[parent_vector[neighbor]]--;
+            //parent_vector[neighbor] = curr_switch;
+            //switch_usage_[curr_switch]++;
+          //}
+        //}
         if (!visited[neighbor]) {
           queue.push(neighbor);
         }  
@@ -303,8 +314,11 @@ switch_id exacomm_dragonfly_topology::node_to_ejection_switch(node_id addr, uint
   }
 
   void exacomm_dragonfly_topology::route_minimal_topology() {
+    switch_usage_.resize(max_switch_id_ + 1);
+    routing_table_.resize(max_switch_id_ + 1);
     std::fill(switch_usage_.begin(), switch_usage_.end(), 0);
     for (int i = 0; i <= max_switch_id_; i++ ) {
+      routing_table_[i].resize(max_switch_id_ + 1);
       route_minimal_individual_switch(i);
     }
     return;
