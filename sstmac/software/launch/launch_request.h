@@ -128,6 +128,10 @@ class software_launch_request
     return num_finished_ == nproc_;
   }
 
+  int procs_per_node() const {
+    return procs_per_node_;
+  }
+  
  private:
   sw::node_allocator* allocator_;
   sw::task_mapper* indexer_;
