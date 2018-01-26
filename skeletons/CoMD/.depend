@@ -1,0 +1,37 @@
+# DO NOT DELETE
+
+src/CoMD.o: src/CoMDTypes.h src/mytype.h src/haloExchange.h src/linkCells.h
+src/CoMD.o: src/decomposition.h src/initAtoms.h src/eam.h src/ljForce.h
+src/CoMD.o: src/memUtils.h src/yamlOutput.h src/parallel.h
+src/CoMD.o: src/performanceTimers.h src/mycommand.h src/timestep.h
+src/CoMD.o: src/constants.h
+src/cmdLineParser.o: src/cmdLineParser.h src/mytype.h src/memUtils.h
+src/decomposition.o: src/decomposition.h src/mytype.h src/memUtils.h
+src/decomposition.o: src/parallel.h
+src/eam.o: src/eam.h src/mytype.h src/constants.h src/memUtils.h
+src/eam.o: src/parallel.h src/linkCells.h src/CoMDTypes.h src/haloExchange.h
+src/eam.o: src/decomposition.h src/initAtoms.h src/performanceTimers.h
+src/haloExchange.o: src/haloExchange.h src/mytype.h src/CoMDTypes.h
+src/haloExchange.o: src/linkCells.h src/decomposition.h src/initAtoms.h
+src/haloExchange.o: src/parallel.h src/eam.h src/memUtils.h
+src/haloExchange.o: src/performanceTimers.h src/random.h src/constants.h
+src/initAtoms.o: src/initAtoms.h src/mytype.h src/constants.h
+src/initAtoms.o: src/decomposition.h src/parallel.h src/random.h
+src/initAtoms.o: src/linkCells.h src/timestep.h src/CoMDTypes.h
+src/initAtoms.o: src/haloExchange.h src/memUtils.h src/performanceTimers.h
+src/linkCells.o: src/linkCells.h src/mytype.h src/parallel.h src/memUtils.h
+src/linkCells.o: src/decomposition.h src/performanceTimers.h src/CoMDTypes.h
+src/linkCells.o: src/haloExchange.h src/initAtoms.h
+src/ljForce.o: src/ljForce.h src/constants.h src/mytype.h src/parallel.h
+src/ljForce.o: src/linkCells.h src/memUtils.h src/CoMDTypes.h
+src/ljForce.o: src/haloExchange.h src/decomposition.h src/initAtoms.h
+src/mycommand.o: src/mycommand.h src/cmdLineParser.h src/parallel.h
+src/mycommand.o: src/mytype.h
+src/parallel.o: src/parallel.h src/mytype.h
+src/performanceTimers.o: src/performanceTimers.h src/mytype.h src/parallel.h
+src/performanceTimers.o: src/yamlOutput.h
+src/random.o: src/random.h src/mytype.h
+src/timestep.o: src/timestep.h src/CoMDTypes.h src/mytype.h
+src/timestep.o: src/haloExchange.h src/linkCells.h src/decomposition.h
+src/timestep.o: src/initAtoms.h src/parallel.h src/performanceTimers.h
+src/yamlOutput.o: src/yamlOutput.h CoMD_info.h src/mytype.h src/parallel.h

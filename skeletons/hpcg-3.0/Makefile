@@ -50,9 +50,9 @@ PRIMARY_HEADERS = src/Geometry.hpp src/SparseMatrix.hpp src/Vector.hpp src/CGDat
 
 ALL_HEADERS = $(shell find src -name '*.hpp')
 
-all: runhpcg-3.0
+all: runhpcg_3_0
 
-runhpcg-3.0: build/main.o $(HPCG_DEPS)
+runhpcg_3_0: build/main.o $(HPCG_DEPS)
 	$(LINKER) $(LINKFLAGS) build/main.o $(HPCG_DEPS) $(HPCG_LIBS) -o $@
 
 libhpcg.so: build/main.o $(HPCG_DEPS)
@@ -63,7 +63,7 @@ sstmac_headers: $(ALL_HEADERS)
 	find `pwd` -name "*.hpp" > $@
 
 clean:
-	rm -f build/*.o hpcg-3.0 sstmac_headers libhpcg.so
+	rm -f build/*.o hpcg_3_0 sstmac_headers librun:hpcg_3_0.so
 
 .PHONY: all clean
 
