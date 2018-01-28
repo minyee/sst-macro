@@ -28,6 +28,5 @@ while isSoFile:
 		del sys.argv[idx]
 	else: isSoFile = False
 	idx += 1
-
 setupTopology()
 

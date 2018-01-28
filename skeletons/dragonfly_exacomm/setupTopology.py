@@ -149,6 +149,7 @@ class Interconnect:
 
 	def buildElectricalSwitches(self):
 		switchParams = self.params["switch"]
+		print "teeeeheeee"
 		switchName = "dragonfly" + "_switch"
 		#totalSwitchesPerGroup = self.optical_switches_per_group + self.switches_per_group
 		for i in range(self.num_switches):
@@ -241,8 +242,8 @@ class Interconnect:
 			switch.addParam("id", i)
 			switches.append(switch)
 			#NEWLY ADDED BEGIN
-			switch.addParam("electrical_bandwidth" , "10Gb/s")
-			switch.addParam("optical_bandwidth", "1Gb/s")
+			#switch.addParam("electrical_bandwidth" , "10Gb/s")
+			#switch.addParam("optical_bandwidth", "1Gb/s")
 			#NEWLY ADDED END
 		for i in range(nproc):
 			sw_i = switches[i]
@@ -272,9 +273,9 @@ class Interconnect:
 
 	def build(self, islogP):
 		if not islogP:
+			
 			self.buildEndpoints()
-			topologyParams = self.params["topology"]
-			topologyName = topologyParams["name"]
+
 			self.buildElectricalSwitches()
 			self.buildTopology()
 			self.buildNodeConnections()
@@ -316,7 +317,7 @@ def setupTopology():
 	params = readCmdLineParams()
 	nodeParams = params["node"]
 	swParams = params["switch"]
-	
+	print "dsfweuguwebj"
 	builtinApps = [
    		"apitest",
        	"global_test",
@@ -358,8 +359,8 @@ def setupTopology():
 		nodeParams["debug"] = " ".join(debugList)
 	swParams["topology"] = params["topology"]
 
-	swParams["topology"] = "torus"
-
+	#swParams["topology"] = "torus"
+	print "hellosdksd	makeUniLink"
 	#move every param in the global namespace 
 	#into the individal namespaces
 	for ns in "node", "switch":

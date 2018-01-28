@@ -10,13 +10,23 @@
 #include <sstmac/hardware/topology/topology.h>
 #include "exacomm_dragonfly_topology.h"
 
+
+
+
+
 namespace sstmac {
 namespace hw {
-
+RegisterKeywords(
+                  {"groups", "The number of groups"},
+                  {"switches_per_group", ""},
+                  {"nodes_per_switch", ""},
+                  {"adjacency_matrix_filename", ""},
+);
  
  exacomm_dragonfly_topology::exacomm_dragonfly_topology(sprockit::sim_parameters* params) : 
                               structured_topology(params,InitMaxPortsIntra::I_Remembered, 
                                                   InitGeomEjectID::I_Remembered) {
+
  	num_groups_ = params->get_int_param("groups"); // controls g
  	switches_per_group_ = params->get_int_param("switches_per_group"); // controls a
   //optical_links_per_switch_ = params->get_int_param("optical_links_per_switch");

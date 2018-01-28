@@ -3,21 +3,27 @@
  * This is the header file containing all the function footprint for the flexfly topology class
  * which is really a canonical Dragonfly
  */
+#ifndef EXACOMM_DRAGONFLY_TOPOLOGY
+#define EXACOMM_DRAGONFLY_TOPOLOGY
+
+
+#include <sprockit/keyword_registration.h>
 #include <algorithm>
 #include <vector>
 #include <sstmac/hardware/topology/topology.h>
 #include <sstmac/hardware/topology/structured_topology.h>
 #include "dfly_link.h"
 
+
+
 namespace sstmac{
 namespace hw {
 
-#ifndef EXACOMM_DRAGONFLY_TOPOLOGY
-#define EXACOMM_DRAGONFLY_TOPOLOGY
 
 class exacomm_dragonfly_topology : public structured_topology {
+  FactoryRegister("exacomm_dragonfly_topology", topology, exacomm_dragonfly_topology)
 public:
-FactoryRegister("exacomm_dragonfly_topology", topology, exacomm_dragonfly_topology, "This is dragonfly topology for exacomm dragonfly design space exploration project");
+//FactoryRegister("exacomm_dragonfly_topology", topology, exacomm_dragonfly_topology, "This is dragonfly topology for exacomm dragonfly design space exploration project");
 /*
 RegisterComponent("flexfly", topology, exacomm_dragonfly_topology,
            "topol", COMPONENT_CATEGORY_NETWORK,
@@ -28,7 +34,6 @@ virtual int diameter() const override {
   return 3;
 };
 
-public:
 
 
 
@@ -317,7 +322,9 @@ public:
   **/
  //void configure_optical_config(std::vector<std::vector<int>>& group_connectivity_matrix,
  //                               std::vector<std::vector<int>>& optical_switch_inout_configuration) {};
-#endif
+
 
 }
 }
+
+#endif

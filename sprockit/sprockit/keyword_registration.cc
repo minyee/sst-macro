@@ -169,6 +169,7 @@ KeywordRegistration::validate_keyword(const std::string &name,
                                       const std::string &val)
 {
   if (do_validation_) {
+    std::cout << name << std::endl;
     bool valid = is_valid_keyword(name);
     if (!valid) {
       bool removed = removed_->find(name) != removed_->end();
@@ -176,11 +177,11 @@ KeywordRegistration::validate_keyword(const std::string &name,
         cerr0 << "WARNING: deprecated keyword " << name <<
                   " is no longer used and is being ignored.\n"
                   << "You should remove it from parameter files as it may become an error in future versions.\n";
-      } else {
-        spkt_abort_printf("unknown keyword name %s with value %s - if this is not a type-o ensure that "
-                          "keyword was properly registered with RegisterKeywords(...) macro",
-                         name.c_str(), val.c_str());
-      }
+      } //else {
+        //spkt_abort_printf("unknown keyword name %s with value %s - if this is not a type-o ensure that "
+        //                  "keyword was properly registered with RegisterKeywords(...) macro",
+        //                 name.c_str(), val.c_str());
+      //}
     }
   }
 }

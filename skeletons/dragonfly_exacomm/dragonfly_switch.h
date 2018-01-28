@@ -1,10 +1,17 @@
+#ifndef EXACOMM_DRAGONFLY_SWITCH 
+#define EXACOMM_DRAGONFLY_SWITCH
+
 #include <sstmac/hardware/switch/network_switch.h>
 #include <sstmac/hardware/topology/topology.h>
 #include <vector> 
-#include <sstmac/hardware/router/router_fwd.h>
-
-#include <sstmac/hardware/router/minimal_routing.h>
 #include "exacomm_dragonfly_topology.h"
+#include <sstmac/hardware/common/connection.h>
+#include <sstmac/common/sstmac_config.h>
+#include <sstmac/common/sst_event.h>
+#include <sprockit/keyword_registration.h>
+
+//RegisterNamespaces("switch", "link", "xbar", "router");
+
 
 
 namespace sstmac {
@@ -13,6 +20,7 @@ namespace hw {
 //typedef int port_id;
 
 class dragonfly_switch : public network_switch {
+  DeclareFactory(dragonfly_switch,uint32_t,event_manager*)
 public:
 
 RegisterComponent("dragonfly_switch", network_switch, dragonfly_switch,
@@ -21,13 +29,12 @@ RegisterComponent("dragonfly_switch", network_switch, dragonfly_switch,
  
 dragonfly_switch(sprockit::sim_parameters* params,
 							uint64_t id,
-							event_manager* mgr,
-							device_id::type_t ty = device_id::router);// : network_switch(params, id, mgr, ty);
+							event_manager* mgr);// : network_switch(params, id, mgr, ty);
  
 ~dragonfly_switch();
 
 virtual std::string to_string() const override {
-	return "dragonfly switch that has both optical ports and electrical ports";
+	return "dragonfly_switch";
 };
 
 /**
@@ -40,7 +47,7 @@ virtual std::string to_string() const override {
 virtual void connect_output(sprockit::sim_parameters* params, 
                                 int src_outport, 
                                 int dst_inport, 
-                                event_handler* payload_handler) override;
+                                event_link* payload_handler) override;
 
 
 /**
@@ -53,7 +60,7 @@ virtual void connect_output(sprockit::sim_parameters* params,
 virtual void connect_input(sprockit::sim_parameters* params, 
                               int src_outport, 
                               int dst_inport,
-                              event_handler* credit_handler) override;
+                              event_link* credit_handler) override;
 
 /**
  * @brief credit_handler
@@ -71,6 +78,10 @@ virtual link_handler* payload_handler(int port) const override;
 
 virtual int queue_length(int port) const override;
 
+virtual timestamp send_latency(sprockit::sim_parameters* params) const override;
+
+virtual timestamp credit_latency(sprockit::sim_parameters* params) const override;
+
 protected:
 
 void recv_payload(event* ev);
@@ -82,10 +93,10 @@ void recv_nodal_payload(event* ev);
 void recv_nodal_credit(event* ev);
 
 private:
-std::vector<event_handler*> switch_inport_handlers_;
-std::vector<event_handler*> switch_outport_handlers_;
-std::vector<event_handler*> nodal_inport_handlers_;
-std::vector<event_handler*> nodal_outport_handlers_;
+std::vector<event_link*> switch_inport_handlers_;
+std::vector<event_link*> switch_outport_handlers_;
+std::vector<event_link*> nodal_inport_handlers_;
+std::vector<event_link*> nodal_outport_handlers_;
 int switch_radix_;
 int* credits_nodal_;
 int* credits_switch_;
@@ -106,3 +117,5 @@ timestamp send_credit_latency_;
  
 }
 }
+
+#endif

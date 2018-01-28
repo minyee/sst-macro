@@ -6,17 +6,45 @@
 #include <sstmac/hardware/pisces/pisces.h>
 #include <sstmac/hardware/network/network_message.h>
 
+MakeDebugSlot(dragonfly_switch)
+
+/*
+RegisterKeywords( "id", 
+					"switches_per_group", 
+					"switch_radix",
+					"nodes_per_switch", 
+					"electrical_link_bandwidth",
+					"send_latency",
+					"credit_latency",
+				); 
+*/
+
+RegisterNamespaces(
+	"link",
+	"xbar",
+	"router"
+);
+
+RegisterKeywords(
+                  {"id","DEPRECATED: the id of this switch"},
+                  {"switches_per_group", "The number of switches in every group of switches"},
+                  {"switch_radix", "The number of ports that is used to connect to other switches"},
+                  {"nodes_per_switch","The p parameter in Dragonfly literatures"},
+                  {"electrical_link_bandwidth", "The bandwidth of the electrical links"},
+                  {"optical_switch_bandwidth", "The bandwidth of the optical links"},
+                  {"send_latency", ""},
+                  {"credit_latency", ""},
+);
+
 namespace sstmac {
 namespace hw {
 
 	dragonfly_switch::dragonfly_switch(sprockit::sim_parameters* params,
     														uint64_t id,
-    														event_manager* mgr,
-    														device_id::type_t ty) : 
+    														event_manager* mgr) : 
 																network_switch(params, 
 																				id,
-																				mgr, 
-																				device_id::logp_overlay) {
+																				mgr) {
 
 		my_addr_ = params->get_int_param("id");
 		switches_per_group_ = params->get_int_param("switches_per_group");
@@ -57,7 +85,7 @@ namespace hw {
 	void dragonfly_switch::connect_input(sprockit::sim_parameters* params, 
                               						int src_outport, 
                               						int dst_inport,
-                              						event_handler* credit_handler) {
+                              						event_link* credit_handler) {
 		if (dst_inport < switch_radix_) {
 			switch_inport_handlers_[dst_inport] = credit_handler;
 		} else if (switch_radix_ <= dst_inport) {
@@ -70,7 +98,7 @@ namespace hw {
 	void dragonfly_switch::connect_output(sprockit::sim_parameters* params, 
                               						int src_outport, 
                               						int dst_inport,
-                              						event_handler* payload_handler) {
+                              						event_link* payload_handler) {
 		if (src_outport < switch_radix_) {
 			switch_outport_handlers_[src_outport] = payload_handler;
 		} else if (src_outport <= switch_radix_ + nodes_per_switch_ - 1) {
@@ -108,7 +136,7 @@ namespace hw {
 		int outport;
 		timestamp actual_delay = send_payload_latency_ + (8 * msg->num_bytes()) * inv_electrical_link_bw_;
 		//timestamp optical_delay = send_payload_latency_ + (8 * msg->num_bytes()) * inv_optical_link_bw_;
-		event_handler* eh; 
+		event_link* eh; 
 		if (dst_switch == my_addr_) {
 			outport = dst % nodes_per_switch_;
 			eh = nodal_outport_handlers_[outport];
@@ -122,7 +150,7 @@ namespace hw {
 				actual_delay = send_payload_latency_ + (8 * msg->num_bytes()) * inv_optical_link_bw_;	
 			} 
 		}
-		send_delayed_to_link(actual_delay, eh, ev);
+		eh->send_extra_delay(actual_delay, ev);
 		return;
 	}
 
@@ -141,9 +169,9 @@ namespace hw {
 		int dst_group = dtop_->group_from_swid(dst_switch);
 		timestamp actual_delay = send_payload_latency_ + (8 * msg->num_bytes()) * inv_electrical_link_bw_;
 		int outport; 
-		event_handler* eh = nullptr; 
+		event_link* eh = nullptr; 
 		pisces_credit* cred = new pisces_credit(0, 0, 100000);
-		send_delayed_to_link(send_credit_latency_, nodal_inport_handlers_[src % nodes_per_switch_], cred);
+		nodal_inport_handlers_[src % nodes_per_switch_]->send_extra_delay(send_credit_latency_, cred);
 		if (my_addr_ == dst_switch) {
 			outport = dst % nodes_per_switch_;
 			eh = nodal_outport_handlers_[outport];
@@ -157,7 +185,8 @@ namespace hw {
 			} 
 		} 
 		assert(eh != nullptr);
-		send_delayed_to_link(actual_delay, eh, ev);
+		eh->send_extra_delay(actual_delay, ev);
+		//send_delayed_to_link(actual_delay, eh, ev);
 	};
 
 	void dragonfly_switch::recv_nodal_credit(event* ev) {
@@ -171,6 +200,14 @@ namespace hw {
 		credits_switch_[cred->port()] += cred->num_credits();
 		return;
 	};
+
+	timestamp dragonfly_switch::send_latency(sprockit::sim_parameters* params) const {
+		return send_payload_latency_;
+	}
+
+	timestamp dragonfly_switch::credit_latency(sprockit::sim_parameters* params) const {
+		return send_credit_latency_;	
+	}
 
 	//void dragonfly_switch::send_credit() {
 
